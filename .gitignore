@@ -1,0 +1,9 @@
+.vs
+build
+out
+CMakeSettings.json
+
+lib
+extern
+
+*.zip

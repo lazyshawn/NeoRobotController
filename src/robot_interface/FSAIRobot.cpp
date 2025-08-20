@@ -1,0 +1,1296 @@
+
+#include "robot_interface/FSAIRobot.h"
+
+#include "RobotLogger.h"
+
+#include <iostream>
+
+namespace FSAIRobotInterface {
+
+	int RegisterBuffer::clear() {
+		num = 0;
+		buffer.clear();
+		return 0;
+	}
+
+	bool RegisterBuffer::empty() {
+		return buffer.empty();
+	}
+
+	int RegisterBuffer::add_buffer(int idx, float value) {
+		buffer.push_back({ idx, value });
+		return 0;
+	}
+
+	int RegisterBuffer::add_buffer(const std::vector<int>& idx, const std::vector<float>& value) {
+		int num = (std::min)(idx.size(), value.size());
+		for (size_t i = 0; i < num; ++i) {
+			buffer.push_back({ idx[i], value[i] });
+		}
+		return 0;
+	}
+
+	int RegisterBuffer::pop(std::pair<int, float>& pair) {
+		if (buffer.empty()) {
+			return -1;
+		}
+
+		pair = buffer.front();
+		buffer.pop_front();
+		num++;
+
+		return 0;
+	}
+
+
+
+	// 机器人管理类
+	FSAIRobot::FSAIRobot() {
+	}
+	FSAIRobot::~FSAIRobot() {
+		// 析构时先停止轴运动
+		//task_stop();
+		//emergency_stop();
+
+		if (ZController) {
+			ZController->remove_robot(robotId);
+		}
+	}
+
+
+	std::vector<int> FSAIRobot::get_execute_axis() {
+		int base = robotId * 32;
+		//std::vector<int> axis = { base + 18,base + 19,base + 20,base + 21,base + 22,base + 23 };
+		std::vector<int> axis = { base + 0,base + 1,base + 2,base + 3,base + 4,base + 5 };
+		return axis;
+	}
+
+	
+	/* *************************** 上层接口实现 *************************** */
+	int FSAIRobot::read_register_config() {
+		int cfgIdxBase = get_config_idx_base();
+		int ret = 0;
+		std::vector<int> configIdx;
+		std::vector<float> readValue;
+
+		// 连杆长度
+		configIdx = std::vector<int>(12, cfgIdxBase + 2);
+		for (size_t i = 0; i < configIdx.size(); ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", readValue);
+		robotConfig.linkLength = std::vector<float>(configIdx.size(), 0);
+		for (size_t i = 0; i < configIdx.size(); ++i) {
+			robotConfig.linkLength[i] = readValue[i];
+		}
+
+		// 编码器位数
+		configIdx = std::vector<int>(9, cfgIdxBase + 20);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.encoderBit);
+
+		// 传动比
+		//configIdx = std::vector<int>(9, cfgIdxBase + 30);
+		//for (size_t i = 0; i < 9; ++i) {
+		//	configIdx[i] += i;
+		//}
+		//ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatio);
+		// 传动比分子
+		configIdx = std::vector<int>(9, cfgIdxBase + 140);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatioNumerator);
+		// 传动比分母
+		configIdx = std::vector<int>(9, cfgIdxBase + 150);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatioDenominator);
+
+		// TCP
+		configIdx = std::vector<int>(6, cfgIdxBase + 111);
+		for (size_t i = 0; i < 6; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.tcpPose);
+
+		// 关节上限位
+		configIdx = std::vector<int>(9, cfgIdxBase + 50);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.jointSupremum);
+
+		// 关节下限位
+		configIdx = std::vector<int>(9, cfgIdxBase + 40);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.jointInfimum);
+
+		// 最大关节速度(自动)
+		configIdx = std::vector<int>(9, cfgIdxBase + 60);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxJointSpeedAuto);
+
+		// 最大关节速度(手动)
+		configIdx = std::vector<int>(9, cfgIdxBase + 70);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxJointSpeedManual);
+
+		// 最大末端速度(手动)
+		configIdx = { cfgIdxBase + 85, cfgIdxBase + 86 };
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxCartSpeedManual);
+
+		// IO 配置
+
+		// 附加轴标定结果
+		configIdx = std::vector<int>(9, cfgIdxBase + 91);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.auxCalbration);
+
+		// 零点编码器值
+		configIdx = std::vector<int>(9, cfgIdxBase + 100);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.zeroEncoder);
+
+		// 主从机标定结果
+		configIdx = std::vector<int>(6, cfgIdxBase + 130);
+		for (size_t i = 0; i < 6; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.slaveCalibration);
+
+		return ret;
+	}
+
+	int FSAIRobot::write_register_config(const RobotConfig& config) {
+
+		int cfgIdxBase = get_config_idx_base();
+		int ret = 0;
+		std::vector<int> configIdx;
+		std::vector<float> readValue;
+
+		configIdx = std::vector<int>(9, cfgIdxBase + 20);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", robotConfig.encoderBit);
+
+		// 传动比
+		//configIdx = std::vector<int>(9, cfgIdxBase + 30);
+		//for (size_t i = 0; i < 9; ++i) {
+		//	configIdx[i] += i;
+		//}
+		//ret = ZController->set_axis_param(configIdx, "VR", config.transRatio);
+		// 传动比分子
+		configIdx = std::vector<int>(9, cfgIdxBase + 140);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.transRatioNumerator);
+		// 传动比分母
+		configIdx = std::vector<int>(9, cfgIdxBase + 150);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.transRatioDenominator);
+
+		// TCP
+		configIdx = std::vector<int>(6, cfgIdxBase + 111);
+		for (size_t i = 0; i < 6; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.tcpPose);
+
+		// 关节上限位
+		configIdx = std::vector<int>(9, cfgIdxBase + 50);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.jointSupremum);
+
+		// 关节下限位
+		configIdx = std::vector<int>(9, cfgIdxBase + 40);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.jointInfimum);
+
+		// 最大关节速度(自动)
+		configIdx = std::vector<int>(9, cfgIdxBase + 60);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.maxJointSpeedAuto);
+
+		// IO 配置
+
+		// 附加轴标定结果
+		configIdx = std::vector<int>(9, cfgIdxBase + 91);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.auxCalbration);
+
+		// 零点编码器值
+		configIdx = std::vector<int>(9, cfgIdxBase + 100);
+		for (size_t i = 0; i < 9; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.zeroEncoder);
+
+		// 主从机标定结果
+		configIdx = std::vector<int>(6, cfgIdxBase + 130);
+		for (size_t i = 0; i < 6; ++i) {
+			configIdx[i] += i;
+		}
+		ret = ZController->set_axis_param(configIdx, "VR", config.slaveCalibration);
+
+		// 写入控制卡后读取到本地
+		read_register_config();
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " write register config.");
+
+		return 0;
+
+	}
+
+	int FSAIRobot::cpos_base_to_world(std::vector<float>& cPos) {
+
+		float tmp = cPos[3];
+		cPos[3] = cPos[5];
+		cPos[5] = tmp;
+
+		return 0;
+	}
+
+
+	/* *************************** 底层接口实现 *************************** */
+	int FSAIRobot::update_rt_robot_status() {
+
+		int stateIdxBase = get_cmd_idx_base();
+		RobotStatus tmp;
+		// !减少读取次数，优化读取速度
+		std::vector<float> value;
+		std::vector<int> idx(9, 0);
+		for (size_t i = 0; i < idx.size(); ++i) {
+			idx[i] += i;
+		}
+		// 关节位置
+		ZController->get_axis_param(idx, "DPOS", tmp.jPos);
+
+		// 空间点位
+		idx = std::vector<int>(9, 32);
+		for (size_t i = 0; i < idx.size(); ++i) {
+			idx[i] += i;
+		}
+		ZController->get_axis_param(idx, "DPOS", tmp.cPosRaw);
+		// 地轨位置
+		for (size_t i = 0; i < 3; ++i) {
+			tmp.cPosRaw[6 + i] = tmp.jPos[6 + i];
+		}
+
+		tmp.cPos = tmp.cPosRaw;
+		cpos_base_to_world(tmp.cPos);
+
+		// 相对本体坐标系的空间点位
+		tmp.cPosR = tmp.cPos;
+
+		idx = std::vector<int>(50, get_state_idx_base());
+		for (size_t i = 0; i < idx.size(); ++i) {
+			idx[i] += i;
+		}
+		ZController->get_axis_param(idx, "TABLE", value);
+
+		// 机器人状态
+		tmp.lowerStatus = static_cast<int>(value[0]);
+
+		// 手动/自动模式
+		tmp.autoMode = static_cast<int>(value[1]);
+
+		// 轨迹编号
+		tmp.lineNum = static_cast<int>(value[3]);
+
+		// 
+		//ZController->get_axis_param({ stateIdxBase + 24117 }, "TABLE", value);
+		//tmp.lineNum = static_cast<int>(value[0]);
+
+		// 加锁
+		std::lock_guard<std::mutex> lock(mtx);
+		robotStatus = tmp;
+
+		return 0;
+	}
+
+	int FSAIRobot::get_all_robot_status(RobotStatus& status) {
+
+		{
+			// 加锁
+			std::lock_guard<std::mutex> lock(mtx);
+
+			// 更新机器人状态
+			status = robotStatus;
+		}
+
+		// 轴号
+		std::vector<int> axis;
+		// 读取非实时参数
+		std::vector<float> value;
+		//// 机器人坐标系
+		//axis = get_robot_tcp_axis();
+		//ZController->get_axis_param(axis, "DPOS", status.cPosR);
+		//// 编码器值
+		//axis = get_joint_axis();
+		//ZController->get_axis_param(axis, "ENCODER", value);
+		//status.encoder = std::vector<int>(value.size(), 0);
+		//for (size_t i = 0; i < axis.size(); ++i) {
+		//	status.encoder[i] = static_cast<int>(value[i]);
+		//}
+		// 轴状态
+		ZController->get_axis_param(axis, "AXISSTATUS", value);
+		status.axisStatus = std::vector<int>(value.size(), 0);
+		for (size_t i = 0; i < axis.size(); ++i) {
+			status.axisStatus[i] = static_cast<int>(value[i]);
+		}
+
+		return 0;
+	}
+
+	int FSAIRobot::get_local_world_dpos(std::vector<float>& dpos) {
+		dpos = std::vector<float>(9, 0);
+		return 0;
+	}
+
+	int FSAIRobot::get_remain_buffer() {
+		int idx = get_state_idx_base() + 5;
+		float value;
+
+		ZController->get_axis_param(idx, "TABLE", value);
+
+		return static_cast<int>(value);
+	}
+
+	int FSAIRobot::set_manual_speed(float ratio) {
+
+		int stateIdxBase = get_cmd_idx_base() + 24111;
+		if (robotStatus.autoMode > 0) {
+			return 1;
+		}
+
+		std::vector<int> idx(5, stateIdxBase);
+		for (size_t i = 0; i < idx.size(); ++i) {
+			idx[i] += i;
+		}
+
+		// 保存到 table, 触发速度刷新
+		ZController->set_axis_param(idx, "TABLE", { 1, static_cast<float>(200.0 * ratio / 100.0), 100, ratio, 100.0 });
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " set speed ratio: " << ratio / 100.0);
+
+		return 0;
+	}
+
+
+	int FSAIRobot::switch_auto(bool enableAuto) {
+
+		int stateIdxBase = get_state_idx_base();
+		// 清除模式不匹配的异常
+		robotStatus.upperStatus &= 0xEF;
+
+		// 机器人运动中
+		//if ((robotStatus.lowerStatus & 0x01) == 1) {
+		//	return 1;
+		//}
+
+		// 已经处于指定模式
+		//if ((robotStatus.autoMode > 0 && enableAuto) || (robotStatus.autoMode < 0 && !enableAuto)) {
+		//	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " already in " << (enableAuto ? "auto" : "manual") << " mode");
+		//	return 2;
+		//}
+
+		// 切换手动/自动模式
+		int TableStartNum = get_cmd_idx_base();
+		ZController->set_axis_param(stateIdxBase + 1, "TABLE", enableAuto ? 1 : -1);
+		if (enableAuto) {
+			ZController->set_axis_param(TableStartNum + 24000, "TABLE", 1);
+			// 开始信号
+			ZController->set_axis_param(TableStartNum + 23996, "TABLE", 1);
+		}
+		else {
+			ZController->set_axis_param(TableStartNum + 24001, "TABLE", 1);
+			// 开始信号
+			ZController->set_axis_param(TableStartNum + 23996, "TABLE", 0);
+		}
+
+		RobotStatus tmpStatus;
+		get_rt_robot_status(tmpStatus);
+
+		// 检测是否切换成功
+
+		// 设定轨迹起点
+		TrajectoryPoint point;
+		point.mainPoint = tmpStatus.jPos;
+		point.trajType = TrajType::None;
+		trajectory.set_preTraj(point);
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(),
+			"R" << aliasId << " switch to " << (enableAuto ? "auto" : "manual") << " mode."
+			<< " upperStatus: " << robotStatus.upperStatus << ", " 
+			<< " TrajType: " << static_cast<int>(trajectory.get_preTraj().get_trajType()) << "\n"
+			<< "CurJPos: " << vector_to_string(tmpStatus.jPos) << "\n"
+			<< "CurCPos: " << vector_to_string(tmpStatus.cPos)
+		);
+
+		return 0;
+	}
+
+
+	int FSAIRobot::switch_enable(bool enable) {
+		if (enable) {
+
+		}
+		// 急停
+		else {
+			emergency_stop();
+		}
+		return 0;
+	}
+
+
+	int FSAIRobot::reset_line_num() {
+
+		int stateIdxBase = get_cmd_idx_base();
+		cmdNum = 0;
+		//ZController->set_axis_param(stateIdxBase + 24123, "TABLE", 0);
+		// 下位机复位
+		ZController->set_axis_param(stateIdxBase + 23999, "TABLE", 1);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		// 清空恢复
+		ZController->set_axis_param(stateIdxBase + 23995, "TABLE", 1);
+
+
+		// 将上一条轨迹类型置空，防止切换正逆解时判断轨迹未走完
+		auto preTraj = trajectory.get_preTraj();
+		TrajectoryPoint point = preTraj.get_point();
+		point.trajType = TrajType::None;
+		trajectory.set_preTraj(point);
+		trajectory.set_previous_line_num(0);
+
+		RBT_LOG_INFO(RobotLog::getLogger(), "R" << aliasId << " reset line num to 0.");
+
+		return 0;
+
+	}
+
+
+	int FSAIRobot::push_new_trajectory(DiscreteTrajectory trajList) {
+
+		// 未设置自动模式
+		//if (robotStatus.autoMode <= 0) {
+		//	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
+		//	set_upperStatus(0x10);
+		//	return -1;
+		//}
+
+		// 轨迹为空
+		if (trajList.size() == 0) {
+			return -2;
+		}
+
+		// 轨迹预处理: 欧拉角修正
+		for (auto& traj : trajList.trajList) {
+			if (traj.isJoint()) {}
+			else {
+				float tmp = traj.mainPoint[3];
+				traj.mainPoint[3] = traj.mainPoint[5];
+				traj.mainPoint[5] = tmp;
+
+				tmp = traj.auxPoint[3];
+				traj.auxPoint[3] = traj.auxPoint[5];
+				traj.auxPoint[5] = tmp;
+			}
+		}
+
+		std::unique_lock<std::mutex> lock(mtx);
+		// 等待条件置反
+		motionDone = false;
+
+		// 轨迹入栈
+		trajectory.push_new_trajectory(trajList);
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " receive new trajectory, trajectory buffer size is " << trajectory.size());
+
+		return 0;
+
+	}
+
+
+	int FSAIRobot::set_jog_type(int type) {
+		if (type < 0) {
+			return -1;
+		}
+
+		int idxBase = get_cmd_idx_base();
+
+		// 关节
+		if (type == 0) {
+			ZController->set_axis_param(idxBase + 24003, "TABLE", 1);
+		}
+		// 世界坐标系
+		else if (type == 1) {
+			ZController->set_axis_param(idxBase + 24002, "TABLE", 1);
+		}
+		// 工具坐标系
+		else if (type == 2) {
+			ZController->set_axis_param(idxBase + 24005, "TABLE", 1);
+		}
+		// 基坐标系
+		else if (type == 3) {
+			ZController->set_axis_param(idxBase + 24004, "TABLE", 1);
+		}
+
+		return 0;
+	}
+
+	int FSAIRobot::jog_moving(int type, int idx, int dir, int move) {
+
+		int ret = 0;
+		if (type < 0 || idx < 0) {
+			return -1;
+		}
+
+		//// 未处于手动模式
+		//if (robotStatus.autoMode > 0) {
+		//	robotStatus.upperStatus |= 0x10;
+		//	return 1;
+		//}
+		//// 暂停状态下不可移动附加轴
+		//if ((robotStatus.lowerStatus & 0x02) == 1 && idx > 5) {
+		//	robotStatus.upperStatus |= 0x04;
+		//	return 2;
+		//}
+
+		int idxBase = get_cmd_idx_base();
+
+		// 关节
+		if (type == 0) {
+			ZController->set_axis_param(idxBase + 24003, "TABLE", 1);
+		}
+		// 世界坐标系
+		else if (type == 1) {
+			ZController->set_axis_param(idxBase + 24002, "TABLE", 1);
+		}
+		// 工具坐标系
+		else if (type == 2) {
+			ZController->set_axis_param(idxBase + 24005, "TABLE", 1);
+		}
+		// 基坐标系
+		else if (type == 3) {
+			ZController->set_axis_param(idxBase + 24004, "TABLE", 1);
+		}
+
+		// 点动
+		if (dir > 0) {
+			ZController->set_axis_param(idxBase + 24010 + idx, "TABLE", 1);
+		}
+		else if (dir < 0) {
+			ZController->set_axis_param(idxBase + 24030 + idx, "TABLE", 1);
+		}
+		// 停止
+		else {
+			ZController->set_axis_param(idxBase + 24010 + idx, "TABLE", -1);
+			ZController->set_axis_param(idxBase + 24030 + idx, "TABLE", -1);
+		}
+
+		return ret;
+	}
+
+	int FSAIRobot::moveJ(const std::vector<int>& axis, const std::vector<float>& moveCmd, const std::vector<int>& mask) {
+		return 0;
+	}
+	int FSAIRobot::moveJABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& end, const std::vector<int>& mask) {
+
+		int idx = get_point_idx_base();
+		std::vector<int> idxList;
+		std::vector<float> value;
+		// 运动类型
+		ZController->set_axis_param(idx + 5, "TABLE", 1);
+
+		// 形态位
+		ZController->set_axis_param(idx + 1, "TABLE", -1);
+		//ZController->set_axis_param(idx + 2, "TABLE", 0);
+		//ZController->set_axis_param(idx + 3, "TABLE", 0);
+
+		// 终点
+		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
+		for (size_t i = 0; i < idxList.size(); ++i) {
+			idxList[i] += i;
+		}
+		ZController->set_axis_param(idxList, "TABLE", end);
+		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 0);
+
+		// 点位插入完成
+		//ZController->set_axis_param(idx - 10, "TABLE", 1);
+
+		return 0;
+	}
+
+	int FSAIRobot::moveL(const std::vector<int>& axis, const std::vector<float>& relMove, const std::vector<int>& mask) {
+
+		return 0;
+
+	}
+	int FSAIRobot::moveLABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& end, const std::vector<int>& mask) {
+		int idx = get_point_idx_base();
+		std::vector<int> idxList;
+		std::vector<float> value;
+		// 运动类型
+		ZController->set_axis_param(idx + 5, "TABLE", 0);
+
+		// 形态位
+		ZController->set_axis_param(idx + 1, "TABLE", -1);
+		//ZController->set_axis_param(idx + 2, "TABLE", 0);
+		//ZController->set_axis_param(idx + 3, "TABLE", 0);
+
+		// 终点
+		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
+		for (size_t i = 0; i < idxList.size(); ++i) {
+			idxList[i] += i;
+		}
+		ZController->set_axis_param(idxList, "TABLE", end);
+		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 1);
+
+		// 点位插入完成
+		//ZController->set_axis_param(idx - 10, "TABLE", 1);
+		return 0;
+	}
+	
+	int FSAIRobot::moveC(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) {
+		return 0;
+	}
+	int FSAIRobot::moveCABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) {
+
+		int idx = get_point_idx_base();
+		std::vector<int> idxList;
+		std::vector<float> value;
+		// 运动类型
+		ZController->set_axis_param(idx + 5, "TABLE", 2);
+
+		// 形态位
+		ZController->set_axis_param(idx + 1, "TABLE", -1);
+		//ZController->set_axis_param(idx + 2, "TABLE", 0);
+		//ZController->set_axis_param(idx + 3, "TABLE", 0);
+
+		// 中间点
+		idxList = std::vector<int>(12, idx + 22 + 12);
+		for (size_t i = 0; i < idxList.size(); ++i) {
+			idxList[i] += i;
+		}
+		ZController->set_axis_param(idxList, "TABLE", mid);
+		ZController->set_axis_param(idx + 22 + 36 + 1, "TABLE", 1);
+
+		// 终点
+		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
+		for (size_t i = 0; i < idxList.size(); ++i) {
+			idxList[i] += i;
+		}
+		ZController->set_axis_param(idxList, "TABLE", end);
+		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 1);
+
+		// 点位插入完成
+		//ZController->set_axis_param(idx - 10, "TABLE", 1);
+		return 0;
+	}
+
+	/* *************************** 运动设置 *************************** */
+	int FSAIRobot::send_line_num(int axis, const SingleTrajectory &curTraj) {
+
+		int ret = 0;
+		int stateIdxBase = get_point_idx_base();
+		ret = ZController->set_axis_param(stateIdxBase, "TABLE", curTraj.lineNum);
+
+		//int tableIdx = get_state_idx_base() + 3;
+		//ret = ZController->set_axis_param(tableIdx, "TABLE", curTraj.lineNum, axis);
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(),
+			"R" << aliasId << " send point with line num: " << cmdNum
+		);
+
+		return ret;
+
+	}
+
+	int FSAIRobot::set_previous_trajectory(const SingleTrajectory& preTraj) {
+		auto pnt = preTraj.mainPoint;
+
+		int idx = 160000;
+		std::vector<int> idxList;
+
+		// 起点
+		idxList = std::vector<int>(12, idx + 22);
+		for (size_t i = 0; i < idxList.size(); ++i) {
+			idxList[i] += i;
+		}
+		ZController->set_axis_param(idxList, "TABLE", pnt);
+
+		// 起点类型
+		if (preTraj.isJoint()) {
+			ZController->set_axis_param(idx + 22 + 36 + 0, "TABLE", 0);
+		}
+		else {
+			ZController->set_axis_param(idx + 22 + 36 + 0, "TABLE", 1);
+		}
+
+		return 0;
+	}
+
+
+	/* *************************** 连续运动 *************************** */
+	int FSAIRobot::execute_single_joint() {
+		int ret = 0;
+		// 前一条轨迹
+		auto preTraj = trajectory.get_preTraj();
+		// 获取当前轨迹
+		auto curTraj = trajectory.get_curTraj();
+
+		std::vector<int> axis = get_execute_axis();
+
+		// 运动类型检查
+
+		// 获取节点目标位置
+		auto pnt = curTraj.mainPoint;
+
+		// 设置速度
+		ZController->set_axis_param(160000 + 6, "TABLE", curTraj.get_speed());
+		// 加速度
+		ZController->set_axis_param(160000 + 8, "TABLE", 50);
+		// 设置平滑度
+		ZController->set_axis_param(160000 + 4, "TABLE", curTraj.get_smooth());
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveJABS: " << vector_to_string(pnt));
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
+			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth());
+
+		// 开始记录位置
+		save_task_status(true);
+
+		// 设置上条轨迹类型
+		auto beg = preTraj.get_mainPoint();
+		set_previous_trajectory(preTraj);
+		// 更新轨迹编号
+		trajectory.trajList.front().lineNum = ++cmdNum;
+		// 下发轨迹序号
+		send_line_num(axis[0], trajectory.get_curTraj());
+
+		// 下发轨迹
+		ret = moveJABS(axis, beg, pnt);
+		if (ret != 0)
+			return ret;
+
+		// 停止记录位置
+		save_task_status(false);
+
+		// 轨迹出栈
+		if (ret == 0) {
+			//trajectory.set_current_line_num(cmdNum);
+			trajectory.next();
+		}
+		else {
+			return -1;
+		}
+
+		return 0;
+	}
+
+	int FSAIRobot::execute_single_cartesian() {
+
+		int stateIdxBase = get_state_idx_base();
+		// 获取当前轨迹
+		auto curTraj = trajectory.get_curTraj();
+		auto preTraj = trajectory.get_preTraj();
+
+		int ret = 0;
+		std::vector<int> axis = get_execute_axis();
+
+		// 获取节点目标位置
+		auto curPoint = curTraj.mainPoint;
+		auto prePoint = preTraj.mainPoint;
+		auto midPoint = curTraj.auxPoint;
+
+		if (curTraj.isArc()) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveCABS: " << vector_to_string(curPoint)
+				<<";\nmid: " << vector_to_string(midPoint));
+		}
+		else {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveLABS: " << vector_to_string(curPoint));
+		}
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
+			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
+			<< ". traj dist: " << trajectory.get_dist()
+		);
+
+		// 轨迹点维度与驱动轴维度的较小值
+		size_t num = (std::min)(curPoint.size(), axis.size());
+
+		// 修改摆焊参数
+		update_swing_config();
+		// 修改焊接参数
+		update_welder_config();
+		// 修改跟踪参数
+		update_track_config();
+
+		// 设置速度
+		ZController->set_axis_param(160000 + 6, "TABLE", curTraj.get_speed());
+		ZController->set_axis_param(160000 + 7, "TABLE", 200);
+		// 加速度
+		ZController->set_axis_param(160000 + 8, "TABLE", 500);
+		ZController->set_axis_param(160000 + 9, "TABLE", 500);
+		// 设置平滑度
+		ZController->set_axis_param(160000 + 4, "TABLE", curTraj.get_smooth());
+
+		// 开始记录位置
+		save_task_status(true);
+
+		// 设置上条轨迹类型
+		set_previous_trajectory(preTraj);
+		// 更新轨迹编号
+		trajectory.trajList.front().lineNum = ++cmdNum;
+		// 下发轨迹序号
+		send_line_num(axis[0], trajectory.get_curTraj());
+
+		// 下发轨迹
+		if (curTraj.isArc()) {
+			moveCABS(axis, prePoint, midPoint, curPoint, 0);
+		}
+		else if (curTraj.isLine()) {
+			moveLABS(axis, prePoint, curPoint);
+		}
+
+		// 停止记录位置
+		save_task_status(false);
+
+		// 下发异常
+		if (ret == 0) {
+			trajectory.next();
+		}
+		else {
+			return -1;
+		}
+
+		return ret;
+	}
+
+	int FSAIRobot::set_ready_for_consistent_traj() {
+		if (trajectory.trajectory_loaded())
+			return 0;
+
+		// 开始执行新轨迹
+		if (trajectory.get_preTraj().trajType == TrajType::None) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " new traj begin point: " << vector_to_string(robotStatus.jPos));
+			SingleTrajectory preTraj;
+			preTraj.mainPoint = robotStatus.jPos;
+			preTraj.trajType = TrajType::Joint;
+			trajectory.set_preTraj(preTraj);
+		}
+
+		return 0;
+	}
+
+	int FSAIRobot::consistent_traj_ready(int& state) {
+
+		int ret = 0;
+		// 获取当前轨迹
+		auto curTraj = trajectory.get_curTraj();
+		// 获取上一条轨迹
+		auto preTraj = trajectory.get_preTraj();
+
+		// 第一条轨迹未就绪
+		if (preTraj.trajType == TrajType::None) {
+			if (get_bit(state, 4) == 0) {
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " previous trajectory type is NONE.");
+				set_bit(state, 4, true);
+			}
+			ret++;
+		}
+		else {
+			set_bit(state, 4, false);
+		}
+
+
+		return ret > 0 ? 0 : 1;
+	}
+
+	int FSAIRobot::remain_buffer_free() {
+		int idx = get_cmd_idx_base() + 29990;
+		float value;
+
+		ZController->get_axis_param(idx, "TABLE", value);
+
+		return value < 1e-2 ? 1 : 0;
+	}
+
+	int FSAIRobot::separate_trajectory() {
+		return 0;
+	}
+
+	/* *************************** 固定运动 *************************** */
+	int FSAIRobot::save_task_status(bool enable) {
+		int stateIdxBase = get_state_idx_base();
+		//std::vector<int> axis = get_execute_axis();
+		//int ret = 0;
+		//ret = ZController->set_axis_param(stateIdxBase + 100, "TABLE", enable, axis[0]);
+
+		if (enable) {
+			begRegister.add_buffer(stateIdxBase + 100, 1);
+		}
+		else {
+			endRegister.add_buffer(stateIdxBase + 100, 0);
+		}
+
+		return 0;
+	}
+
+
+	int FSAIRobot::write_buffer_register(int flag) {
+
+		int idx = get_point_idx_base();
+		if (flag == 0) {
+			while (!begRegister.empty()) {
+				std::pair<int, float> pair;
+				begRegister.pop(pair);
+
+				ZController->set_axis_param(idx + 67 + begRegister.get_num() - 1, "TABLE", pair.first);
+				ZController->set_axis_param(idx + 167 + begRegister.get_num() - 1, "TABLE", pair.second);
+			}
+		}
+		else {
+			while (!endRegister.empty()) {
+				std::pair<int, float> pair;
+				endRegister.pop(pair);
+
+				ZController->set_axis_param(idx + 127 + endRegister.get_num() - 1, "TABLE", pair.first);
+				ZController->set_axis_param(idx + 227 + endRegister.get_num() - 1, "TABLE", pair.second);
+			}
+		}
+
+		return 0;
+	}
+
+	/* *************************** 自定义功能 *************************** */
+	int FSAIRobot::read_saved_status(RobotStatus& status) {
+
+		int cfgIdxBase = get_config_idx_base();
+		std::vector<float> data;
+		std::vector<int> axis(24, cfgIdxBase + 550);
+		for (size_t i = 0; i < axis.size(); ++i) {
+			axis[i] += i;
+		}
+
+		ZController->get_axis_param(axis, "VR", data);
+
+		// 保存数据功能未使能或异常
+		if (data[0] != 1) {
+			return -1;
+		}
+
+		status.fkMode = static_cast<int>(data[1]);
+
+		status.lineNum = static_cast<int>(data[2]);
+
+		status.jPos = std::vector<float>(data.begin() + 3, data.begin() + 9);
+		status.jPos.insert(status.jPos.end(), data.begin() + 15, data.begin() + 18);
+
+		status.cPosRaw = std::vector<float>(data.begin() + 9, data.begin() + 15);
+		status.cPosRaw.insert(status.cPosRaw.end(), data.begin() + 15, data.begin() + 18);
+
+		status.posOffset = std::vector<float>(data.begin() + 18, data.begin() + 24);
+
+		// 局部坐标系转世界坐标系
+		status.cPos = status.cPosRaw;
+		cpos_base_to_world(status.cPos);
+		//auto rotMat = robotConfig.get_slave_calibratino_mat();
+		//auto euler = std::vector<float>(status.cPosRaw.begin() + 3, status.cPosRaw.begin() + 6);
+		//Eigen::Matrix3f curMat = Eigen::AngleAxisf(euler[2] * DT_PI / 180, Eigen::Vector3f::UnitZ()) *
+		//	Eigen::AngleAxisf(euler[1] * DT_PI / 180, Eigen::Vector3f::UnitY()) *
+		//	Eigen::AngleAxisf(euler[0] * DT_PI / 180, Eigen::Vector3f::UnitX()).matrix();
+		//auto afterEuler = (rotMat * curMat).eulerAngles(2, 1, 0);
+		//for (size_t i = 0; i < 3; ++i) {
+		//	status.cPos[3 + i] = afterEuler[2 - i] * 180 / DT_PI;
+		//}
+
+		return 0;
+	}
+
+
+	int FSAIRobot::task_pause() {
+
+		int stateIdxBase = get_state_idx_base();
+		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 2 });
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task pause.");
+		return 0;
+
+	}
+
+
+	int FSAIRobot::task_resume() {
+
+		// 不在自动模式
+		if (robotStatus.autoMode <= 0)
+			return 1;
+
+		int stateIdxBase = get_state_idx_base();
+		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 1 });
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task resume.");
+		return 0;
+
+	}
+
+
+	int FSAIRobot::task_stop() {
+
+		// 轨迹清空
+		trajectory.clear();
+
+		// 轴停止，清空已下发任务
+		set_upperStatus(0x08);
+
+		int stateIdxBase = get_cmd_idx_base();
+		// 暂停
+		ZController->set_axis_param({ stateIdxBase + 23997 }, "TABLE", { 1 });
+
+		// 轨迹序号复位
+		reset_line_num();
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
+
+		return 0;
+
+	}
+
+
+	int FSAIRobot::emergency_stop() {
+
+		int stateIdxBase = get_state_idx_base();
+		trajectory.clear();
+		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " emergency stop.");
+		return 0;
+
+	}
+
+
+	int FSAIRobot::device_operation() {
+		return 0;
+	}
+
+
+	int FSAIRobot::execute_move_action(const std::vector<std::pair<int, std::vector<float>>>& actionList, int flag) {
+
+		int stateIdxBase = get_state_idx_base();
+		std::vector<int> axis = get_execute_axis();
+
+		int delayNum = 0;
+		for (const auto& action : actionList) {
+			auto type = action.first;
+			auto param = action.second;
+
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Move_Action " << type << (param.size() > 0 ? ": " : "") << vector_to_string(param));
+
+			// 仅延时
+			if (type == 1 && param[0] < 0) {
+				ZController->set_axis_param(get_point_idx_base() + 21, "TABLE", param[2]);
+				delayNum++;
+				continue;
+			}
+
+			// 完成标志位复位
+			if (flag == 0)
+				begRegister.add_buffer(stateIdxBase + 350, 0);
+			else
+				endRegister.add_buffer(stateIdxBase + 350, 0);
+
+
+			// 下发运动参数
+			if (param.size() > 0) {
+				std::vector<int> idx(param.size(), stateIdxBase + 301);
+
+				//ZController->set_axis_param(idx, "TABLE", param, axis[0]);
+				if (flag == 0)
+					begRegister.add_buffer(idx, param);
+				else
+					endRegister.add_buffer(idx, param);
+			}
+
+			// 下发运动
+			if (flag == 0)
+				begRegister.add_buffer(stateIdxBase + 300, type);
+			else
+				endRegister.add_buffer(stateIdxBase + 300, type);
+
+			// 等待运动结束
+			//ZController->move_wait(axis[0], "TABLE", stateIdxBase + 350, 0, 1);
+
+		}
+
+		// 等待运动结束
+		if (actionList.size() > delayNum) {
+			ZController->set_axis_param(flag == 0 ? get_point_idx_base() + 19 : get_point_idx_base() + 18, "TABLE", 1);
+		}
+
+		return 0;
+	}
+
+
+	int FSAIRobot::process_after_send_traj() {
+
+		int idx = get_point_idx_base();
+
+		// 运动前缓冲
+		write_buffer_register(0);
+		begRegister.clear();
+		// 运动后缓冲
+		write_buffer_register(1);
+		endRegister.clear();
+
+		// 点位插入完成
+		ZController->set_axis_param(idx - 10, "TABLE", 1);
+
+		return 0;
+	}
+
+
+	int FSAIRobot::update_swing_config() {
+
+		auto curTraj = trajectory.get_curTraj();
+		Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
+
+		std::vector<int> idx(8, 160000 + 10);
+		for (size_t i = 0; i < idx.size(); ++i) {
+			idx[i] += i;
+		}
+		std::vector<float> value(idx.size(), 0.0);
+
+		value[0] = waveCfg.Id;
+		value[1] = (waveCfg.Id == 0 || (waveCfg.Dwell_left + waveCfg.Dwell_right) < 1e-2) ?  0 : waveCfg.Dwell_type;
+		value[2] = waveCfg.LeftWidth;
+		value[3] = waveCfg.RightWidth;
+		value[5] = waveCfg.Freq;
+		value[6] = waveCfg.Dwell_left;
+		value[7] = waveCfg.Dwell_right;
+
+		ZController->set_axis_param(idx, "TABLE", value);
+
+		if (waveCfg.Id > 0) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Update swing config: " <<
+				vector_to_string(serialize_Weave(waveCfg).second, 2)
+			);
+		}
+
+		return 0;
+	}
+
+
+	int FSAIRobot::update_track_config() {
+
+		auto curTraj = trajectory.get_curTraj();
+		Track trackCfg = deserialize_Track(curTraj.get_appendix());
+
+		int stateIdxBase = get_state_idx_base();
+		std::vector<int> axis = get_execute_axis();
+		std::vector<float> config = serialize_Track(trackCfg).second;
+		size_t configTableStart = stateIdxBase + 180;
+		int ret = 0;
+
+		// 跟踪未使能
+		if (trackCfg.Id > 0) {
+			// 电弧跟踪标志位，区分电弧跟踪和线激光跟踪
+			//ZController->set_axis_param(stateIdxBase + 150, "TABLE", trackCfg.Id, axis[0]);
+			begRegister.add_buffer(stateIdxBase + 150, trackCfg.Id);
+
+			// 下发跟踪参数
+			for (size_t i = 0; i < config.size(); ++i) {
+				//ZController->set_axis_param(configTableStart + i, "TABLE", config[i], axis[0]);
+				begRegister.add_buffer(configTableStart + i, config[i]);
+			}
+
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId <<
+				" Update track config: " << vector_to_string(serialize_Track(trackCfg).second, 2)
+			);
+		}
+		else {
+			//ZController->set_axis_param(stateIdxBase + 187, "TABLE", trackCfg.Id, axis[0]);
+			begRegister.add_buffer(stateIdxBase + 187, trackCfg.Id);
+		}
+
+		return 0;
+	}
+
+
+	int FSAIRobot::update_welder_config() {
+
+		auto curTraj = trajectory.get_curTraj();
+		Arc_WeldingParaItem weldCfg = deserialize_Arc_WeldingParaItem(curTraj.get_appendix());
+
+		// 不起弧，无需修改焊接参数
+		if (weldCfg.Id <= 0)
+			return 1;
+
+		float current, voltage;
+		// 电流
+		current = weldCfg.WeldingCrt_Spd;
+		// 电压分别模式
+		if (weldCfg.WeldingWorkMode == 4) {
+			voltage = weldCfg.WeldingVtg_Strth;
+		}
+		// 一元模式
+		else {
+			voltage = weldCfg.VtgUniCorrection + 30;
+		}
+
+		uint8_t modeCmd = 0;
+		//modeCmd += (1 << 1);
+		//modeCmd += (weldCfg.WeldingWorkMode == 1) << 2;
+		modeCmd += weldCfg.WeldingWorkMode;
+		modeCmd += (weldCfg.Id >= 0);
+
+		int stateBase = get_state_idx_base();
+		std::vector<int> tableList(3, stateBase + 171);
+		for (size_t i = 0; i < tableList.size(); ++i) {
+			tableList[i] += i;
+		}
+
+		std::vector<float> data;
+		data.push_back(modeCmd);
+		data.push_back(current);
+		data.push_back(voltage);
+
+		// 写入变工艺参数
+		//ZController->set_axis_param(tableList, "TABLE", data, get_execute_axis()[0]);
+		begRegister.add_buffer(tableList, data);
+		// 变工艺使能
+		//ZController->set_axis_param(stateBase + 170, "TABLE", 1, get_execute_axis()[0]);
+		begRegister.add_buffer(stateBase + 170, 1);
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId <<
+			" Update welder config: " << vector_to_string(serialize_Arc_WeldingParaItem(weldCfg).second, 2)
+		);
+
+		return 0;
+	}
+
+
+} // namespace ZMotionRobot
