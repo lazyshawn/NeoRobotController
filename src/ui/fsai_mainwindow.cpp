@@ -33,7 +33,8 @@ MainWindow::MainWindow() {
 	connect_slot();
 }
 
-MainWindow::~MainWindow(){ }
+MainWindow::~MainWindow(){
+}
 
 
 /* ********************** 私有方法 ********************** */
@@ -81,7 +82,7 @@ void MainWindow::set_up_ui() {
 	/* ********************** 示教页面 ********************** */
 	// 设置表头
 	rowHeader.clear();
-	rowHeader << "Seq" << "MType" << "Proc." << "JPos" << "CPos" << "External";
+	rowHeader << "Seq" << "MType" << "Proc." << "JPos" << "CPos" << "External" << "Speed" << "Config";
 	ui->tableWidget->setColumnCount(rowHeader.count());
 	ui->tableWidget->setHorizontalHeaderLabels(rowHeader);
 
@@ -100,16 +101,16 @@ void MainWindow::set_up_ui() {
 	ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 	ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 	ui->tableWidget->horizontalHeader()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+	ui->tableWidget->horizontalHeader()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+	ui->tableWidget->horizontalHeader()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
 
 }
 
 void MainWindow::connect_slot() {
-	/* ********************** 连接信号和槽 ********************** */
+	/* ********************** 控制页面 ********************** */
 	// 选择机器人
 	for (size_t i = 0; i < 4; ++i) {
 		QObject::connect(robotButton[i], &QPushButton::pressed, this, [&, i]() {
-			//displayData->selectedRobot = i;
-			//update_display();
 			for (size_t j = 0; j < robotButton.size(); ++j) {
 				robotButton[j]->setDisabled(j == i);
 			}
@@ -155,7 +156,6 @@ void MainWindow::connect_slot() {
 			ui->textBrowser->append("Set jog mode: " + jogTypeBtn[i]->text());
 		});
 	}
-	//ui->radioButton->setChecked(true);
 
 }
 
@@ -166,27 +166,50 @@ void MainWindow::update_display() {
 }
 
 // 更新状态数据并刷新界面
-void MainWindow::update_display(const MainWindowDisplayData data) {
-	//*displayData = data;
-	//update_display();
+void MainWindow::update_display(const MainWindowDisplayData& data) {
 
-	// 选中机器人
-	//std::vector<QPushButton*> robotButton = { ui->pushButton_30, ui->pushButton_31, ui->pushButton_32, ui->pushButton_33 };
-	//for (size_t i = 0; i < 4; ++i) {
-	//	robotButton[i]->setDisabled(i == displayData->selectedRobot);
-	//}
+	// 当前选中机器人
+	int idx = data.selectedRobot;
 
-	// 运行状态
-	//for (size_t i = 0; i < displayData->robotNum; ++i) {
-	//}
-	// 离线状态
-	if (data.runStatus[0] % 2) {
-		ui->pushButton_30->setStyleSheet("color: rgb(255,0,0)");
-	}
-
-	// 机器人状态
+	// 手自动模式
+	int autoMode = data.robotMode[idx] % 2;
+	ui->checkBox_2->setChecked(autoMode);
+	ui->checkBox_2->setText(autoMode ? "Auto  " : "Manual");
 
 	// 机器人运行模式
+	int curRunStatus = data.runStatus[0];
+	QString runStatusLabel;
+	// 在线
+	if (curRunStatus % 2) {
+		runStatusLabel += "Online";
+		ui->pushButton_30->setStyleSheet("background-color: rgb(96,96,96)");
+	}
+	else {
+		runStatusLabel += "Offline";
+	}
+	// 空闲
+	if ((curRunStatus >> 1) % 2) {
+		runStatusLabel += "\nIdle";
+		ui->pushButton_30->setStyleSheet("");
+	}
+	// 运行中
+	else if ((curRunStatus >> 2) % 2) {
+		runStatusLabel += "\nRunning";
+		ui->pushButton_30->setStyleSheet("background-color: rgb(0,255,0)");
+	}
+	// 警告
+	if ((curRunStatus >> 3) % 2) {
+		runStatusLabel += "\nWarnning";
+		ui->pushButton_30->setStyleSheet("background-color: rgb(255,255,51)");
+	}
+	// 异常
+	if ((curRunStatus >> 4) % 2) {
+		runStatusLabel += "\nError";
+		ui->pushButton_30->setStyleSheet("background-color: rgb(255,0,0)");
+	}
+	// 改用 mouseMoveEvent
+	ui->pushButton_30->setToolTip(runStatusLabel);
+
 
 	// 位置监控
 	for (size_t i = 0; i < 9; ++i) {
@@ -202,7 +225,6 @@ void MainWindow::update_display(const MainWindowDisplayData data) {
 		ui->tableWidget_2->setItem(i, 2, seqItem);
 	}
 
-	//ui->textBrowser->append("Update");
 }
 
 
@@ -214,8 +236,9 @@ void MainWindow::record_teach_point() {
 
 	// 新增一行
 	ui->tableWidget->insertRow(row);
+	// 保存示教点参数
+	moveCfg.insert(moveCfg.begin() + row, std::map<int, std::vector<float>>());
 
-	// 填充行内容
 	// 序号
 	QTableWidgetItem* seqItem = new QTableWidgetItem(QString::number(row));
 	seqItem->setFlags(seqItem->flags() & (~Qt::ItemIsEditable));
@@ -225,6 +248,7 @@ void MainWindow::record_teach_point() {
 	typeComboBox->addItem("     J");
 	typeComboBox->addItem("     L");
 	typeComboBox->addItem("     C");
+	//typeComboBox->setButtonSymbols(QSpinBox::NoButtons);
 	ui->tableWidget->setCellWidget(row, 1, typeComboBox);
 
 	// 如果上一条运动为圆弧中间点，则当前类型为圆弧终点
@@ -247,6 +271,14 @@ void MainWindow::record_teach_point() {
 			if (((QComboBox*)preItem)->currentIndex() == 2) {
 				QWidget* preItem = ui->tableWidget->cellWidget(row, 1);
 				((QComboBox*)preItem)->setCurrentIndex(-1);
+			}
+		}
+		// 没有下一条轨迹则无法设置为圆弧中间点
+		if (row + 1 >= ui->tableWidget->rowCount()) {
+			QWidget* curItem = ui->tableWidget->cellWidget(row, 1);
+			if (((QComboBox*)curItem)->currentIndex() == 2) {
+				ui->textBrowser->append("Record end point of arc trajectory first");
+				((QComboBox*)curItem)->setCurrentIndex(0);
 			}
 		}
 	});
@@ -318,6 +350,17 @@ void MainWindow::record_teach_point() {
 	}
 	item = new QTableWidgetItem(posStr);
 	ui->tableWidget->setItem(row, 5, item);
+
+	// 默认速度
+	item = new QTableWidgetItem(QString::number(10.0));
+	ui->tableWidget->setItem(row, 6, item);
+
+	// 高级设置
+	QPushButton* trajCfgBox = new QPushButton();
+	//trajCfgBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	//trajCfgBox->setText("...");
+	ui->tableWidget->setCellWidget(row, 7, trajCfgBox);
+
 }
 
 void MainWindow::delete_teach_point() {
@@ -339,7 +382,10 @@ void MainWindow::delete_teach_point() {
 
 	// 从前往后
 	for (size_t i = 0; i < rowIdx.size(); ++i) {
+		// 删除行
 		ui->tableWidget->removeRow(rowIdx[i] - i);
+		// 删除记录参数
+		moveCfg.erase(moveCfg.begin() + rowIdx[i] - i);
 	}
 
 	// 更新行索引

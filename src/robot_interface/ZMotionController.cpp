@@ -128,6 +128,7 @@ int Controller::connect_pci(uint32 cardNum, bool local, bool log) {
 
 		ret = ZAux_OpenPci(cardNum, &handle);
 		if (ret != 0) {
+			printf("Failed!\n");
 			LOG4CPLUS_INFO(ControllerLog::getLogger(), cardName << "PCI open failed.");
 		}
 	}

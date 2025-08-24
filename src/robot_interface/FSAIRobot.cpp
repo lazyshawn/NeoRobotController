@@ -458,14 +458,21 @@ namespace FSAIRobotInterface {
 
 
 	int FSAIRobot::switch_enable(bool enable) {
+		int ret = 0;
 		if (enable) {
+			char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
+			sprintf(cmdbuff, "RUNTASK 6, ROBOT_RESET");
+			sprintf(tempbuff, "(%d)", robotId);
+			strcat(cmdbuff, tempbuff);
+
+			ret = ZController->sendCmd(cmdbuff, cmdbuffAck, 0);
 		}
-		// 急停
 		else {
 			emergency_stop();
 		}
-		return 0;
+
+		return ret;
 	}
 
 
@@ -498,11 +505,11 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 
 		// 未设置自动模式
-		//if (robotStatus.autoMode <= 0) {
-		//	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
-		//	set_upperStatus(0x10);
-		//	return -1;
-		//}
+		if (robotStatus.autoMode <= 0) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
+			set_upperStatus(0x10);
+			return -1;
+		}
 
 		// 轨迹为空
 		if (trajList.size() == 0) {
@@ -1127,6 +1134,9 @@ namespace FSAIRobotInterface {
 			// 下发运动参数
 			if (param.size() > 0) {
 				std::vector<int> idx(param.size(), stateIdxBase + 301);
+				for (size_t i = 0; i < param.size(); ++i) {
+					idx[i] += i;
+				}
 
 				//ZController->set_axis_param(idx, "TABLE", param, axis[0]);
 				if (flag == 0)

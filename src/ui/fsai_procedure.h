@@ -12,18 +12,24 @@ public:
 
 private:
 
+	void set_up_ui();
+
 
 public:
 	ProcedureWindow();
 	virtual ~ProcedureWindow();
+
+	// 待修改的运动编号
+	int cmdIdx = -1;
+
+	// 工艺参数: 依赖主界面显示
+	std::vector<std::map<int, std::vector<float>>> procedure;
 
 
 private:
 
  Q_OBJECT
 public slots:
-	// void switch_online();
-	// void jog_moving(int axis, int type);
 
 };
 

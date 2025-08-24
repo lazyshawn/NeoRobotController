@@ -1023,18 +1023,32 @@ namespace FSAIRobotInterface {
 		point.trajType = TrajType::None;
 		trajectory.set_preTraj(point);
 
-		LOG4CPLUS_INFO(RobotLog::getLogger(),
-			"R" << aliasId << " switch to " << (enableAuto ? "auto" : "manual") << " mode."
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to " << (enableAuto ? "auto" : "manual") << " mode."
 			<< " upperStatus: " << robotStatus.upperStatus << ", "
-			<< " TrajType: " << static_cast<int>(trajectory.get_preTraj().get_trajType()) << "\n" <<
-			"CurPos: " << vector_to_string(point.mainPoint)
+			<< " TrajType: " << static_cast<int>(trajectory.get_preTraj().get_trajType()) << "\n"
+			<< "CurJPos: " << vector_to_string(tmpStatus.jPos) << "\n"
+			<< "CurCPos: " << vector_to_string(tmpStatus.cPos)
 		);
 
 		return 0;
 	}
 
 	int ZRVRobot::switch_enable(bool enable) {
-		return 0;
+		int ret = 0;
+		if (enable) {
+			char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
+
+			sprintf(cmdbuff, "RUNTASK 6, ROBOT_RESET");
+			sprintf(tempbuff, "(%d)", robotId);
+			strcat(cmdbuff, tempbuff);
+
+			ret = ZController->sendCmd(cmdbuff, cmdbuffAck, 0);
+		}
+		else {
+			emergency_stop();
+		}
+
+		return ret;
 	}
 
 	int ZRVRobot::reset_line_num() {
@@ -1096,10 +1110,7 @@ namespace FSAIRobotInterface {
 		}
 		// 世界坐标点动
 		else if (type == 1) {
-			if (dir == 0)
-				ZController->axis_stop({ axisIdx[1][0] }, 4);
-			else
-				ZController->baseCMD({ axisIdx[type][idx] }, "MOVERV_L", { static_cast<float>(1000.0 *  dir) });
+			ZController->axis_jog(axisIdx[type][idx], dir);
 		}
 
 		return ret;

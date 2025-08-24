@@ -45,11 +45,14 @@ struct Move_Action {
 	std::vector<std::pair<int, std::vector<float>>> actionAfter;
 };
 
-
+struct Move_Config {
+	float speed = 10;
+	float smooth = -1;
+};
 
 // 自定义参数类型
 enum class AppendixType {
-	WAVE_CFG, TRACK_CFG, WELD_CFG, REARC_CFG, MOTION_CFG, Sync_CFG
+	WAVE_CFG, TRACK_CFG, WELD_CFG, REARC_CFG, MOTION_CFG, Sync_CFG, MOVE_CONFIG
 };
 
 // 自定义参数序列化与反序列化
@@ -76,5 +79,9 @@ Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& app
 // 协同参数
 std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg);
 Sync_Config deserialize_Sync_Config(const std::map<int, std::vector<float>>& appendix);
+
+// 运动参数
+std::pair<int, std::vector<float>> serialize_Move_Config(const Move_Config& moveCfg);
+Move_Config deserialize_Move_Config(const std::map<int, std::vector<float>>& appendix);
 
 }

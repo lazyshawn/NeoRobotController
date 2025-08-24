@@ -30,7 +30,7 @@ target_link_directories(FSAIRobotInterface PUBLIC
 target_link_libraries(FSAIRobotInterface PUBLIC
   zauxdll
   zmotion
-  log4cplusD
+  log4cplus$<$<CONFIG:Debug>:D>
 )
 
 # Install headers

@@ -21,7 +21,7 @@ std::vector<int> finish;
 int main() {
 
 	ZController->lazy_connect();
-	
+
 	robot->set_ZController(ZController);
 	robot->switch_auto(true);
 	group.new_robot(robot);

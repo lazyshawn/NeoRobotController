@@ -863,24 +863,43 @@
     </item>
     <item row="1" column="0" rowspan="2">
      <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>Teach</string>
       </property>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="2" column="3">
-        <widget class="QPushButton" name="pushButton_7">
+       <item row="2" column="2">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="3" column="5">
+        <widget class="QPushButton" name="pushButton_6">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Excute</string>
+          <string>Stop</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="0" colspan="5">
+       <item row="0" column="0" colspan="6">
         <widget class="QTableWidget" name="tableWidget">
          <property name="verticalScrollMode">
           <enum>QAbstractItemView::ScrollPerPixel</enum>
@@ -890,34 +909,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
-        <widget class="QCheckBox" name="checkBox_19">
-         <property name="text">
-          <string>Enable Co-motion</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="4">
-        <widget class="QPushButton" name="pushButton_5">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Pause</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QPushButton" name="pushButton_4">
-         <property name="text">
-          <string>Start</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
+       <item row="2" column="3">
         <widget class="QPushButton" name="pushButton_2">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -927,13 +919,6 @@
          </property>
          <property name="text">
           <string>Record</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QPushButton" name="pushButton_3">
-         <property name="text">
-          <string>Delete</string>
          </property>
         </widget>
        </item>
@@ -950,31 +935,59 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="4">
-        <widget class="QPushButton" name="pushButton_6">
+       <item row="3" column="3">
+        <widget class="QPushButton" name="pushButton_3">
+         <property name="text">
+          <string>Delete</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="5">
+        <widget class="QPushButton" name="pushButton_5">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Stop</string>
+          <string>Pause</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="4">
+        <widget class="QPushButton" name="pushButton_4">
+         <property name="text">
+          <string>Start</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="4">
+        <widget class="QPushButton" name="pushButton_7">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Excute</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QCheckBox" name="checkBox_19">
+         <property name="text">
+          <string>Enable Co-motion</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QCheckBox" name="checkBox_20">
+         <property name="text">
+          <string>Run Circularly</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -994,56 +1007,44 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen_Project"/>
-    <addaction name="actionSave_Project"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
     <addaction name="actionSave_As"/>
-    <addaction name="actionClose"/>
-   </widget>
-   <widget class="QMenu" name="menuProcedure">
-    <property name="title">
-     <string>Procedure</string>
-    </property>
-    <addaction name="actionConfigure"/>
    </widget>
    <widget class="QMenu" name="menuAdvance">
     <property name="title">
      <string>Advance</string>
     </property>
-    <addaction name="actionAxis_Configure"/>
+    <addaction name="actionConfig"/>
+    <addaction name="actionProcedure"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuProcedure"/>
    <addaction name="menuAdvance"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionClose">
-   <property name="text">
-    <string>Close</string>
-   </property>
-  </action>
-  <action name="actionConfigure">
-   <property name="text">
-    <string>Configure</string>
-   </property>
-  </action>
-  <action name="actionAxis_Configure">
-   <property name="text">
-    <string>Axis Configure</string>
-   </property>
-  </action>
-  <action name="actionSave_Project">
-   <property name="text">
-    <string>Save</string>
-   </property>
-  </action>
-  <action name="actionOpen_Project">
+  <action name="actionOpen">
    <property name="text">
     <string>Open</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
    </property>
   </action>
   <action name="actionSave_As">
    <property name="text">
     <string>Save As</string>
+   </property>
+  </action>
+  <action name="actionConfig">
+   <property name="text">
+    <string>Config</string>
+   </property>
+  </action>
+  <action name="actionProcedure">
+   <property name="text">
+    <string>Procedure</string>
    </property>
   </action>
  </widget>

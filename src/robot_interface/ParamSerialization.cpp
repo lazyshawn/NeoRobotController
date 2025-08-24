@@ -226,7 +226,7 @@ Track deserialize_Track(const std::map<int, std::vector<float>>& appendix) {
 }
 
 
-// ------- 运动参数 -------
+// ------- 缓冲动作参数 -------
 std::pair<int, std::vector<float>> serialize_Move_Action(const Move_Action& moveCfg) {
 
 	std::pair<int, std::vector<float>> ans;
@@ -300,6 +300,7 @@ Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& app
 }
 
 
+// ------- 同步参数 -------
 std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg) {
 
 	// 排序
@@ -350,9 +351,6 @@ Sync_Config deserialize_Sync_Config(const std::map<int, std::vector<float>>& app
 	
 	return cfg;
 }
-
-
-
 
 
 Sync_Unit::Sync_Unit(int syncType, int robotId, int num) {
@@ -454,5 +452,37 @@ bool Sync_Config::different_from(Sync_Config& next) {
 
 	return false;
 }
+
+
+// ------- 运动参数 -------
+
+std::pair<int, std::vector<float>> serialize_Move_Config(const Move_Config& moveCfg) {
+
+	std::pair<int, std::vector<float>> ans;
+	std::vector<float> param;
+
+	param.push_back(moveCfg.speed);
+	param.push_back(moveCfg.smooth);
+
+	ans.first = static_cast<int>(AppendixType::MOVE_CONFIG);
+	ans.second = param;
+
+	return ans;
+}
+
+Move_Config deserialize_Move_Config(const std::map<int, std::vector<float>>& appendix) {
+
+	Move_Config cfg;
+	auto ite = appendix.find(static_cast<int>(AppendixType::MOVE_CONFIG));
+	if (ite == appendix.end())
+		return cfg;
+	std::vector<float> param = ite->second;
+
+	cfg.speed = param[0];
+	cfg.smooth = param[1];
+
+	return cfg;
+}
+
 
 } // namespace ZMotionRobot

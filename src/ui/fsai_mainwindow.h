@@ -6,33 +6,40 @@
 #include <condition_variable>
 
 #include <QDesktopWidget>
+#include <QToolTip>
 #include "ui_mainWindow.h"
+
+#include "fsai_display_data.h"
 
 
 // 主窗口显示数据
-struct MainWindowDisplayData {
-	// 机器人数量
-	int robotNum = 4;
-	// 当前选中机器人
-	int selectedRobot = 0;
-	// 运行状态: <离线, 空闲, 运行, 警告, 异常>
-	std::vector<int> runStatus = { 0,0,0,0 };
-	// 机器人状态
-	std::vector<int> errorStatus = { 0,0,0,0 };
-
-	// 机器人运行状态 <关节/世界/机器人/工具> <手动/自动>
-	std::vector<int> robotMode = { 1,1,1,1 };
-
-	// 机器人位置
-	std::vector<float> jPos;
-	std::vector<float> cPos;
-
-	// IO状态
-
-	// 示教轨迹<序号, 运动类型, 工艺号, 关节位置, TCP位置, 地轨位置>
-	std::vector<int> trajectory;
-};
-Q_DECLARE_METATYPE(MainWindowDisplayData);
+//struct MainWindowDisplayData {
+//	// 机器人数量
+//	int robotNum = 4;
+//	// 当前选中机器人
+//	int selectedRobot = 0;
+//
+//	// 全局配置
+//	// 算法类型
+//
+//	// 运行状态: <离线, 空闲, 运行, 警告, 异常>
+//	std::vector<int> runStatus = { 0,0,0,0 };
+//	// 机器人状态
+//	std::vector<int> errorStatus = { 0,0,0,0 };
+//
+//	// 机器人运行状态 <关节/世界/机器人/工具> <手动/自动>
+//	std::vector<int> robotMode = { 1,1,1,1 };
+//
+//	// 机器人位置
+//	std::vector<float> jPos;
+//	std::vector<float> cPos;
+//
+//	// IO状态
+//
+//	// 示教轨迹<序号, 运动类型, 工艺号, 关节位置, TCP位置, 地轨位置>
+//	std::vector<int> trajectory;
+//};
+//Q_DECLARE_METATYPE(MainWindowDisplayData);
 
 // 主窗口观察者接口
 class MainWindowSubscriber {
@@ -77,6 +84,9 @@ public:
 	std::vector<QLabel *> jogMoveLabel;
 	std::vector<QRadioButton *> jogTypeBtn;
 
+	// 当前记录的轨迹运动参数
+	std::vector<std::map<int, std::vector<float>>> moveCfg;
+
 private:
 
 	void set_up_ui();
@@ -87,7 +97,7 @@ private:
 Q_OBJECT
 public slots:
 	void update_display();
-	void update_display(const MainWindowDisplayData data);
+	void update_display(const MainWindowDisplayData& data);
 
 };
 

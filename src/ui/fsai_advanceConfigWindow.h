@@ -4,6 +4,8 @@
 
 #include "ui_advanceConfigWindow.h"
 
+#include "fsai_display_data.h"
+
 class AdvanceConfigWindow : public QDialog {
 public:
 	// 主页面
@@ -16,12 +18,15 @@ public:
 	AdvanceConfigWindow();
 	virtual ~AdvanceConfigWindow();
 
+	// 输出当前显示数据
+	void export_display_data(MainWindowDisplayData& data);
 
 private:
 
 	Q_OBJECT
 public slots:
-	// void switch_online();
-	// void jog_moving(int axis, int type);
+	// 刷新显示数据
+	void refresh_display_data(const MainWindowDisplayData& data);
 
+signals:
 };

@@ -6,115 +6,76 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>248</width>
-    <height>355</height>
+    <width>227</width>
+    <height>176</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
+   <item row="2" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Axis Configure</string>
+      <string>General Configure</string>
      </property>
-     <layout class="QFormLayout" name="formLayout">
-      <item row="1" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Joint Axis</string>
-        </property>
-       </widget>
-      </item>
+     <layout class="QGridLayout" name="gridLayout_3">
       <item row="2" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Appendix Axis</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>TCP Pos Axis</string>
+         <string>Controller Config</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_4">
+      <item row="2" column="2">
+       <widget class="QPushButton" name="pushButton_2">
         <property name="text">
-         <string>TCP Angle Axis</string>
+         <string>Export</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="label_5">
+      <item row="2" column="1">
+       <widget class="QPushButton" name="pushButton">
         <property name="text">
-         <string>Cam Axis</string>
+         <string>Import</string>
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>Swing Axis</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>Excute Axis</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
+      <item row="0" column="1" colspan="2">
        <widget class="QComboBox" name="comboBox">
         <property name="editable">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="1" column="1" colspan="2">
        <widget class="QComboBox" name="comboBox_2">
         <property name="editable">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QComboBox" name="comboBox_3">
-        <property name="editable">
-         <bool>true</bool>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Interpolation Algo</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QComboBox" name="comboBox_4">
-        <property name="editable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QComboBox" name="comboBox_5">
-        <property name="editable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QComboBox" name="comboBox_6">
-        <property name="editable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="1">
-       <widget class="QComboBox" name="comboBox_7">
-        <property name="editable">
-         <bool>true</bool>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Max Robot Num</string>
         </property>
        </widget>
       </item>
@@ -124,137 +85,80 @@
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
-      <string>Kinematic Param</string>
+      <string>Assistant service</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="3" column="2">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_10">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="3">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_13"/>
-      </item>
-      <item row="2" column="3">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_8">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="3">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_11">
-        <property name="maximum">
-         <double>100.000000000000000</double>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="2">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
+       <widget class="QRadioButton" name="radioButton_3">
+        <property name="text">
+         <string>R1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Card 2</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QRadioButton" name="radioButton_2">
+        <property name="text">
+         <string>R0</string>
         </property>
        </widget>
       </item>
       <item row="2" column="2">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_7">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
+       <widget class="QRadioButton" name="radioButton_4">
+        <property name="text">
+         <string>R1</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_11">
+      <item row="2" column="3">
+       <widget class="QRadioButton" name="radioButton_6">
         <property name="text">
-         <string>Acc/Dec Time</string>
+         <string>R2</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QLabel" name="label_9">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="radioButton">
         <property name="text">
-         <string>Appendix Speed</string>
+         <string>R0</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_10">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>TCP Speed</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_12"/>
-      </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="label_8">
-        <property name="text">
-         <string>Joint Speed</string>
+         <string>Card 1</string>
         </property>
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_4">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_5">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="4">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_6">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="4">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
+       <widget class="QRadioButton" name="radioButton_5">
+        <property name="text">
+         <string>R2</string>
         </property>
        </widget>
       </item>
       <item row="2" column="4">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_9">
-        <property name="maximum">
-         <double>10000.000000000000000</double>
+       <widget class="QRadioButton" name="radioButton_8">
+        <property name="text">
+         <string>R3</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QRadioButton" name="radioButton_7">
+        <property name="text">
+         <string>R3</string>
         </property>
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
     </widget>
    </item>
   </layout>

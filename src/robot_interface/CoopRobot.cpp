@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.2.0.6\n"
-		<< "Release Date:    250702");
+		<< "Version:         0.0.1.3\n"
+		<< "Release Date:    250825");
 }
 
 
@@ -75,15 +75,21 @@ int RobotBase::notify_waiting_robot() {
 	return 0;
 }
 
-int RobotBase::set_ZController(std::shared_ptr<Controller> ZController_) {
+int RobotBase::set_ZController(std::shared_ptr<Controller> ZController_, int id) {
 	ZController = ZController_;
 
-	// 获取可用的 robotId 号
-	robotId = ZController->allocate_robot_id();
+	// 机器人ID未指定
+	if (id < 0) {
+		// 获取可用的 robotId 号
+		robotId = ZController->allocate_robot_id();
 
-	// 使用分配的 robotId
-	if (ZController->add_robot(robotId) != 0) {
-		return -1;
+		// 使用分配的 robotId
+		if (ZController->add_robot(robotId) != 0) {
+			return -1;
+		}
+	}
+	else {
+		robotId = id;
 	}
 
 	// 从控制卡读取现有的机器人配置

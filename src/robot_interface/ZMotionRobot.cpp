@@ -364,11 +364,11 @@ int ZMotionRobot::get_remain_buffer() {
 int ZMotionRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 
 	// 未设置自动模式
-	//if (robotStatus.autoMode <= 0) {
-	//	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
-	//	set_upperStatus(0x10);
-	//	return -1;
-	//}
+	if (robotStatus.autoMode <= 0) {
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
+		set_upperStatus(0x10);
+		return -1;
+	}
 
 	// 轨迹为空
 	if (trajList.size() == 0) {
@@ -1325,7 +1325,21 @@ int ZMotionRobot::switch_auto(bool enableAuto) {
 }
 
 int ZMotionRobot::switch_enable(bool enable) {
-	return 0;
+	int ret = 0;
+	if (enable) {
+		char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
+
+		sprintf(cmdbuff, "RUNTASK 6, ROBOT_RESET");
+		sprintf(tempbuff, "(%d)", robotId);
+		strcat(cmdbuff, tempbuff);
+
+		ret = ZController->sendCmd(cmdbuff, cmdbuffAck, 0);
+	}
+	else {
+		emergency_stop();
+	}
+
+	return ret;
 }
 
 int ZMotionRobot::reset_line_num() {
@@ -1413,9 +1427,8 @@ int ZMotionRobot::task_pause() {
 
 int ZMotionRobot::task_resume() {
 	// 不在自动模式
-	if (robotStatus.autoMode <= 0) {
+	if (robotStatus.autoMode <= 0)
 		return 1;
-	}
 
 	// 获取保存状态
 	RobotStatus savedState;
@@ -1442,6 +1455,42 @@ int ZMotionRobot::task_resume() {
 		}
 	}
 
+	// 暂停后是否运动
+	float dist = 0.0;
+	for (size_t i = 0; i < 9; ++i) {
+		dist += (robotStatus.jPos[i] - savedState.jPos[i]) * (robotStatus.jPos[i] - savedState.jPos[i]);
+	}
+	dist = std::sqrt(dist);
+	
+
+	if (dist > 1e-2) {
+		// 回到起点
+		std::vector<int> axis = get_tcp_axis();
+		int ret = moveLABS(axis, robotStatus.cPos, savedState.cPos, {});
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " "
+			<< "from: " << vector_to_string(robotStatus.cPos) << "\n"
+			<< "move to: " << vector_to_string(savedState.cPos)
+		);
+
+		// 等待运动完成
+		while (true) {
+			// 异常退出
+			if (((robotStatus.lowerStatus >> 2) != 0) || (robotStatus.upperStatus > 0)) {
+				return -3;
+			}
+
+			// IDLE 标志位
+			std::vector<float> value;
+			ZController->get_axis_param({ get_joint_axis()[0], get_tcp_axis()[0] }, "IDLE", value);
+
+			if (std::fabs(value[0] + value[1] + 1) < 1e-2) {
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " reach desired point.");
+				break;
+			}
+		}
+	}
+	
+
 	int stateIdxBase = get_state_idx_base();
 	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 1 });
 
@@ -1464,7 +1513,8 @@ int ZMotionRobot::task_stop() {
 
 	// 轴停止，清空已下发任务
 	ZController->axis_stop(axis);
-	set_upperStatus(0x08);
+	//set_upperStatus(0x08);
+	set_upperStatus(0x00);
 
 	// 摆焊轴位置回零
 	auto zeroPos = std::vector<float>(camAxis.size(), 0);
