@@ -20,7 +20,7 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.0.1.3\n"
+		<< "Version:         0.0.1.4\n"
 		<< "Release Date:    250825");
 }
 
@@ -659,8 +659,18 @@ void RobotGroupManager::processCommandThread() {
 
 			// 运动完成，清空轨迹
 			if (robot_idle(i)) {
+				if (get_bit(coopState[i], 7) == 0) {
+					LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " task complete. \n"
+						<< "Cur JPos: " << vector_to_string(statusList[i].jPos) << "\n"
+						<< "Cur CPos: " << vector_to_string(statusList[i].cPos)
+					);
+					set_bit(coopState[i], 7, true);
+				}
 				robotList[i]->notify_waiting_robot();
 				continue;
+			}
+			else {
+				set_bit(coopState[i], 7, false);
 			}
 
 			// 指令缓存不为空

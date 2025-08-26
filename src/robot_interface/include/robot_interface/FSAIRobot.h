@@ -97,6 +97,7 @@ public:
 	int reset_line_num() override;
 	int set_jog_type(int type) override;
 	int jog_moving(int type, int idx, int dir, int move) override;
+	int save_task_status(bool enable) override;
 
 	int task_pause() override;
 	int task_resume() override;
@@ -128,11 +129,6 @@ public:
  	/* *************************** 初始化 *************************** */
 	FSAIRobot();
 	~FSAIRobot();
-
-	/**
-	* @brief  保存点位
-	*/
-	int save_task_status(bool enable);
 
 	// 写入缓冲寄存器
 	int write_buffer_register(int flag);

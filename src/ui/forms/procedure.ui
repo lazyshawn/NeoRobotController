@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>431</width>
-    <height>374</height>
+    <height>466</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,34 +23,6 @@
    <item row="0" column="0">
     <widget class="QComboBox" name="comboBox_4"/>
    </item>
-   <item row="0" column="1">
-    <widget class="QPushButton" name="pushButton_3">
-     <property name="text">
-      <string>New</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="2">
-    <widget class="QPushButton" name="pushButton">
-     <property name="text">
-      <string>Import</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="3">
-    <widget class="QPushButton" name="pushButton_2">
-     <property name="text">
-      <string>Export</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="4">
-    <widget class="QLineEdit" name="lineEdit">
-     <property name="placeholderText">
-      <string>Remark</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0" rowspan="2" colspan="2">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
@@ -62,9 +34,6 @@
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="1">
        <widget class="QComboBox" name="comboBox"/>
-      </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="comboBox_2"/>
       </item>
       <item row="3" column="0" colspan="2">
        <widget class="QGroupBox" name="groupBox_5">
@@ -110,7 +79,34 @@
          <item row="1" column="1">
           <widget class="QSpinBox" name="spinBox_14"/>
          </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_31">
+           <property name="text">
+            <string>Air Duration</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="spinBox_20"/>
+         </item>
         </layout>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboBox_2"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Work Pattern</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Voltage Mode</string>
+        </property>
        </widget>
       </item>
       <item row="2" column="0" colspan="2">
@@ -144,20 +140,6 @@
           </widget>
          </item>
         </layout>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Work Pattern</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Voltage Mode</string>
-        </property>
        </widget>
       </item>
       <item row="4" column="0" colspan="2">
@@ -204,6 +186,44 @@
          <item row="1" column="1">
           <widget class="QSpinBox" name="spinBox_16"/>
          </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_32">
+           <property name="text">
+            <string>Air Duration</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="spinBox_21"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="2">
+       <widget class="QGroupBox" name="groupBox_11">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>ReArc</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <layout class="QFormLayout" name="formLayout_8">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_30">
+           <property name="text">
+            <string>Retry Times</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QSpinBox" name="spinBox_19"/>
+         </item>
         </layout>
        </widget>
       </item>
@@ -238,7 +258,7 @@
       <item row="0" column="1">
        <widget class="QComboBox" name="comboBox_3"/>
       </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="label_13">
         <property name="enabled">
          <bool>true</bool>
@@ -248,14 +268,14 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="3" column="1">
        <widget class="QDoubleSpinBox" name="doubleSpinBox_7">
         <property name="enabled">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="4" column="0">
        <widget class="QLabel" name="label_12">
         <property name="enabled">
          <bool>true</bool>
@@ -265,14 +285,14 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="4" column="1">
        <widget class="QDoubleSpinBox" name="doubleSpinBox_8">
         <property name="enabled">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="5" column="0">
        <widget class="QLabel" name="label_14">
         <property name="enabled">
          <bool>true</bool>
@@ -282,14 +302,14 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="5" column="1">
        <widget class="QDoubleSpinBox" name="doubleSpinBox_9">
         <property name="enabled">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
+      <item row="6" column="0">
        <widget class="QLabel" name="label_15">
         <property name="enabled">
          <bool>true</bool>
@@ -299,7 +319,7 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
+      <item row="6" column="1">
        <widget class="QSpinBox" name="spinBox_4">
         <property name="enabled">
          <bool>true</bool>
@@ -309,7 +329,7 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
+      <item row="7" column="0">
        <widget class="QLabel" name="label_17">
         <property name="enabled">
          <bool>true</bool>
@@ -319,7 +339,7 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
+      <item row="7" column="1">
        <widget class="QSpinBox" name="spinBox_6">
         <property name="enabled">
          <bool>true</bool>
@@ -329,7 +349,7 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="0">
+      <item row="8" column="0">
        <widget class="QLabel" name="label_16">
         <property name="enabled">
          <bool>true</bool>
@@ -339,7 +359,7 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
+      <item row="8" column="1">
        <widget class="QSpinBox" name="spinBox_5">
         <property name="enabled">
          <bool>true</bool>
@@ -349,7 +369,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="9" column="0">
        <widget class="QRadioButton" name="radioButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -362,7 +382,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="1">
+      <item row="9" column="1">
        <widget class="QRadioButton" name="radioButton_2">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -375,7 +395,7 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="0" colspan="2">
+      <item row="10" column="0" colspan="2">
        <widget class="QGroupBox" name="groupBox_10">
         <property name="title">
          <string>Advance</string>
@@ -424,7 +444,45 @@
         </layout>
        </widget>
       </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_11">
+        <property name="text">
+         <string>Velocity</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_6">
+        <property name="maximum">
+         <double>1000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>10.000000000000000</double>
+        </property>
+       </widget>
+      </item>
      </layout>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QPushButton" name="pushButton_2">
+     <property name="text">
+      <string>Export</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QPushButton" name="pushButton">
+     <property name="text">
+      <string>Import</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="4">
+    <widget class="QLineEdit" name="lineEdit">
+     <property name="placeholderText">
+      <string>Remark</string>
+     </property>
     </widget>
    </item>
    <item row="1" column="4">
@@ -537,6 +595,20 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="1">
+    <widget class="QPushButton" name="pushButton_3">
+     <property name="text">
+      <string>New</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1" colspan="4">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
    <item row="2" column="4">
     <widget class="QGroupBox" name="groupBox_9">
      <property name="sizePolicy">
@@ -566,31 +638,27 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_11">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_28">
         <property name="text">
-         <string>Velocity</string>
+         <string>Delay Before</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_6">
-        <property name="maximum">
-         <double>1000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>10.000000000000000</double>
+      <item row="2" column="1">
+       <widget class="QSpinBox" name="spinBox_17"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_29">
+        <property name="text">
+         <string>Delay After</string>
         </property>
        </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="spinBox_18"/>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="3" column="1" colspan="4">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
     </widget>
    </item>
   </layout>

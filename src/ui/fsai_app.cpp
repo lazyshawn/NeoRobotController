@@ -33,9 +33,7 @@ void Worker::doWork() {
 	long long duration = 50;
 
 	while (workerHealthy) {
-		// 获取当前主界面状态
-		//MainWindowDisplayData data;
-
+		
 		// 修改主界面状态
 		FSAIRobotInterface::RobotStatus status;
 		group.robotList[0]->get_rt_robot_status(status);
@@ -67,8 +65,7 @@ void Worker::doWork() {
 			FSAIRobotInterface::set_bit(displayData->runStatus[0], 1, true);
 		}
 
-
-		// 暂停状态
+		// IO 状态
 
 		// 触发线程刷新
 		emit update_data(*displayData);
@@ -129,6 +126,7 @@ FSAIApp::FSAIApp() {
 
 
 	ZController->lazy_connect();
+	robot->set_aliasId(0);
 	robot->set_ZController(ZController);
 	group.new_robot(robot);
 	group.start_thread();
@@ -136,8 +134,18 @@ FSAIApp::FSAIApp() {
 	// 连接信号和槽
 	connect_slot();
 
+
 	// 初始状态
 	mainWindow->ui->radioButton->setChecked(true);
+
+	// 默认工艺：无工艺
+	std::map<int, std::vector<float>> proc;
+	// 焊接参数
+	Arc_WeldingParaItem weldCfg;
+	weldCfg.Id = 0;
+	auto weldPair = FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg);
+	proc[weldPair.first] = weldPair.second;
+	procedureWindow->procedure[0] = proc;
 
 	// 开启状态刷新线程
 	worker->moveToThread(&workerThread);
@@ -168,9 +176,7 @@ void FSAIApp::connect_slot() {
 		advanceWindow->activateWindow();
 	});
 	QObject::connect(mainWindow->ui->actionProcedure, &QAction::triggered, this, [&]() {
-		// 设置可切换工艺
-		procedureWindow->ui->comboBox_4->setDisabled(false);
-
+		
 		procedureWindow->cmdIdx = -1;
 
 		// 更新工艺参数界面
@@ -182,7 +188,7 @@ void FSAIApp::connect_slot() {
 	});
 
 	// 设置窗口
-	QObject::connect(advanceWindow->ui->buttonBox, &QDialogButtonBox::accepted, this, [&]() {
+	QObject::connect(advanceWindow->ui->pushButton_3, &QPushButton::released, this, [&]() {
 		// 插补算法类型
 		int curInterpAlgo = advanceWindow->ui->comboBox->currentIndex();
 		if (worker->displayData->interpAlgo != curInterpAlgo) {
@@ -195,6 +201,10 @@ void FSAIApp::connect_slot() {
 			else if (curInterpAlgo == 2) {
 				robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::FSAIRobot);
 			}
+			robot->set_aliasId(group.robotList[0]->get_aliasId());
+			robot->set_ZController(ZController, group.robotList[0]->get_robotId());
+			// 注意共享指针的替换
+			group.robotList[0] = robot;
 			mainWindow->ui->textBrowser->append("Switch InterpAlgo: " + advanceWindow->ui->comboBox->currentText());
 		}
 
@@ -281,13 +291,14 @@ void FSAIApp::connect_slot() {
 
 
 	/* ********************** 控制页面 ********************** */
-	// 连接机器人
+	// 连接控制卡
 	QObject::connect(mainWindow->ui->pushButton, &QPushButton::released, this, [&]() {
-		//ZController->disconnect();
-		//std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		// 若已连接则断开当前连接
+		ZController->disconnect();
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
+		// 建立新连接
 		int ret = ZController->lazy_connect();
-
 		if (ret) {
 			mainWindow->ui->textBrowser->append("Connect to controller failed");
 			return;
@@ -295,8 +306,8 @@ void FSAIApp::connect_slot() {
 		else {
 			mainWindow->ui->textBrowser->append("Connect to controller successful");
 		}
-
 		group.robotList[0]->set_ZController(ZController, group.robotList[0]->get_robotId());
+
 	});
 
 	// 切换手自动模式
@@ -308,9 +319,14 @@ void FSAIApp::connect_slot() {
 
 	// 切换选中机器人
 	for (size_t i = 0; i < 4; ++i) {
+		// 保存记录点位信息
+
+		// 切换机器人
 		QObject::connect(mainWindow->robotButton[i], &QPushButton::pressed, this, [&, i]() {
 			worker->switch_robot(i);
 		});
+
+		// 加载新机器人的点位信息
 	}
 
 	// 清空任务/报警
@@ -341,6 +357,23 @@ void FSAIApp::connect_slot() {
 		}
 	});
 
+	// 速度设置
+	QObject::connect(mainWindow->ui->horizontalSlider, &QSlider::sliderReleased, this, [&]() {
+		// 当前速度
+		float speed = mainWindow->ui->spinBox->value();
+		// 当前机器人
+		int idx = worker->displayData->selectedRobot;
+
+		group.robotList[idx]->set_manual_speed(speed);
+	});
+	QObject::connect(mainWindow->ui->spinBox, &QSpinBox::editingFinished, this, [&]() {
+		// 当前速度
+		float speed = mainWindow->ui->spinBox->value();
+		// 当前机器人
+		int idx = worker->displayData->selectedRobot;
+
+		group.robotList[idx]->set_manual_speed(speed);
+	});
 
 	/* ********************** 示教页面 ********************** */
 	// 开始
@@ -372,10 +405,13 @@ void FSAIApp::connect_slot() {
 	});
 	// 暂停
 	QObject::connect(mainWindow->ui->pushButton_5, &QPushButton::pressed, this, [&]() {
-		group.robotList[worker->displayData->selectedRobot]->task_pause();
-		mainWindow->ui->pushButton_5->setText("Resume");
-		//group.robotList[mainWindow->displayData->selectedRobot]->task_resume();
-		//mainWindow->ui->pushButton_5->setText("Pause");
+		// 当前处于暂停状态
+		if (FSAIRobotInterface::get_bit(worker->displayData->runStatus[0], 3)) {
+			group.robotList[worker->displayData->selectedRobot]->task_resume();
+		}
+		else {
+			group.robotList[worker->displayData->selectedRobot]->task_pause();
+		}
 	});
 	// 停止
 	QObject::connect(mainWindow->ui->pushButton_6, &QPushButton::pressed, this, [&]() {
@@ -392,9 +428,7 @@ void FSAIApp::connect_slot() {
 
 		// 绑定打开工艺参数
 		connect(btn, &QPushButton::released, this, [&]() {
-			// 设置不可切换工艺
-			procedureWindow->ui->comboBox_4->setDisabled(true);
-
+			
 			// 当前行号
 			int tRow = mainWindow->ui->tableWidget->currentRow();
 			procedureWindow->cmdIdx = tRow;
@@ -468,13 +502,27 @@ void FSAIApp::display_procedure_data(int procIdx, int cmdIdx) {
 	}
 
 	// 未指定行号，仅修改工艺
-	procedureWindow->ui->spinBox_11->setDisabled(procedureWindow->cmdIdx < 0);
+	//procedureWindow->ui->spinBox_11->setDisabled(procedureWindow->cmdIdx < 0);
 	if (cmdIdx >= 0) {
 		auto moveCfg = FSAIRobotInterface::deserialize_Move_Config(mainWindow->moveCfg[cmdIdx]);
 		procedureWindow->ui->spinBox_11->setValue(moveCfg.smooth);
+
+		// 设置不可切换工艺
+		procedureWindow->ui->groupBox_9->setDisabled(false);
+
+		// 可编辑工艺和运动参数
+		procedureWindow->ui->comboBox_4->setDisabled(true);
+
 	}
 	else {
 		procedureWindow->ui->spinBox_11->setValue(-1);
+
+		// 设置可切换工艺
+		procedureWindow->ui->comboBox_4->setDisabled(false);
+
+		// 仅修改工艺，不修改运动参数
+		procedureWindow->ui->groupBox_9->setDisabled(true);
+
 	}
 
 	// 焊接参数
@@ -544,6 +592,9 @@ void FSAIApp::display_procedure_data(int procIdx, int cmdIdx) {
 	procedureWindow->ui->doubleSpinBox_6->setValue(moveCfg.speed);
 
 
+	// 缓冲运动
+	FSAIRobotInterface::Move_Action moveAct = FSAIRobotInterface::deserialize_Move_Action(procedureWindow->procedure[procIdx]);
+
 }
 
 void FSAIApp::save_procedure_data() {
@@ -565,26 +616,26 @@ void FSAIApp::save_procedure_data() {
 	weldWorkMode += voltageMode ? 16 : 0;
 
 	// 焊接参数 0
-	weldCfg.Id = procedureWindow->ui->groupBox->isChecked();                       // 0 起弧标志
-	weldCfg.WeldingCrt_Spd = procedureWindow->ui->spinBox_12->value();             // 1 焊接电流
-	weldCfg.WeldingVtg_Strth = procedureWindow->ui->spinBox->value();              // 2 焊接电压
-	weldCfg.WeldingWorkMode = weldWorkMode;                                        // 3 焊接工作模式
-	weldCfg.VtgUniCorrection = procedureWindow->ui->spinBox->value();              // 4 焊接电压修正值
+	weldCfg.Id = procedureWindow->ui->groupBox->isChecked();                   // 0 起弧标志
+	weldCfg.WeldingCrt_Spd = procedureWindow->ui->spinBox_12->value();         // 1 焊接电流
+	weldCfg.WeldingVtg_Strth = procedureWindow->ui->spinBox->value();          // 2 焊接电压
+	weldCfg.WeldingWorkMode = weldWorkMode;                                    // 3 焊接工作模式
+	weldCfg.VtgUniCorrection = procedureWindow->ui->spinBox->value();          // 4 焊接电压修正值
 
 	// 起弧参数 5
-	weldCfg.ArcOnWorkMode = weldWorkMode;                                          // 0 起弧模式
+	weldCfg.ArcOnWorkMode = weldWorkMode;                                      // 0 起弧模式
 	weldCfg.ArcOnCrt_Spd = procedureWindow->ui->spinBox_13->value();	       // 1 起弧电流
 	weldCfg.ArcOnVtg_Strth = procedureWindow->ui->spinBox_14->value();	       // 2 起弧电压
-	weldCfg.ArcOnTime = procedureWindow->ui->spinBox_2->value();	               // 3 起弧时间
+	weldCfg.ArcOnTime = procedureWindow->ui->spinBox_2->value();	           // 3 起弧时间
 	weldCfg.ArcOnVtg_Correction = procedureWindow->ui->spinBox_14->value();    // 4 起弧电压修正值
 	//weldCfg.ArcOnBlowTime = param[num++];	 // 5 引气时间						   
 
 	// 收弧参数 11
-	weldCfg.ArcOffWorkMode = weldWorkMode;                                         // 0 收弧模式
-	weldCfg.ArcOffCrt_Spd = procedureWindow->ui->spinBox_15->value();         // 1 收弧电流
-	weldCfg.ArcOffVtg_Strth = procedureWindow->ui->spinBox_16->value();       // 2 收弧电压
-	weldCfg.ArcOffTime = procedureWindow->ui->spinBox_3->value();             // 3 收弧时间
-	weldCfg.ArcOffVtg_Correction = procedureWindow->ui->spinBox_16->value();  // 4 收弧电压修正值
+	weldCfg.ArcOffWorkMode = weldWorkMode;                                     // 0 收弧模式
+	weldCfg.ArcOffCrt_Spd = procedureWindow->ui->spinBox_15->value();          // 1 收弧电流
+	weldCfg.ArcOffVtg_Strth = procedureWindow->ui->spinBox_16->value();        // 2 收弧电压
+	weldCfg.ArcOffTime = procedureWindow->ui->spinBox_3->value();              // 3 收弧时间
+	weldCfg.ArcOffVtg_Correction = procedureWindow->ui->spinBox_16->value();   // 4 收弧电压修正值
 	//weldCfg.ArcOffBlowTime = param[num++];  // 5 收气时间
 	auto weldPair = FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg);
 	proc[weldPair.first] = weldPair.second;
@@ -675,6 +726,7 @@ void FSAIApp::execute_teached_trajectory(int row) {
 	// 平滑度
 	trajCfg.smooth = moveCfg.smooth;
 
+
 	// 关节运动
 	if (moveType == 0) {
 		// 获取点位
@@ -692,21 +744,64 @@ void FSAIApp::execute_teached_trajectory(int row) {
 	}
 	// 空间运动
 	else {
-		// 获取点位
-		std::vector<float> dpos = read_list_from_tableWidget(mainWindow->ui->tableWidget, row, { 4,5 });
 
-		// 获取工艺参数
+		// 附加参数
 		for (auto& cfg : procedureWindow->procedure[procIdx]) {
 			trajCfg.add_appendix(cfg);
 		}
+
+		// 获取工艺参数
+		Arc_WeldingParaItem weldCfg = FSAIRobotInterface::deserialize_Arc_WeldingParaItem(trajCfg.appendix);
+		// 不允许起弧
+		if (!mainWindow->ui->checkBox->isChecked()) {
+			// 修改工艺参数起弧标志位
+			weldCfg.Id = 0;
+			trajCfg.add_appendix(FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg));
+		}
+		// 允许起弧
+		else if (weldCfg.Id > 0) {
+			FSAIRobotInterface::Move_Action moveAct = FSAIRobotInterface::deserialize_Move_Action(trajCfg.appendix);
+
+			bool isBeg = true;
+			// 当前行不是第一行
+			if (row > 0) {
+				// 获取前一条轨迹工艺参数
+				widget = mainWindow->ui->tableWidget->cellWidget(row - 1, 2);
+				procIdx = ((QSpinBox*)widget)->value();
+				Arc_WeldingParaItem preWeldCfg = FSAIRobotInterface::deserialize_Arc_WeldingParaItem(procedureWindow->procedure[procIdx]);
+				isBeg = preWeldCfg.Id <= 0;
+			}
+
+			// 添加起弧动作
+			if (isBeg) {
+				// 起弧动作默认加在动作最后
+				moveAct.actionBefore.push_back({ 2, FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg).second });
+			}
+
+			bool isEnd = true;
+			int nextRow = (moveType == 2) ? row + 2 : row + 1;
+			if (nextRow < mainWindow->ui->tableWidget->rowCount()) {
+				// 下一条轨迹为空走
+				widget = mainWindow->ui->tableWidget->cellWidget(nextRow, 2);
+				procIdx = ((QSpinBox*)widget)->value();
+				Arc_WeldingParaItem nextWeldCfg = FSAIRobotInterface::deserialize_Arc_WeldingParaItem(procedureWindow->procedure[procIdx]);
+
+				isEnd = nextWeldCfg.Id <= 0;
+			}
+
+			// 添加息弧动作
+			if (isEnd) {
+				moveAct.actionAfter.push_back({ 3, FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg).second });
+			}
+
+			trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(moveAct));
+		}
+
 		// 非默认工艺，使用工艺指定的焊接速度
 		trajCfg.speed = procIdx > 0 ? FSAIRobotInterface::deserialize_Move_Config(trajCfg.appendix).speed : speed;
-		// 允许起弧
-		Arc_WeldingParaItem weldCfg = FSAIRobotInterface::deserialize_Arc_WeldingParaItem(trajCfg.appendix);
-		if (!mainWindow->ui->checkBox->isChecked())
-			weldCfg.Id = 0;
-		trajCfg.add_appendix(FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg));
 
+		// 获取点位
+		std::vector<float> dpos = read_list_from_tableWidget(mainWindow->ui->tableWidget, row, { 4,5 });
 		// 直线运动
 		if (moveType == 1) {
 			traj.moveLABS(dpos, trajCfg);
@@ -737,6 +832,7 @@ void FSAIApp::execute_teached_trajectory(int row) {
 			if (ret)
 				mainWindow->ui->textBrowser->append("send traj error: " + QString::number(ret));
 		}
+
 	}
 
 }

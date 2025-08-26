@@ -1116,6 +1116,10 @@ namespace FSAIRobotInterface {
 		return ret;
 	}
 
+	int ZRVRobot::save_task_status(bool enable) {
+		return 0;
+	}
+
 	int ZRVRobot::task_pause() {
 		int stateIdxBase = get_state_idx_base();
 		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 2 });

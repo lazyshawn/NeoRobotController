@@ -448,7 +448,7 @@ int ZMotionRobot::execute_single_joint() {
 		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : ""));
 
 	// 开始记录位置
-	//save_task_status(true);
+	save_task_status(true);
 	// 下发轨迹编号
 	//send_running_line_num(axis[0], traj.get_curTraj());
 
@@ -465,7 +465,7 @@ int ZMotionRobot::execute_single_joint() {
 	// 下发轨迹序号
 	send_line_num(axis[0], trajectory.get_curTraj());
 	// 停止记录位置
-	//save_task_status(false);
+	save_task_status(false);
 
 	// 轨迹出栈
 	if (ret == 0) {
@@ -548,7 +548,7 @@ int ZMotionRobot::execute_single_cartesian() {
 	ZController->set_axis_param(axis[0], "FORCE_SPEED", curTraj.get_speed());
 
 	// 开始记录位置
-	//save_task_status(true);
+	save_task_status(true);
 	// 下发轨迹编号
 	//send_running_line_num(axis[0], traj.get_curTraj());
 
@@ -821,7 +821,7 @@ int ZMotionRobot::execute_single_cartesian() {
 	// 下发轨迹序号
 	send_line_num(axis[0], trajectory.get_curTraj());
 	// 停止记录位置
-	//save_task_status(false);
+	save_task_status(false);
 
 
 	// 下发异常
@@ -1416,6 +1416,15 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 
 	return ret;
 }
+
+int ZMotionRobot::save_task_status(bool enable) {
+	int stateIdxBase = get_state_idx_base();
+	std::vector<int> axis = get_execute_axis();
+	int ret = 0;
+	ret = ZController->set_axis_param(stateIdxBase + 100, "TABLE", enable, axis[0]);
+	return 0;
+}
+
 
 int ZMotionRobot::task_pause() {
 	int stateIdxBase = get_state_idx_base();

@@ -7,7 +7,7 @@ AdvanceConfigWindow::AdvanceConfigWindow() {
 	ui->setupUi(this);
 	
 	// ¹Ø±Õ´°¿Ú
-	QObject::connect(ui->buttonBox, &QDialogButtonBox::rejected, this, [&]() {
+	QObject::connect(ui->pushButton_4, &QPushButton::released, this, [&]() {
 		this->hide();
 	});
 

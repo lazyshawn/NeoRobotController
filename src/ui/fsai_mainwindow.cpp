@@ -23,9 +23,6 @@ MainWindow::MainWindow() {
 	// UI 初始化
 	set_up_ui();
 
-	// 加载默认参数
-	//displayData = std::shared_ptr<MainWindowDisplayData>(new MainWindowDisplayData);
-
 	// 按默认参数显示
 	update_display();
 
@@ -130,8 +127,27 @@ void MainWindow::connect_slot() {
 		ui->lineEdit->selectAll();
 	});
 
-	// 清空日志
-	QObject::connect(ui->pushButton_9, &QPushButton::pressed, ui->textBrowser, &QTextBrowser::clear);
+	// 速度滑块与输入框同步
+	QObject::connect(ui->horizontalSlider, &QSlider::valueChanged, this, [&](int value) {
+		ui->spinBox->setValue(value);
+	});
+	QObject::connect(ui->spinBox, (void (QSpinBox::*)(int))&QSpinBox::valueChanged, this, [&](int value) {
+		ui->horizontalSlider->setValue(value);
+	});
+	
+
+	/* ********************** 示教页面 ********************** */
+	// 记录示教点
+	QObject::connect(ui->pushButton_2, &QPushButton::pressed, this, &MainWindow::record_teach_point);
+	QObject::connect(ui->pushButton_3, &QPushButton::pressed, this, &MainWindow::delete_teach_point);
+
+
+	/* ********************** 点动页面 ********************** */
+	for (size_t i = 0; i < jogTypeBtn.size(); ++i) {
+		QObject::connect(jogTypeBtn[i], &QRadioButton::clicked, this, [&,i]() {
+			ui->textBrowser->append("Set jog mode: " + jogTypeBtn[i]->text());
+		});
+	}
 
 	// 点动
 	for (int i = 0; i < 9; ++i) {
@@ -146,16 +162,10 @@ void MainWindow::connect_slot() {
 		});
 	}
 
-	// 记录示教点
-	QObject::connect(ui->pushButton_2, &QPushButton::pressed, this, &MainWindow::record_teach_point);
-	QObject::connect(ui->pushButton_3, &QPushButton::pressed, this, &MainWindow::delete_teach_point);
 
-	/* ********************** 点动页面 ********************** */
-	for (size_t i = 0; i < jogTypeBtn.size(); ++i) {
-		QObject::connect(jogTypeBtn[i], &QRadioButton::clicked, this, [&,i]() {
-			ui->textBrowser->append("Set jog mode: " + jogTypeBtn[i]->text());
-		});
-	}
+	/* ********************** 日志页面 ********************** */
+	// 清空日志
+	QObject::connect(ui->pushButton_9, &QPushButton::pressed, ui->textBrowser, &QTextBrowser::clear);
 
 }
 
@@ -197,10 +207,15 @@ void MainWindow::update_display(const MainWindowDisplayData& data) {
 		runStatusLabel += "\nRunning";
 		ui->pushButton_30->setStyleSheet("background-color: rgb(0,255,0)");
 	}
-	// 警告
+	// 暂停 / 警告
 	if ((curRunStatus >> 3) % 2) {
 		runStatusLabel += "\nWarnning";
 		ui->pushButton_30->setStyleSheet("background-color: rgb(255,255,51)");
+
+		ui->pushButton_5->setText("Resume");
+	}
+	else {
+		ui->pushButton_5->setText("Pause");
 	}
 	// 异常
 	if ((curRunStatus >> 4) % 2) {

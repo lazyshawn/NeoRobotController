@@ -462,7 +462,7 @@ namespace FSAIRobotInterface {
 		if (enable) {
 			char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
-			sprintf(cmdbuff, "RUNTASK 6, ROBOT_RESET");
+			sprintf(cmdbuff, "RUNTASK 10, ROBOT_RESET");
 			sprintf(tempbuff, "(%d)", robotId);
 			strcat(cmdbuff, tempbuff);
 
@@ -577,11 +577,11 @@ namespace FSAIRobotInterface {
 			return -1;
 		}
 
-		//// 未处于手动模式
-		//if (robotStatus.autoMode > 0) {
-		//	robotStatus.upperStatus |= 0x10;
-		//	return 1;
-		//}
+		// 未处于手动模式
+		if (robotStatus.autoMode > 0) {
+			robotStatus.upperStatus |= 0x10;
+			return 1;
+		}
 		//// 暂停状态下不可移动附加轴
 		//if ((robotStatus.lowerStatus & 0x02) == 1 && idx > 5) {
 		//	robotStatus.upperStatus |= 0x04;
@@ -934,7 +934,6 @@ namespace FSAIRobotInterface {
 			set_bit(state, 4, false);
 		}
 
-
 		return ret > 0 ? 0 : 1;
 	}
 
@@ -1122,6 +1121,12 @@ namespace FSAIRobotInterface {
 				ZController->set_axis_param(get_point_idx_base() + 21, "TABLE", param[2]);
 				delayNum++;
 				continue;
+			}
+			// 寻位动作，行号不返回
+			if (type == 5) {
+				int idx = get_point_idx_base();
+				ZController->set_axis_param(idx + 267, "TABLE", 1);
+				delayNum++;
 			}
 
 			// 完成标志位复位
