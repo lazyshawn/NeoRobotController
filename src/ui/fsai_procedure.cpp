@@ -1,7 +1,9 @@
 ﻿
 #include "fsai_procedure.h"
 
-ProcedureWindow::ProcedureWindow() : ui(new Ui_Procedure) {
+ProcedureWindow::ProcedureWindow() {
+
+	ui = std::make_shared<Ui_Procedure>();
 	ui->setupUi(this);
 
 	set_up_ui();
@@ -28,7 +30,7 @@ ProcedureWindow::~ProcedureWindow() {
 void ProcedureWindow::set_up_ui() {
 
 	// Ref: [子窗口位于父窗口上方，不阻塞父窗口](https://dev59.com/gY7ea4cB1Zd3GeqPBXbZ)
-	setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+	//setWindowFlags(windowFlags() | Qt::Tool);
 
 	// 工艺号
 	procedure.clear();

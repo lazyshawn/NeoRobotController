@@ -5,7 +5,7 @@
 
 #include <memory>
 
-class ProcedureWindow : public QDialog {
+class ProcedureWindow : public QWidget {
 public:
 	// 主页面
 	std::shared_ptr<Ui_Procedure> ui;
@@ -17,6 +17,7 @@ private:
 
 public:
 	ProcedureWindow();
+	//ProcedureWindow(QWidget* parent) : QWidget(parent) {};
 	virtual ~ProcedureWindow();
 
 	// 待修改的运动编号

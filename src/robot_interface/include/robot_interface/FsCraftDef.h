@@ -140,7 +140,7 @@ public:
 	int CurrentMode = 0;		            //电流模式: 0 电流值
 	int VoltageMode = 1;		            //电压模式: 0 分别, 1 一元化
 	int CoolingMode = 0;		            //冷却模式
-	int Inductance = 0;
+	int Inductance = 0;                     //电感
 	int BaseCurrentRatio = 0;
 	double ReburnCorrectionTime = 0;
 

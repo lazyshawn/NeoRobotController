@@ -398,7 +398,7 @@ public:
 	*/
 	virtual int jog_moving(int type, int idx, int dir, int move) = 0;
 
-	virtual int save_task_status(bool enable) = 0;
+	virtual int save_task_status(bool enable, int inBuffer) = 0;
 
 	virtual int task_pause() = 0;
 	virtual int task_resume() = 0;

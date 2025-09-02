@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.0.1.4\n"
-		<< "Release Date:    250825");
+		<< "Version:         0.0.2.6\n"
+		<< "Release Date:    250902");
 }
 
 
@@ -457,6 +457,7 @@ int RobotBase::get_multilayer_pos(std::vector<float>& pos) {
 	ZController->get_axis_param({ dataIdxBase + 25000 }, "TABLE", data);
 	int num = static_cast<int>(data[0]);
 
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << ": " << num << " multilayer data recorded.");
 	if (num < 0)
 		return -1;
 

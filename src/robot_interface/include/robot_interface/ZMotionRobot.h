@@ -78,7 +78,7 @@ public:
 	int reset_line_num() override;
 	int set_jog_type(int type) override;
 	int jog_moving(int type, int idx, int dir, int move) override;
-	int save_task_status(bool enable) override;
+	int save_task_status(bool enable, int inBuffer) override;
 
 	int task_pause() override;
 	int task_resume() override;
@@ -99,6 +99,9 @@ public:
 	std::vector<int> get_joint_axis();
 	std::vector<int> get_tcp_axis();
 	std::vector<int> get_robot_tcp_axis();
+
+	// 设置下发行号
+	int send_running_line_num(int axis, const SingleTrajectory &curTraj);
 
 	// 摆焊参数
 	int get_swing_num();

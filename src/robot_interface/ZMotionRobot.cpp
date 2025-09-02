@@ -260,10 +260,11 @@ int ZMotionRobot::update_swing_config() {
 		update_swing_table(waveCfg);
 
 		int swingMode = curTraj.isLine() ? 3 : 5;
-		ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
+		//ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
+		ret = swing_on((trajectory.get_dist() - 0.00) / numPeriod, waveCfg, swingMode, zDir, nDir);
 
 		// 计算轴运动距离
-		ret += swing_off(trajectory.get_dist() - 0.02);
+		//ret += swing_off(trajectory.get_dist() - 0.02);
 	}
 
 	return 0;
@@ -316,7 +317,8 @@ int ZMotionRobot::update_welder_config() {
 	// 电流
 	current = weldCfg.WeldingCrt_Spd;
 	// 电压分别模式
-	if (weldCfg.WeldingWorkMode == 4) {
+	//if (weldCfg.WeldingWorkMode == 4) {
+	if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1) {
 		voltage = weldCfg.WeldingVtg_Strth;
 	}
 	// 一元模式
@@ -438,7 +440,7 @@ int ZMotionRobot::execute_single_joint() {
 		ZController->set_axis_param(axis, (char*)"SPEED", speed);
 	}
 	// 设置平滑度
-	if (curTraj.get_smooth() > 0) {
+	if (curTraj.get_smooth() >= 0) {
 		ZController->set_axis_param(axis[0], (char*)"ZSMOOTH", curTraj.get_smooth());
 	}
 
@@ -448,9 +450,9 @@ int ZMotionRobot::execute_single_joint() {
 		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : ""));
 
 	// 开始记录位置
-	save_task_status(true);
+	save_task_status(true, axis[0]);
 	// 下发轨迹编号
-	//send_running_line_num(axis[0], traj.get_curTraj());
+	send_running_line_num(axis[0], trajectory.get_curTraj());
 
 	// 获取前一条轨迹位置
 	auto beg = preTraj.get_mainPoint();
@@ -465,7 +467,7 @@ int ZMotionRobot::execute_single_joint() {
 	// 下发轨迹序号
 	send_line_num(axis[0], trajectory.get_curTraj());
 	// 停止记录位置
-	save_task_status(false);
+	save_task_status(false, axis[0]);
 
 	// 轨迹出栈
 	if (ret == 0) {
@@ -548,9 +550,9 @@ int ZMotionRobot::execute_single_cartesian() {
 	ZController->set_axis_param(axis[0], "FORCE_SPEED", curTraj.get_speed());
 
 	// 开始记录位置
-	save_task_status(true);
+	save_task_status(true, axis[0]);
 	// 下发轨迹编号
-	//send_running_line_num(axis[0], traj.get_curTraj());
+	send_running_line_num(axis[0], trajectory.get_curTraj());
 
 
 	// 当前轨迹的相对运动量
@@ -558,7 +560,7 @@ int ZMotionRobot::execute_single_cartesian() {
 
 	// 开启摆焊
 	int numPeriod = get_swing_num();
-	if (waveCfg.Id > 0) {
+	if (waveCfg.Id > 0 && numPeriod > 0) {
 		// 正弦摆
 		if (waveCfg.Shape == 0) {
 			// 第一个1/4周期占用的相位角
@@ -656,7 +658,9 @@ int ZMotionRobot::execute_single_cartesian() {
 			}
 
 			// 停止以防速度突变
-			ZController->set_base_param(axis[0], "MOVE_WA", { 1.0 });
+			//ZController->set_base_param(axis[0], "MOVE_WA", { 1.0 });
+			// 摆焊结束
+			ret += swing_off(trajectory.get_dist() - 0.02);
 		}
 		else if (waveCfg.Shape == 3) {
 			// 加入摆动轴
@@ -821,7 +825,7 @@ int ZMotionRobot::execute_single_cartesian() {
 	// 下发轨迹序号
 	send_line_num(axis[0], trajectory.get_curTraj());
 	// 停止记录位置
-	save_task_status(false);
+	save_task_status(false, axis[0]);
 
 
 	// 下发异常
@@ -836,6 +840,17 @@ int ZMotionRobot::execute_single_cartesian() {
 	return ret;
 }
 
+int ZMotionRobot::send_running_line_num(int axis, const SingleTrajectory &curTraj) {
+	int stateIdxBase = get_state_idx_base();
+	int ret = 0;
+
+	ret = ZController->set_axis_param(stateIdxBase + 7, "TABLE", curTraj.saveSeq, axis);
+
+	LOG4CPLUS_INFO(RobotLog::getLogger(),
+		"R" << aliasId << " ready to send traj num: " << curTraj.saveSeq
+	);
+	return 0;
+}
 
 int ZMotionRobot::send_line_num(int axis, const SingleTrajectory &curTraj) {
 	int stateIdxBase = get_state_idx_base();
@@ -1417,11 +1432,18 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 	return ret;
 }
 
-int ZMotionRobot::save_task_status(bool enable) {
+int ZMotionRobot::save_task_status(bool enable, int inBuffer) {
 	int stateIdxBase = get_state_idx_base();
 	std::vector<int> axis = get_execute_axis();
 	int ret = 0;
-	ret = ZController->set_axis_param(stateIdxBase + 100, "TABLE", enable, axis[0]);
+
+	if (inBuffer < 0) {
+		ret = ZController->set_axis_param(stateIdxBase + 100, "TABLE", enable);
+	}
+	else {
+		ret = ZController->set_axis_param(stateIdxBase + 100, "TABLE", enable, axis[0]);
+	}
+
 	return 0;
 }
 
@@ -1511,6 +1533,9 @@ int ZMotionRobot::task_stop() {
 	// 轨迹清空
 	trajectory.clear();
 
+	// 停止记录位置
+	save_task_status(false, -1);
+
 	// 清空执行轴，摆焊轴
 	std::vector<int> axis;
 	auto camAxis = get_execute_axis();
@@ -1522,8 +1547,8 @@ int ZMotionRobot::task_stop() {
 
 	// 轴停止，清空已下发任务
 	ZController->axis_stop(axis);
-	//set_upperStatus(0x08);
-	set_upperStatus(0x00);
+	// 清除上位机异常码
+	reset_upperStatus(-1);
 
 	// 摆焊轴位置回零
 	auto zeroPos = std::vector<float>(camAxis.size(), 0);
@@ -1545,6 +1570,9 @@ int ZMotionRobot::emergency_stop() {
 	int stateIdxBase = get_state_idx_base();
 	trajectory.clear();
 	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+
+	// 上位机下发停止
+	//set_upperStatus(0x08);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " emergency stop.");
 	return 0;
@@ -1800,7 +1828,7 @@ int ZMotionRobot::swing_off(float displacement) {
 
 	float vectorBuffered2 = 0.0;
 	ZController->get_axis_param(axis[0], "VECTOR_BUFFERED2", vectorBuffered2);
-	vectorBuffered2 += displacement;
+	//vectorBuffered2 += displacement;
 
 	//生成命令
 	sprintf(cmdbuff, "BASE(%d,%d,%d)\nCONN_SWING(%d,%d,%f)",

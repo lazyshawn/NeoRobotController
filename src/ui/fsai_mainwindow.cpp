@@ -371,10 +371,6 @@ void MainWindow::record_teach_point() {
 	ui->tableWidget->setItem(row, 6, item);
 
 	// 高级设置
-	QPushButton* trajCfgBox = new QPushButton();
-	//trajCfgBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	//trajCfgBox->setText("...");
-	ui->tableWidget->setCellWidget(row, 7, trajCfgBox);
 
 }
 
@@ -397,10 +393,11 @@ void MainWindow::delete_teach_point() {
 
 	// 从前往后
 	for (size_t i = 0; i < rowIdx.size(); ++i) {
+		int newRow = rowIdx[i] - i;
 		// 删除行
 		ui->tableWidget->removeRow(rowIdx[i] - i);
 		// 删除记录参数
-		moveCfg.erase(moveCfg.begin() + rowIdx[i] - i);
+		moveCfg.erase(moveCfg.begin() + (rowIdx[i] - i));
 	}
 
 	// 更新行索引

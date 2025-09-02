@@ -483,7 +483,6 @@ namespace FSAIRobotInterface {
 		//ZController->set_axis_param(stateIdxBase + 24123, "TABLE", 0);
 		// 下位机复位
 		ZController->set_axis_param(stateIdxBase + 23999, "TABLE", 1);
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		// 清空恢复
 		ZController->set_axis_param(stateIdxBase + 23995, "TABLE", 1);
 
@@ -790,7 +789,7 @@ namespace FSAIRobotInterface {
 			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth());
 
 		// 开始记录位置
-		save_task_status(true);
+		save_task_status(true, 1);
 
 		// 设置上条轨迹类型
 		auto beg = preTraj.get_mainPoint();
@@ -806,7 +805,7 @@ namespace FSAIRobotInterface {
 			return ret;
 
 		// 停止记录位置
-		save_task_status(false);
+		save_task_status(false, 1);
 
 		// 轨迹出栈
 		if (ret == 0) {
@@ -867,7 +866,7 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(160000 + 4, "TABLE", curTraj.get_smooth());
 
 		// 开始记录位置
-		save_task_status(true);
+		save_task_status(true, 1);
 
 		// 设置上条轨迹类型
 		set_previous_trajectory(preTraj);
@@ -885,7 +884,7 @@ namespace FSAIRobotInterface {
 		}
 
 		// 停止记录位置
-		save_task_status(false);
+		save_task_status(false, 1);
 
 		// 下发异常
 		if (ret == 0) {
@@ -951,20 +950,25 @@ namespace FSAIRobotInterface {
 	}
 
 	/* *************************** 固定运动 *************************** */
-	int FSAIRobot::save_task_status(bool enable) {
+	int FSAIRobot::save_task_status(bool enable, int inBuffer) {
 		int stateIdxBase = get_state_idx_base();
+		int ret = 0;
 		//std::vector<int> axis = get_execute_axis();
-		//int ret = 0;
 		//ret = ZController->set_axis_param(stateIdxBase + 100, "TABLE", enable, axis[0]);
 
-		if (enable) {
-			begRegister.add_buffer(stateIdxBase + 100, 1);
+		if (inBuffer < 0) {
+			ret = ZController->set_axis_param(stateIdxBase + 100, "TABLE", enable);
 		}
 		else {
-			endRegister.add_buffer(stateIdxBase + 100, 0);
+			if (enable) {
+				begRegister.add_buffer(stateIdxBase + 100, 1);
+			}
+			else {
+				endRegister.add_buffer(stateIdxBase + 100, 0);
+			}
 		}
 
-		return 0;
+		return ret;
 	}
 
 
@@ -1070,12 +1074,16 @@ namespace FSAIRobotInterface {
 		// 轨迹清空
 		trajectory.clear();
 
-		// 轴停止，清空已下发任务
-		set_upperStatus(0x08);
+		// 停止记录位置
+		save_task_status(false, -1);
+
+		// 清除上位机异常码
+		reset_upperStatus(-1);
 
 		int stateIdxBase = get_cmd_idx_base();
 		// 暂停
 		ZController->set_axis_param({ stateIdxBase + 23997 }, "TABLE", { 1 });
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		// 轨迹序号复位
 		reset_line_num();
@@ -1092,6 +1100,9 @@ namespace FSAIRobotInterface {
 		int stateIdxBase = get_state_idx_base();
 		trajectory.clear();
 		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+
+		// 上位机下发停止
+		set_upperStatus(0x08);
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " emergency stop.");
 		return 0;
@@ -1235,6 +1246,10 @@ namespace FSAIRobotInterface {
 			// 电弧跟踪标志位，区分电弧跟踪和线激光跟踪
 			//ZController->set_axis_param(stateIdxBase + 150, "TABLE", trackCfg.Id, axis[0]);
 			begRegister.add_buffer(stateIdxBase + 150, trackCfg.Id);
+			// 跟踪开启和关闭
+			begRegister.add_buffer(get_cmd_idx_base() + 24100, 1);
+			endRegister.add_buffer(get_cmd_idx_base() + 24101, 1);
+			
 
 			// 下发跟踪参数
 			for (size_t i = 0; i < config.size(); ++i) {
@@ -1268,7 +1283,8 @@ namespace FSAIRobotInterface {
 		// 电流
 		current = weldCfg.WeldingCrt_Spd;
 		// 电压分别模式
-		if (weldCfg.WeldingWorkMode == 4) {
+		//if (weldCfg.WeldingWorkMode == 4) {
+		if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1) {
 			voltage = weldCfg.WeldingVtg_Strth;
 		}
 		// 一元模式

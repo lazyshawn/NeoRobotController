@@ -82,7 +82,7 @@ public:
 	int reset_line_num() override;
 	int set_jog_type(int type) override;
 	int jog_moving(int type, int idx, int dir, int move) override;
-	int save_task_status(bool enable) override;
+	int save_task_status(bool enable, int inBuffer) override;
 
 	int task_pause() override;
 	int task_resume() override;

@@ -10,6 +10,7 @@
 
 #include "robot_interface/CoopRobot.h"
 
+
 /**
 * @brief  机器人状态，从下位机读取
 */
@@ -90,7 +91,13 @@ private:
 	void save_procedure_data();
 
 	// 执行示教轨迹
-	void execute_teached_trajectory(int row);
+	void append_teached_trajectory(int row, DiscreteTrajectory& traj);
+
+	// 插入示教点参数设置按钮
+	int insert_teach_point_config_button(const std::vector<int>& idxList);
+
+	// 保存工程
+	int save_project(std::string fileName);
 
 public:
 	FSAIApp();

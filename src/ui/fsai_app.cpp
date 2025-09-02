@@ -5,16 +5,23 @@
 #include <chrono>
 #include <iostream>
 
+#include<QFileDialog> // 打开文件浏览器选择文件
+#include <QTextCodec> // 中文路径
+
 #include "robot_interface/ZMotionRobot.h"
 #include "robot_interface/ZRVRobot.h"
 #include "robot_interface/FSAIRobot.h"
 
+#include "nlohmann/json.hpp"
+
 FSAIRobotInterface::RobotGroupManager group;
 
 Worker::Worker() {
+	// 加载默认参数
 	// 主窗口显示数据
 	displayData = std::shared_ptr<MainWindowDisplayData>(new MainWindowDisplayData);
 	displayData->trajectory = std::vector<std::vector<std::vector<float>>>(displayData->robotNum);
+	displayData->interpAlgo = 0;
 }
 
 void Worker::doWork() {
@@ -23,8 +30,6 @@ void Worker::doWork() {
 	std::default_random_engine engine(std::chrono::system_clock::now().time_since_epoch().count());
 	std::normal_distribution<double> distribution(100, 10);
 
-	// 加载默认参数
-	displayData = std::shared_ptr<MainWindowDisplayData>(new MainWindowDisplayData);
 	// 获取当前时间戳
 	auto start = std::chrono::steady_clock::now();
 	// 下次唤醒时间
@@ -103,15 +108,18 @@ FSAIApp::FSAIApp() {
 	// 资源初始化
 	// 主窗口
 	mainWindow = std::shared_ptr<MainWindow>(new MainWindow);
+	//mainWindow->setWindowFlags(mainWindow->windowFlags() | Qt::Window);
 	// 全局配置窗口
 	advanceWindow = std::shared_ptr<AdvanceConfigWindow>(new AdvanceConfigWindow);
 	// 工艺窗口
 	procedureWindow = std::shared_ptr<ProcedureWindow>(new ProcedureWindow);
 
+	//QWidget * newWidget = new QWidget(mainWindow.get(), Qt::Tool);
+
 	// 线程
 	worker = new Worker;
 
-	// 加载配置
+	// 加载默认配置
 
 	// 状态数据初始化
 	//robotStatus = std::shared_ptr<RobotStatus>(new RobotStatus);
@@ -120,9 +128,12 @@ FSAIApp::FSAIApp() {
 	mainWindow->show();
 
 	ZController = std::shared_ptr<FSAIRobotInterface::Controller>(new FSAIRobotInterface::Controller);
-	robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::ZMotionRobot);
-	//robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::ZRVRobot);
-	//robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::FSAIRobot);
+	if (worker->displayData->interpAlgo == 0)
+		robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::ZMotionRobot);
+	else if (worker->displayData->interpAlgo == 1)
+		robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::ZRVRobot);
+	else
+		robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::FSAIRobot);
 
 
 	ZController->lazy_connect();
@@ -185,6 +196,149 @@ void FSAIApp::connect_slot() {
 		// 传入参数
 		procedureWindow->show();
 		procedureWindow->activateWindow();
+	});
+	// 另存为工程
+	QObject::connect(mainWindow->ui->actionSave_As, &QAction::triggered, this, [&]() {
+		QString filename = QFileDialog::getSaveFileName(this, "Select project file", "./", "Json(*.json);;All files(*.*)");
+		if (filename.isEmpty()) {
+			mainWindow->ui->textBrowser->append("File not exists.");
+			return;
+		}
+		// 中文路径转码
+		QTextCodec * code = QTextCodec::codecForName("GB2312");
+		std::string name = code->fromUnicode(filename).data();
+		
+		save_project(name);
+	});
+	// 保存工程
+	QObject::connect(mainWindow->ui->actionSave, &QAction::triggered, this, [&]() {
+		// 获取系统当前的时间
+		QDateTime dateTime = QDateTime::currentDateTime(); 
+		// 格式化时间
+		//QString str = dateTime.toString("yyMMdd_hhmmss");
+		QString str = dateTime.toString("yyMMdd");
+		QString fileName = "project/" + str + ".json";
+
+		mainWindow->ui->textBrowser->append("Project saved as \"" + fileName + "\"");
+
+		//save_project("project/teach_point.json");
+		save_project(fileName.toStdString());
+	});
+	// 加载工程
+	QObject::connect(mainWindow->ui->actionOpen, &QAction::triggered, this, [&]() {
+		QString filename = QFileDialog::getOpenFileName(this, "Select project file", "./", "Json(*.json);;All files(*.*)");
+		if (filename.isEmpty()) {
+			mainWindow->ui->textBrowser->append("File not exists");
+			return;
+		}
+		// 中文路径转码
+		QTextCodec * code = QTextCodec::codecForName("GB2312");
+		std::string name = code->fromUnicode(filename).data();
+
+		//std::ifstream ifile("project/teach_point.json");
+		std::ifstream ifile(name);
+		if (!ifile) {
+			mainWindow->ui->textBrowser->append("Open file failed");
+			return;
+		}
+
+		nlohmann::json json;
+		json << ifile;
+
+		// 示教点位
+		nlohmann::json teachPoint = json["teach_point"];
+		// 删除点位
+		mainWindow->moveCfg.clear();
+		mainWindow->ui->tableWidget->setRowCount(teachPoint.size());
+		mainWindow->moveCfg.resize(teachPoint.size());
+
+		// 记录点位更新到当前界面
+		for (auto& item : teachPoint.items()) {
+			int row = atol(item.key().c_str());
+			// 序号
+			QTableWidgetItem* seqItem = new QTableWidgetItem(QString::number(row));
+			seqItem->setFlags(seqItem->flags() & (~Qt::ItemIsEditable));
+			mainWindow->ui->tableWidget->setItem(row, 0, seqItem);
+
+			// 轨迹类型
+			QComboBox* typeComboBox = new QComboBox();
+			typeComboBox->addItem("     J");
+			typeComboBox->addItem("     L");
+			typeComboBox->addItem("     C");
+			typeComboBox->setCurrentIndex(item.value()["MType"].get<int>());
+			mainWindow->ui->tableWidget->setCellWidget(row, 1, typeComboBox);
+
+			// 工艺号
+			QSpinBox* procedureBox = new QSpinBox();
+			procedureBox->setMaximum(10);
+			procedureBox->setPrefix("Proc. ");
+			procedureBox->setButtonSymbols(QSpinBox::NoButtons);
+			procedureBox->setAlignment(Qt::AlignHCenter);
+			procedureBox->setValue(item.value()["ProcIdx"].get<int>());
+			mainWindow->ui->tableWidget->setCellWidget(row, 2, procedureBox);
+
+			// 读取当前空间位置
+			std::vector<float> pos = item.value()["JPos"].get<std::vector<float>>();
+			QString posStr = QString::number(pos[0]);
+			for (size_t i = 1; i < pos.size(); ++i) {
+				posStr += ", " + QString::number(pos[i]);
+			}
+			QTableWidgetItem* cellItem = new QTableWidgetItem(posStr);
+			mainWindow->ui->tableWidget->setItem(row, 3, cellItem);
+
+			// 关节位置
+			pos = (item.value()["CPos"]).get<std::vector<float>>();
+			posStr = QString::number(pos[0]);
+			for (size_t i = 1; i < pos.size(); ++i) {
+				posStr += ", " + QString::number(pos[i]);
+			}
+			cellItem = new QTableWidgetItem(posStr);
+			mainWindow->ui->tableWidget->setItem(row, 4, cellItem);
+
+			// 附加轴位置
+			pos = (item.value()["External"]).get<std::vector<float>>();
+			posStr = QString::number(pos[0]);
+			for (size_t i = 1; i < pos.size(); ++i) {
+				posStr += ", " + QString::number(pos[i]);
+			}
+			cellItem = new QTableWidgetItem(posStr);
+			mainWindow->ui->tableWidget->setItem(row, 5, cellItem);
+
+			// 速度
+			cellItem = new QTableWidgetItem(QString::number(item.value()["Speed"].get<float>()));
+			mainWindow->ui->tableWidget->setItem(row, 6, cellItem);
+
+			// 轨迹参数
+			std::map<int, std::vector<float>> moveCfgMap;
+			for (auto& cfg : item.value()["MoveConfig"].items()) {
+				moveCfgMap[atol(cfg.key().c_str())] = cfg.value().get<std::vector<float>>();
+			}
+			mainWindow->moveCfg[row] = moveCfgMap;
+
+			// 轨迹参数设置按钮
+			insert_teach_point_config_button({ row });
+		}
+
+		// 工艺参数
+		nlohmann::json procedure = json["procedure"];
+		for (size_t i = 0; i < procedure.size(); ++i) {
+			// 第 i 个工艺
+			nlohmann::json proc = procedure[std::to_string(i)];
+			std::map<int, std::vector<float>> map;
+
+			// 键值对转map
+			for (auto& item : proc.items()) {
+				int key = atol(item.key().c_str());
+				std::vector<float> value = item.value().get<std::vector<float>>();
+
+				map[key] = value;
+			}
+
+			// 保存工艺参数
+			procedureWindow->procedure[i] = map;
+		}
+
+		mainWindow->ui->textBrowser->append("Project Loaded.");
 	});
 
 	// 设置窗口
@@ -379,11 +533,15 @@ void FSAIApp::connect_slot() {
 	// 开始
 	QObject::connect(mainWindow->ui->pushButton_4, &QPushButton::pressed, this, [&]() {
 
+		DiscreteTrajectory traj;
+
 		for (size_t i = 0; i < mainWindow->ui->tableWidget->rowCount(); ++i) {
-
-			execute_teached_trajectory(i);
-
+			append_teached_trajectory(i, traj);
 		}
+
+		int ret = group.robotList[0]->push_new_trajectory(traj);
+		if (ret)
+			mainWindow->ui->textBrowser->append("send traj error: " + QString::number(ret));
 
 	});
 	// 执行当前
@@ -400,7 +558,14 @@ void FSAIApp::connect_slot() {
 			return;
 		}
 
-		execute_teached_trajectory(row);
+		DiscreteTrajectory traj;
+
+		append_teached_trajectory(row, traj);
+
+		int ret = group.robotList[0]->push_new_trajectory(traj);
+		if (ret)
+			mainWindow->ui->textBrowser->append("send traj error: " + QString::number(ret));
+
 
 	});
 	// 暂停
@@ -423,30 +588,14 @@ void FSAIApp::connect_slot() {
 		// 当前行
 		int row = mainWindow->ui->tableWidget->currentRow();
 
-		// 设置按钮
-		QPushButton *btn = (QPushButton *)(mainWindow->ui->tableWidget->cellWidget(row, 7));
+		// 设置当前行默认运动参数
+		auto moveCfg = FSAIRobotInterface::deserialize_Move_Config(mainWindow->moveCfg[row]);
+		moveCfg.speed = 10;
+		moveCfg.smooth = -1;
+		auto movePair = FSAIRobotInterface::serialize_Move_Config(moveCfg);
+		mainWindow->moveCfg[row][movePair.first] = movePair.second;
 
-		// 绑定打开工艺参数
-		connect(btn, &QPushButton::released, this, [&]() {
-			
-			// 当前行号
-			int tRow = mainWindow->ui->tableWidget->currentRow();
-			procedureWindow->cmdIdx = tRow;
-
-			// 当前选中工艺号
-			QWidget* widget = mainWindow->ui->tableWidget->cellWidget(tRow, 2);
-			int procIdx = ((QSpinBox*)widget)->value();
-			procedureWindow->ui->comboBox_4->setCurrentIndex(procIdx);
-
-			// 更新工艺参数界面
-			display_procedure_data(procIdx, tRow);
-
-			// 显示窗口
-			procedureWindow->show();
-			procedureWindow->activateWindow();
-
-		});
-
+		insert_teach_point_config_button({ row });
 	});
 
 
@@ -502,7 +651,6 @@ void FSAIApp::display_procedure_data(int procIdx, int cmdIdx) {
 	}
 
 	// 未指定行号，仅修改工艺
-	//procedureWindow->ui->spinBox_11->setDisabled(procedureWindow->cmdIdx < 0);
 	if (cmdIdx >= 0) {
 		auto moveCfg = FSAIRobotInterface::deserialize_Move_Config(mainWindow->moveCfg[cmdIdx]);
 		procedureWindow->ui->spinBox_11->setValue(moveCfg.smooth);
@@ -701,7 +849,7 @@ void FSAIApp::save_procedure_data() {
 }
 
 
-void FSAIApp::execute_teached_trajectory(int row) {
+void FSAIApp::append_teached_trajectory(int row, DiscreteTrajectory& traj) {
 
 	if (row < 0) {
 		mainWindow->ui->textBrowser->append("Teach point not selected.");
@@ -709,7 +857,7 @@ void FSAIApp::execute_teached_trajectory(int row) {
 	}
 
 	// 当前行转换为轨迹
-	DiscreteTrajectory traj;
+	//DiscreteTrajectory traj;
 	TrajectoryConfig trajCfg;
 
 	// 运动类型
@@ -734,9 +882,6 @@ void FSAIApp::execute_teached_trajectory(int row) {
 
 		trajCfg.speed = speed > 100 ? 100 : speed;
 		traj.moveJABS(dpos, trajCfg);
-		int ret = group.robotList[0]->push_new_trajectory(traj);
-		if (ret)
-			mainWindow->ui->textBrowser->append("send traj error: " + QString::number(ret));
 	}
 	// 忽略圆弧运动终点
 	else if (moveType < 0) {
@@ -805,9 +950,6 @@ void FSAIApp::execute_teached_trajectory(int row) {
 		// 直线运动
 		if (moveType == 1) {
 			traj.moveLABS(dpos, trajCfg);
-			int ret = group.robotList[0]->push_new_trajectory(traj);
-			if (ret)
-				mainWindow->ui->textBrowser->append("send traj error: " + QString::number(ret));
 		}
 		// 圆弧运动
 		else {
@@ -828,11 +970,134 @@ void FSAIApp::execute_teached_trajectory(int row) {
 			std::vector<float> endPos = read_list_from_tableWidget(mainWindow->ui->tableWidget, row + 1, { 4,5 });
 
 			traj.moveCABS(dpos, endPos, trajCfg);
-			int ret = group.robotList[0]->push_new_trajectory(traj);
-			if (ret)
-				mainWindow->ui->textBrowser->append("send traj error: " + QString::number(ret));
 		}
 
 	}
 
+}
+
+
+int FSAIApp::insert_teach_point_config_button(const std::vector<int>& idxList) {
+
+	for (auto& row : idxList) {
+		QPushButton* trajCfgBox = new QPushButton();
+		//trajCfgBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+		//trajCfgBox->setText("...");
+		mainWindow->ui->tableWidget->setCellWidget(row, 7, trajCfgBox);
+
+		// 设置按钮
+		//QPushButton *btn = (QPushButton *)(mainWindow->ui->tableWidget->cellWidget(row, 7));
+
+		// 绑定打开工艺参数
+		connect(trajCfgBox, &QPushButton::released, this, [&]() {
+
+			// 当前行号
+			int tRow = mainWindow->ui->tableWidget->currentRow();
+			procedureWindow->cmdIdx = tRow;
+
+			// 当前选中工艺号
+			QWidget* widget = mainWindow->ui->tableWidget->cellWidget(tRow, 2);
+			int procIdx = ((QSpinBox*)widget)->value();
+			procedureWindow->ui->comboBox_4->setCurrentIndex(procIdx);
+
+			// 更新工艺参数界面
+			display_procedure_data(procIdx, tRow);
+
+			// 显示窗口
+			procedureWindow->show();
+			procedureWindow->activateWindow();
+
+		});
+	}
+	return 0;
+}
+
+int FSAIApp::save_project(std::string fileName) {
+
+	std::ofstream ofile(fileName);
+	if (!ofile) {
+		mainWindow->ui->textBrowser->append("Open file failed");
+		return -1;
+	}
+
+	// 按插入顺序保存
+	nlohmann::ordered_json json;
+
+	json["version"] = 250829;
+
+	// 保存点位 [teach_point]
+	nlohmann::json teachPoint;
+	for (size_t i = 0; i < mainWindow->ui->tableWidget->rowCount(); ++i) {
+		int row = i;
+
+		// 点位序号
+		teachPoint[i]["Seq"] = mainWindow->ui->tableWidget->item(row, 0)->text().toInt();
+
+		// 运动类型
+		QWidget* widget = mainWindow->ui->tableWidget->cellWidget(row, 1);
+		int moveType = ((QComboBox*)widget)->currentIndex();
+		teachPoint[i]["MType"] = moveType;
+
+		// 工艺号
+		widget = mainWindow->ui->tableWidget->cellWidget(row, 2);
+		int procIdx = ((QSpinBox*)widget)->value();
+		teachPoint[i]["ProcIdx"] = procIdx;
+
+		// 获取点位
+		auto value = read_list_from_tableWidget(mainWindow->ui->tableWidget, row, { 3 });
+		teachPoint[i]["JPos"] = value;
+
+		value = read_list_from_tableWidget(mainWindow->ui->tableWidget, row, { 4 });
+		teachPoint[i]["CPos"] = value;
+
+		value = read_list_from_tableWidget(mainWindow->ui->tableWidget, row, { 5 });
+		teachPoint[i]["External"] = value;
+
+		//auto moveCfg = FSAIRobotInterface::deserialize_Move_Config(moveCfgMap);
+		//cellItem = new QTableWidgetItem(QString::number(moveCfg.speed));
+		//mainWindow->ui->tableWidget->setItem(row, 6, cellItem);
+		// 速度
+		teachPoint[i]["Speed"] = mainWindow->ui->tableWidget->item(row, 6)->text().toFloat();
+		// 平滑度
+
+		// 轨迹参数
+		for (auto& cfg : mainWindow->moveCfg[row]) {
+			teachPoint[i]["MoveConfig"][std::to_string(cfg.first)] = cfg.second;
+		}
+
+	}
+	json["teach_point"] = teachPoint;
+
+	// 工艺参数保存 [procedure]
+	nlohmann::json procedure;
+	for (size_t i = 0; i < procedureWindow->procedure.size(); ++i) {
+		auto proc = procedureWindow->procedure[i];
+
+		// 焊接参数
+		Arc_WeldingParaItem weldCfg = FSAIRobotInterface::deserialize_Arc_WeldingParaItem(proc);
+		auto weldPair = FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg);
+		procedure[std::to_string(i)][std::to_string(weldPair.first)] = weldPair.second;
+
+		// 摆焊参数
+		Weave waveCfg = FSAIRobotInterface::deserialize_Weave(proc);
+		auto wavePair = FSAIRobotInterface::serialize_Weave(waveCfg);
+		procedure[std::to_string(i)][std::to_string(wavePair.first)] = wavePair.second;
+
+		// 跟踪参数
+		Track trackCfg = FSAIRobotInterface::deserialize_Track(proc);
+		auto trackPair = FSAIRobotInterface::serialize_Track(trackCfg);
+		procedure[std::to_string(i)][std::to_string(trackPair.first)] = trackPair.second;
+
+		// 运动参数
+		FSAIRobotInterface::Move_Config moveCfg = FSAIRobotInterface::deserialize_Move_Config(proc);
+		auto movePair = FSAIRobotInterface::serialize_Move_Config(moveCfg);
+		procedure[std::to_string(i)][std::to_string(movePair.first)] = movePair.second;
+	}
+	json["procedure"] = procedure;
+
+	// 写入文件
+	//std::cout << std::setw(4) << json << std::endl;
+	ofile << json << "\n";
+	
+	return 0;
 }

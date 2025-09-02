@@ -26,7 +26,5 @@ struct MainWindowDisplayData {
 	// 示教轨迹<运动类型, 工艺号, 关节位置, TCP位置, 地轨位置, 速度>
 	std::vector<std::vector<std::vector<float>>> trajectory;
 	
-	// 工艺
-	//std::vector<std::map<int, std::vector<float>>> procdure;
 };
 Q_DECLARE_METATYPE(MainWindowDisplayData);

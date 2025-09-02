@@ -7,33 +7,25 @@
     <x>0</x>
     <y>0</y>
     <width>231</width>
-    <height>182</height>
+    <height>253</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="2" column="0">
-    <widget class="QPushButton" name="pushButton_3">
-     <property name="text">
-      <string>OK</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QPushButton" name="pushButton_4">
-     <property name="text">
-      <string>Cancel</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0" colspan="2">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
       <string>Assistant Configuration</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBox_3"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QComboBox" name="comboBox_4"/>
+      </item>
       <item row="0" column="0">
        <widget class="QCheckBox" name="checkBox">
         <property name="text">
@@ -41,13 +33,21 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QComboBox" name="comboBox_4"/>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="comboBox_3"/>
-      </item>
      </layout>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QPushButton" name="pushButton_3">
+     <property name="text">
+      <string>OK</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QPushButton" name="pushButton_4">
+     <property name="text">
+      <string>Cancel</string>
+     </property>
     </widget>
    </item>
    <item row="0" column="0" colspan="2">
@@ -56,6 +56,13 @@
       <string>General Configuration</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <item row="1" column="1" colspan="2">
+       <widget class="QComboBox" name="comboBox_2">
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="1">
        <widget class="QPushButton" name="pushButton">
         <property name="text">
@@ -77,13 +84,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Interpolation Algo</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
@@ -91,10 +91,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1" colspan="2">
-       <widget class="QComboBox" name="comboBox_2">
-        <property name="editable">
-         <bool>true</bool>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Interpolation Algo</string>
         </property>
        </widget>
       </item>
@@ -105,10 +105,50 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0" colspan="3">
-       <widget class="QCheckBox" name="checkBox_2">
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Controller Logging</string>
+         <string>Welder</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1" colspan="2">
+       <widget class="QComboBox" name="comboBox_5"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Welder Test</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushButton_5">
+        <property name="text">
+         <string>Feed Silk</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="pushButton_6">
+        <property name="text">
+         <string>Draw Silk</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushButton_7">
+        <property name="text">
+         <string>Gas Test</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="pushButton_8">
+        <property name="text">
+         <string>Clearance</string>
         </property>
        </widget>
       </item>
