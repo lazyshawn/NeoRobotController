@@ -689,6 +689,9 @@ int DiscreteTrajectory::next() {
 void DiscreteTrajectory::clear() {
 	trajList.clear();
 }
+bool DiscreteTrajectory::atLast() const {
+	return std::next(trajList.begin()) == trajList.end();
+}
 SingleTrajectory DiscreteTrajectory::get_curTraj() const {
 	return trajList.front();
 }

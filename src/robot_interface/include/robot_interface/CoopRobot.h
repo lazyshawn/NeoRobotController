@@ -4,6 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <unordered_set>
+#include <atomic>
 
 #include "ZMotionController.h"
 #include "RobotTrajectory.h"
@@ -17,6 +18,8 @@ namespace FSAIRobotInterface {
  */
 struct RobotConfig {
 	// 机器人配置参数
+	// 耦合比
+	bool couple;
 	// 连杆参数: LargeZ,L1,L2,L3,L4,D5,DiffY
 	std::vector<float> linkLength = {};
 	// 编码器位数
@@ -104,7 +107,8 @@ struct RobotConfig {
  * 需要高频更新的实时参数
  * 每次轮询都更新一次，以保证机器人管理线程的正常运行
  */
-struct RobotRTStatus {
+struct RobotStatusBuffer {
+	std::vector<float> slaveBuffer;
 };
 
 
@@ -185,6 +189,8 @@ protected:
 	RobotConfig robotConfig;
 	//! 机器人状态
 	RobotStatus robotStatus;
+	//! 状态缓存
+	RobotStatusBuffer statusBuffer;
 
 public:
 	virtual ~RobotBase();
@@ -257,9 +263,9 @@ public:
 	int capture_controller_log();
 
 	//! 下发指令
-	int send_command(const std::string& cmd, std::string& ack);
+	int send_command(const std::string& cmd, std::string& ack, int type);
 
-	int reboot(const char *basPath);
+	int reboot(const char *basPath,  int mode);
 	int load_config(const std::string& fname);
 	int export_config(const std::string& fname);
 
@@ -290,6 +296,8 @@ public:
 	int read_action_result(std::vector<float>& result);
 	int get_multilayer_pos(std::vector<float>& pos);
 
+	// 获取自定义的下位机缓存数据: 如电弧跟踪、激光跟踪数据
+	int get_slave_buffer();
 
 	/* *************************** 底层可修改接口 *************************** */
 	/**
@@ -304,6 +312,7 @@ public:
 
 	// 设置当前轨迹类型
 	virtual int send_traj_type(int type);
+
 
 	/* *************************** 底层自定义接口 *************************** */
 
@@ -342,10 +351,20 @@ public:
 	// 剩余缓冲检测
 	virtual int remain_buffer_free() = 0;
 
-	// 一致性轨迹预处理，可以连续下发的轨迹
+	/**
+	* @brief 一致性轨迹预处理
+	* 
+	* 不同算法，可能轨迹段开始前需要预存数据，或其他预处理
+	* 该功能用于检测是否可以进行预处理，并修改下发标识，让轨迹可以通过后续的一致性检测
+	*/
 	virtual int set_ready_for_consistent_traj() = 0;
 
-	// 一致性轨迹就绪
+	/**
+	* @brief 一致性轨迹就绪检测
+	* 
+	* 检测是否当前轨迹可以开始下发，若不能则判断并执行切换动作，等待下次判断
+	* 该功能可以阻止未进行预处理的轨迹被下发
+	*/
 	virtual int consistent_traj_ready(int& state) = 0;
 
 	virtual int separate_trajectory() = 0;
@@ -417,10 +436,6 @@ public:
  * 处理多机器人的状态更新，指令下发，任务协同等
  */
 class RobotGroupManager {
-	//! 公用地轨轴号<轴号，机器人索引>
-	//std::map<int, std::vector<int>> sharedAxis;
-	//! 共用地轨的运动状态
-	//std::map<int, int> sharedAxisState;
 	//! 协同就绪状态: 0 未就绪, 1 已就绪
 	std::vector<int> syncReadyState;
 	//! 协同就绪状态: <<type, num>, ...>
@@ -430,8 +445,10 @@ class RobotGroupManager {
 
 	//! 线程终止条件
 	bool workerHealthy = true;
-	//! 指令处理线程
-	std::thread worker;
+	//! 指令处理线程, 状态更新线程
+	std::thread cmdThreadWorker, updateThreadWorker;
+	//! 指令线程状态
+	std::atomic<bool> cmdThreadDone;
 	//! 保存机器人状态
 	std::vector<RobotStatus> statusList;
 	//! RobotGroupManager 状态
@@ -448,6 +465,10 @@ class RobotGroupManager {
 	* @brief  指令处理线程
 	*/
 	void processCommandThread();
+	/** 
+	* @brief  状态更新线程
+	*/
+	void updateStatusThread();
 
 	void set_group_sync_config(int robotIdx);
 
@@ -478,9 +499,6 @@ class RobotGroupManager {
 	// 计算协同段总运动时间
 	int calc_sync_duration(int robotIdx);
 
-	// 轨迹分段
-	//int separate_trajectory(int robotIdx);
-
 	// 修正协同段轨迹速度
 	void correct_sync_speed();
 
@@ -510,7 +528,7 @@ public:
 	int set_shared_axis(int axisId, const std::vector<int>& robotId);
 
 	/**
-	* @brief  开启线程
+	* @brief  开启线程，开始管理机器人组状态
 	*/
 	int start_thread();
 
@@ -533,21 +551,27 @@ public:
 	bool robot_idle(int idx);
 
 	/**
-	* @brief  机器人组暂停
-	*/
-	int robot_group_pause(int idx);
-	/**
 	* @brief  机器人组继续
 	*/
 	int robot_group_resume(int idx);
+	int robot_group_resume(const std::vector<int>& idxList);
 	/**
 	* @brief  机器人组暂停
 	*/
+	int robot_group_pause(int idx);
 	int robot_group_pause(const std::vector<int>& idxList);
 	/**
 	* @brief  机器人组暂停后更新位置
 	*/
 	int robot_group_update_saved_pos(const std::vector<int>& idxList);
+	/**
+	* @brief  机器人组清空任务
+	*/
+	int robot_group_clear_task(int idx);
+	/**
+	* @brief  机器人组急停
+	*/
+	int robot_group_stop(int idx);
 };
 
 /**

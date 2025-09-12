@@ -6,6 +6,9 @@ add_executable(test_fsai_app# WIN32
 target_link_libraries(test_fsai_app PUBLIC
   fsai_app
 )
+set_target_properties(test_fsai_app
+  PROPERTIES WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,ON,OFF>
+)
 
 ##[[
 if (EXISTS "${QT5_DIR}/bin/windeployqt.exe")

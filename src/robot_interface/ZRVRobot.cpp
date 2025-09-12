@@ -1,4 +1,6 @@
 
+// Todo: 下发时读取ZAux_DirectCommand返回值，返回值 1002
+
 #include "robot_interface/ZRVRobot.h"
 
 #include "RobotLogger.h"
@@ -111,7 +113,11 @@ namespace FSAIRobotInterface {
 		return 0;
 	}
 	int ZRVRobot::moveJABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& end, const std::vector<int>& mask) {
-		return ZController->baseCMD(axis, "MOVERV_JABS", end);
+		
+		int num = (std::min)(axis.size(), end.size());
+		std::vector<float> cmdData(end.begin(), end.begin() + num);
+
+		return ZController->baseCMD(axis, "MOVERV_JABS", cmdData);
 	}
 
 	int ZRVRobot::moveL(const std::vector<int>& axis, const std::vector<float>& relMove, const std::vector<int>& mask) {
@@ -124,8 +130,9 @@ namespace FSAIRobotInterface {
 	}
 	int ZRVRobot::moveLABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& end, const std::vector<int>& mask) {
 		
+		int num = (std::min)(axis.size(), end.size());
 		std::vector<float> cmdData = { -1.0 };
-		cmdData.insert(cmdData.end(), end.begin(), end.end());
+		cmdData.insert(cmdData.end(), end.begin(), end.begin() + num);
 
 		return ZController->baseCMD(axis, "MOVERV_LABS", cmdData);
 
@@ -136,64 +143,71 @@ namespace FSAIRobotInterface {
 	}
 	int ZRVRobot::moveCABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) {
 
-		size_t num = (std::min)(beg.size(), axis.size());
-		num = (std::min)(num, mid.size());
+		int num = (std::min)(axis.size(), end.size());
+		std::vector<float> cmdData = { -1.0 };
+		cmdData.insert(cmdData.end(), mid.begin(), mid.begin() + 3);
+		cmdData.insert(cmdData.end(), end.begin(), end.begin() + 6);
 
-		// 中间点相对值
-		std::vector<float> relMidMove(num);
-		for (size_t i = 0; i < num; ++i) {
-			relMidMove[i] = mid[i] - beg[i];
-		}
+		return ZController->baseCMD(axis, "MOVERV_ARCABS", cmdData);
 
-		// 终点相对值
-		std::vector<float> relEndMove(num);
-		for (size_t i = 0; i < num; ++i) {
-			relEndMove[i] = end[i] - beg[i];
-		}
+		//size_t num = (std::min)(beg.size(), axis.size());
+		//num = (std::min)(num, mid.size());
 
-		// 欧拉角转换到相对运动: beg -> mid -> end
-		auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(beg[3], beg[4], beg[5]);
-		auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(mid[3], mid[4], mid[5]);
-		auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(end[3], end[4], end[5]);
-		// 欧拉角相对值
-		auto relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
-		for (size_t i = 0; i < 3; ++i) {
-			// 修正欧拉角
-			relEndMove[3 + i] = relEuler[i];
-		}
+		//// 中间点相对值
+		//std::vector<float> relMidMove(num);
+		//for (size_t i = 0; i < num; ++i) {
+		//	relMidMove[i] = mid[i] - beg[i];
+		//}
 
-		// 生成命令
-		char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
+		//// 终点相对值
+		//std::vector<float> relEndMove(num);
+		//for (size_t i = 0; i < num; ++i) {
+		//	relEndMove[i] = end[i] - beg[i];
+		//}
 
-		strcpy(cmdbuff, "BASE(");
-		for (size_t i = 0; i < num - 1; i++) {
-			// 轴屏蔽
-			if (mask.size() > i && mask[i] <= 0) {
-				continue;
-			}
+		//// 欧拉角转换到相对运动: beg -> mid -> end
+		//auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(beg[3], beg[4], beg[5]);
+		//auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(mid[3], mid[4], mid[5]);
+		//auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(end[3], end[4], end[5]);
+		//// 欧拉角相对值
+		//auto relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
+		//for (size_t i = 0; i < 3; ++i) {
+		//	// 修正欧拉角
+		//	relEndMove[3 + i] = relEuler[i];
+		//}
 
-			sprintf(tempbuff, "%d,", axis[i]);
-			strcat(cmdbuff, tempbuff);
-		}
-		sprintf(tempbuff, "%d)", axis[num - 1]);
-		strcat(cmdbuff, tempbuff);
-		strcat(cmdbuff, "\n");
+		//// 生成命令
+		//char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
-		sprintf(tempbuff, "MSPHERICALSP(%f,%f,%f,%f,%f,%f,%d", relEndMove[0], relEndMove[1], relEndMove[2], relMidMove[0], relMidMove[1], relMidMove[2], imode);
-		strcat(cmdbuff, tempbuff);
-		for (size_t i = 3; i < num; ++i) {
-			// 轴屏蔽
-			if (mask.size() > i && mask[i] <= 0) {
-				continue;
-			}
+		//strcpy(cmdbuff, "BASE(");
+		//for (size_t i = 0; i < num - 1; i++) {
+		//	// 轴屏蔽
+		//	if (mask.size() > i && mask[i] <= 0) {
+		//		continue;
+		//	}
 
-			sprintf(tempbuff, ",%f", relEndMove[i]);
-			strcat(cmdbuff, tempbuff);
-		}
-		strcat(cmdbuff, ")");
+		//	sprintf(tempbuff, "%d,", axis[i]);
+		//	strcat(cmdbuff, tempbuff);
+		//}
+		//sprintf(tempbuff, "%d)", axis[num - 1]);
+		//strcat(cmdbuff, tempbuff);
+		//strcat(cmdbuff, "\n");
 
-		//调用命令执行函数
-		return ZController->sendCmd(cmdbuff, cmdbuffAck);
+		//sprintf(tempbuff, "MSPHERICALSP(%f,%f,%f,%f,%f,%f,%d", relEndMove[0], relEndMove[1], relEndMove[2], relMidMove[0], relMidMove[1], relMidMove[2], imode);
+		//strcat(cmdbuff, tempbuff);
+		//for (size_t i = 3; i < num; ++i) {
+		//	// 轴屏蔽
+		//	if (mask.size() > i && mask[i] <= 0) {
+		//		continue;
+		//	}
+
+		//	sprintf(tempbuff, ",%f", relEndMove[i]);
+		//	strcat(cmdbuff, tempbuff);
+		//}
+		//strcat(cmdbuff, ")");
+
+		////调用命令执行函数
+		//return ZController->sendCmd(cmdbuff, cmdbuffAck);
 	}
 
 	int ZRVRobot::set_manual_speed(float ratio) {
@@ -254,12 +268,14 @@ namespace FSAIRobotInterface {
 			// 设置摆焊
 			update_swing_table(waveCfg);
 
+			ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
+
 			int swingMode = curTraj.isLine() ? 3 : 5;
 			ret = swing_on((trajectory.get_dist() - 0.00) / numPeriod, waveCfg, swingMode, zDir, nDir);
 			//ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
 
 			// 计算轴运动距离
-			ret += swing_off(trajectory.get_dist() - 0.00);
+			//ret += swing_off(trajectory.get_dist() - 0.00);
 		}
 
 		return 0;
@@ -363,11 +379,11 @@ namespace FSAIRobotInterface {
 	int ZRVRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 
 		// 未设置自动模式
-		//if (robotStatus.autoMode <= 0) {
-		//	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
-		//	set_upperStatus(0x10);
-		//	return -1;
-		//}
+		if (robotStatus.autoMode <= 0) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
+			set_upperStatus(0x10);
+			return -1;
+		}
 
 		// 轨迹为空
 		if (trajList.size() == 0) {
@@ -400,6 +416,7 @@ namespace FSAIRobotInterface {
 		auto curTraj = trajectory.get_curTraj();
 
 		std::vector<int> axis = get_composed_axis({ get_joint_axis(), robotConfig.appAxisIdx });
+		//std::vector<int> axis = get_joint_axis();
 
 		// 轴屏蔽
 		std::vector<int> mask(axis.size(), 1);
@@ -480,6 +497,7 @@ namespace FSAIRobotInterface {
 
 		int ret = 0;
 		std::vector<int> axis = get_composed_axis({ get_execute_axis(), robotConfig.appAxisIdx });
+		//std::vector<int> axis = get_tcp_axis();
 		std::vector<int> camAxis = get_cam_axis();
 
 		// 轴屏蔽
@@ -553,6 +571,7 @@ namespace FSAIRobotInterface {
 		if (waveCfg.Id > 0 && numPeriod > 0) {
 			// 正弦摆
 			if (waveCfg.Shape == 0) {
+
 				// 第一个1/4周期占用的相位角
 				float detQ = std::asin((waveCfg.LeftWidth - waveCfg.RightWidth) / (waveCfg.LeftWidth + waveCfg.RightWidth));
 				float rightPartial = 1.0 / numPeriod * (DT_PI / 2 - detQ) / (2 * DT_PI);
@@ -651,6 +670,7 @@ namespace FSAIRobotInterface {
 				//ZController->set_base_param(axis[0], "MOVE_WA", { 1.0 });
 				// 摆焊结束
 				//ret += swing_off(trajectory.get_dist() - 0.02);
+				ret += swing_off(trajectory.get_dist() - 0.00);
 			}
 		}
 		// 无摆焊，正常下发
@@ -670,7 +690,6 @@ namespace FSAIRobotInterface {
 		send_line_num(axis[0], trajectory.get_curTraj());
 		// 停止记录位置
 		save_task_status(false, axis[0]);
-
 
 		// 下发异常
 		if (ret == 0) {
@@ -720,6 +739,7 @@ namespace FSAIRobotInterface {
 		// 设定空间运动起点
 		if (preTraj.trajType == TrajType::None || (preTraj.isJoint() && !curTraj.isJoint())) {
 
+			// 保存缓冲目标位置，即空间运动指令的起点
 			TrajectoryPoint point;
 			point.trajType = TrajType::Line;
 			point.mainPoint = robotStatus.cPosBuffer;
@@ -750,6 +770,16 @@ namespace FSAIRobotInterface {
 			ret++;
 		}
 
+		//// 摆焊与不摆焊的切换
+		//Weave curSwingCfg = deserialize_Weave(curTraj.get_appendix());
+		//Weave preSwingCfg = deserialize_Weave(preTraj.get_appendix());
+		//// 当前段焊接，前一段空走
+		//if (curSwingCfg.Id > 0 && preSwingCfg.Id <= 0) {
+		//}
+		//// 当前段空走，前一段焊接
+		//else if (curSwingCfg.Id <= 0 && preSwingCfg.Id > 0) {
+		//}
+
 		// 第一条正逆解未切换
 		if (preTraj.trajType == TrajType::None) {
 			if (get_bit(state, 4) == 0) {
@@ -766,6 +796,15 @@ namespace FSAIRobotInterface {
 
 	}
 
+	int ZRVRobot::process_after_send_traj() {
+		
+		//// 无轨迹
+		//if (trajectory.trajectory_loaded())
+		//	return 0;
+
+		return 0;
+	}
+
 	int ZRVRobot::separate_trajectory() {
 		auto ite = trajectory.trajList.begin();
 
@@ -776,6 +815,107 @@ namespace FSAIRobotInterface {
 
 		// 计算轨迹参数
 		trajectory.calc_traj_info();
+
+		auto waveCfg = deserialize_Weave(ite->get_appendix());
+
+		// 无摆焊无需分段
+		if (waveCfg.Id <= 0)
+			return 1;
+
+		auto curTraj = trajectory.get_curTraj();
+		auto preTraj = trajectory.get_preTraj();
+
+		// 备份需要修改的运动参数
+		Move_Action moveCfgBk = deserialize_Move_Action(curTraj.get_appendix());
+
+		// 旋转角度小，用直线近似
+		Eigen::Vector3f dir = Eigen::Vector3f(trajectory.get_dir().data());
+		if (curTraj.isArc() && dir.norm() < 1e-2) {
+			ite->trajType = TrajType::Line;
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " convert to traj Line: " << (dir.norm() * 180 / DT_PI));
+			trajectory.calc_traj_info();
+		}
+
+		// 计算摆焊段数
+		int numPeriod = std::round(trajectory.get_dist() / (curTraj.get_speed() / waveCfg.Freq));
+
+		// 估计占用缓冲数
+		int bufferSize = 0;
+		if (curTraj.isArc()) {
+			bufferSize = 4 * numPeriod * (9 + 2);
+		}
+		else {
+			bufferSize = 4 * numPeriod * (1 + 2);
+		}
+
+		// 轨迹分段
+		float maxBuffSize = 1000.0;
+		if (bufferSize > maxBuffSize) {
+
+			// 轨迹段数，向上取整
+			int trajSize = std::ceil(bufferSize / maxBuffSize);
+
+			if (curTraj.isArc()) {
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " separated traj Arc : " << vector_to_string(curTraj.mainPoint) << ";\n"
+					<< "mid: " << vector_to_string(curTraj.auxPoint) << ".\n"
+					<< "traj separated to: " << trajSize << ", dist: " << trajectory.get_dist()
+				);
+			}
+			else {
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " separated traj Line : " << vector_to_string(curTraj.mainPoint) << ".\n"
+					<< "traj separated to: " << trajSize << ", dist: " << trajectory.get_dist()
+				);
+			}
+
+			float begPartial = 1.0 - 1.0 / trajSize, endPartial = 1.0;
+			auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 0);
+
+			auto traj = curTraj;
+			traj.mainPoint = segment.mainPoint;
+			traj.auxPoint = segment.auxPoint;
+			// 清空轨迹前动作
+			auto moveCfg = moveCfgBk;
+			moveCfg.actionBefore.clear();
+			traj.add_appendix(serialize_Move_Action(moveCfg));
+			// 修改当前轨迹(最后一段)
+			*ite = traj;
+
+			begPartial = 0.0, endPartial = 0.0;
+			for (size_t i = 0; i < trajSize - 1; ++i) {
+
+				begPartial = endPartial;
+				endPartial += 1.0 / trajSize;
+
+				// 轨迹分段
+				segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 0);
+
+				traj = curTraj;
+				traj.mainPoint = segment.mainPoint;
+				traj.auxPoint = segment.auxPoint;
+
+				auto moveCfg = moveCfgBk;
+				// 第一条轨迹
+				if (i == 0) {
+					// 清空轨迹后动作
+					moveCfg.actionAfter.clear();
+					traj.add_appendix(serialize_Move_Action(moveCfg));
+				}
+				else {
+					// 清空轨迹动作
+					moveCfg.actionBefore.clear();
+					moveCfg.actionAfter.clear();
+					traj.add_appendix(serialize_Move_Action(moveCfg));
+				}
+
+				// 插入新轨迹
+				trajectory.trajList.insert(ite, traj);
+
+			}
+
+			// 重新计算轨迹参数
+			trajectory.calc_traj_info();
+
+		}
 
 		return 0;
 	}
@@ -1088,6 +1228,8 @@ namespace FSAIRobotInterface {
 		// 世界坐标轴
 		axis = get_composed_axis({ get_tcp_axis(), robotConfig.appAxisIdx });
 		axisIdx.push_back(axis);
+		// 工具坐标轴
+		//axisIdx.push_back(axis);
 
 		int ret = 0;
 		if (type < 0 || type >= axisIdx.size() || idx < 0 || idx >= axisIdx[type].size()) {
@@ -1105,19 +1247,66 @@ namespace FSAIRobotInterface {
 			return 2;
 		}
 
-		// 关节点动
-		if (type == 0) {
-			if (dir == 0)
-				ZController->axis_stop({ axisIdx[1][0] }, 4);
-			else
-				ZController->baseCMD({ axisIdx[type][idx] }, "MOVERV_J", { static_cast<float>(359.9 *  dir) });
+		// 切换正逆解
+		if (type < 1) {
+			ret = switch_kinematics(1);
 		}
-		// 世界坐标点动
-		else if (type == 1) {
+		else {
+			ret = switch_kinematics(-1);
+		}
+		// 正逆解切换失败
+		if (ret != 0) {
+			return -2;
+		}
+
+		// VMOVE 点动
+		if (type < 2) {
 			ZController->axis_jog(axisIdx[type][idx], dir);
+		}
+		// MOVE 点动
+		else {
 		}
 
 		return ret;
+
+		//std::vector<std::vector<int>> axisIdx;
+		//std::vector<int> axis;
+		//// 关节轴
+		//axis = get_composed_axis({ get_joint_axis(), robotConfig.appAxisIdx });
+		//axisIdx.push_back(axis);
+		//// 世界坐标轴
+		//axis = get_composed_axis({ get_tcp_axis(), robotConfig.appAxisIdx });
+		//axisIdx.push_back(axis);
+
+		//int ret = 0;
+		//if (type < 0 || type >= axisIdx.size() || idx < 0 || idx >= axisIdx[type].size()) {
+		//	return -1;
+		//}
+
+		//// 未处于手动模式
+		//if (robotStatus.autoMode > 0) {
+		//	robotStatus.upperStatus |= 0x10;
+		//	return 1;
+		//}
+		//// 暂停状态下不可移动附加轴
+		//if ((robotStatus.lowerStatus & 0x02) == 1 && idx > 5) {
+		//	robotStatus.upperStatus |= 0x04;
+		//	return 2;
+		//}
+
+		//// 关节点动
+		//if (type == 0) {
+		//	if (dir == 0)
+		//		ZController->axis_stop({ axisIdx[1][0] }, 4);
+		//	else
+		//		ZController->baseCMD({ axisIdx[type][idx] }, "MOVERV_J", { static_cast<float>(359.9 *  dir) });
+		//}
+		//// 世界坐标点动
+		//else if (type == 1) {
+		//	ZController->axis_jog(axisIdx[type][idx], dir);
+		//}
+
+		//return ret;
 	}
 
 	int ZRVRobot::save_task_status(bool enable, int inBuffer) {
@@ -1461,7 +1650,7 @@ namespace FSAIRobotInterface {
 
 		float vectorBuffered2 = 0.0;
 		ZController->get_axis_param(axis[0], "VECTOR_BUFFERED2", vectorBuffered2);
-		vectorBuffered2 += displacement;
+		//vectorBuffered2 += displacement;
 
 		//生成命令
 		sprintf(cmdbuff, "BASE(%d,%d,%d)\nCONN_SWING(%d,%d,%f)",
@@ -1635,6 +1824,29 @@ namespace FSAIRobotInterface {
 		}
 
 		return ans;
+	}
+
+	int ZRVRobot::switch_kinematics(int mode, int retry) {
+		int stateIdxBase = get_state_idx_base();
+		int ret = 0, curFkMode = stateIdxBase + 2, fkCmd = stateIdxBase + 51;
+		float readVal;
+
+		for (size_t i = 0; i < retry + 1; ++i) {
+
+			// 当前正逆解状态
+			ret = ZController->get_axis_param(curFkMode, "TABLE", readVal);
+
+			// 判断是否切换完成
+			if (std::fabs(readVal - mode) < 0.1) {
+				return ret;
+			}
+
+			// 切换一次正逆解
+			ret = ZController->set_axis_param(fkCmd, "TABLE", mode);
+
+		}
+
+		return -1;
 	}
 
 

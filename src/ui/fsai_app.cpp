@@ -5,8 +5,9 @@
 #include <chrono>
 #include <iostream>
 
-#include<QFileDialog> // 打开文件浏览器选择文件
-#include <QTextCodec> // 中文路径
+#include <QFileDialog> // 打开文件浏览器选择文件
+#include <QTextCodec>  // 中文路径
+#include <QtNetwork/QHostAddress>
 
 #include "robot_interface/ZMotionRobot.h"
 #include "robot_interface/ZRVRobot.h"
@@ -39,28 +40,22 @@ void Worker::doWork() {
 
 	while (workerHealthy) {
 		
-		// 修改主界面状态
+		// --- 修改主界面状态
 		FSAIRobotInterface::RobotStatus status;
 		group.robotList[0]->get_rt_robot_status(status);
+
+		// 机器人当前位置
 		displayData->jPos = status.jPos;
 		displayData->cPos = status.cPos;
 
 		// 手自动模式
 		FSAIRobotInterface::set_bit(displayData->robotMode[0], 0, status.autoMode > 0);
 
-		// 运行状态
+		// 运行状态复位
 		displayData->runStatus[0] = 0;
 		// 在线/离线
 		if (!FSAIRobotInterface::get_bit(status.lowerStatus, 6)) {
 			FSAIRobotInterface::set_bit(displayData->runStatus[0], 0, true);
-		}
-		// 异常
-		if (status.lowerStatus >> 2) {
-			FSAIRobotInterface::set_bit(displayData->runStatus[0], 4, true);
-		}
-		// 暂停 / 警告
-		if (FSAIRobotInterface::get_bit(status.lowerStatus, 1)) {
-			FSAIRobotInterface::set_bit(displayData->runStatus[0], 3, true);
 		}
 		// 空闲 / 运行中
 		if (FSAIRobotInterface::get_bit(status.lowerStatus, 0)) {
@@ -69,11 +64,30 @@ void Worker::doWork() {
 		else {
 			FSAIRobotInterface::set_bit(displayData->runStatus[0], 1, true);
 		}
+		// 暂停 / 警告
+		if (FSAIRobotInterface::get_bit(status.lowerStatus, 1)) {
+			FSAIRobotInterface::set_bit(displayData->runStatus[0], 3, true);
+		}
+		// 下位机异常
+		if (status.lowerStatus >> 2) {
+			FSAIRobotInterface::set_bit(displayData->runStatus[0], 4, true);
+		}
+		// 上位机异常
+		if (status.upperStatus > 0) {
+			FSAIRobotInterface::set_bit(displayData->runStatus[0], 5, true);
+		}
+
+		// 下位机异常码
+		displayData->LErrCode[0] = status.lowerStatus;
+		// 上位机异常码
+		displayData->UErrCode[0] = status.upperStatus;
 
 		// IO 状态
 
 		// 触发线程刷新
 		emit update_data(*displayData);
+
+		// --- 循环执行标志置位，触发任务下发
 
 		// 设置下次唤醒时间
 		wakeUpTime += std::chrono::milliseconds(duration);
@@ -108,7 +122,6 @@ FSAIApp::FSAIApp() {
 	// 资源初始化
 	// 主窗口
 	mainWindow = std::shared_ptr<MainWindow>(new MainWindow);
-	//mainWindow->setWindowFlags(mainWindow->windowFlags() | Qt::Window);
 	// 全局配置窗口
 	advanceWindow = std::shared_ptr<AdvanceConfigWindow>(new AdvanceConfigWindow);
 	// 工艺窗口
@@ -136,6 +149,7 @@ FSAIApp::FSAIApp() {
 		robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::FSAIRobot);
 
 
+	// 默认连接
 	ZController->lazy_connect();
 	robot->set_aliasId(0);
 	robot->set_ZController(ZController);
@@ -451,15 +465,43 @@ void FSAIApp::connect_slot() {
 		ZController->disconnect();
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-		// 建立新连接
-		int ret = ZController->lazy_connect();
+		QString address = mainWindow->ui->comboBox->currentText();
+		int ret = 0;
+		// 数字
+		bool isNum = true;
+		int cardId = address.toInt(&isNum);
+		// IP 地址
+		QHostAddress ipAddr(address.trimmed());
+
+		// 自动连接
+		if (address.isEmpty()) {
+			ret = ZController->lazy_connect();
+		}
+		// IP 连接
+		else if (ipAddr.protocol() == QAbstractSocket::IPv4Protocol) {
+			ret = ZController->connect_eth(ipAddr.toString().toStdString().c_str());
+		}
+		// 750 连接
+		else if (address == "LOCAL") {
+			ret = ZController->connect_pci(0, true, true);
+		}
+		// PCI 连接
+		else if (isNum) {
+			ret = ZController->connect_pci(cardId, false, true);
+		}
+		// 连接异常
+		else {
+			mainWindow->ui->textBrowser->append("Connection Address illegal.");
+			ret = 1;
+		}
+
+		// 连接失败
 		if (ret) {
 			mainWindow->ui->textBrowser->append("Connect to controller failed");
 			return;
 		}
-		else {
-			mainWindow->ui->textBrowser->append("Connect to controller successful");
-		}
+
+		mainWindow->ui->textBrowser->append("Connect to controller successful: " + address);
 		group.robotList[0]->set_ZController(ZController, group.robotList[0]->get_robotId());
 
 	});
@@ -487,6 +529,7 @@ void FSAIApp::connect_slot() {
 	QObject::connect(mainWindow->ui->pushButton_10, &QPushButton::pressed, this, [&]() {
 		// 清除任务
 		group.robotList[worker->displayData->selectedRobot]->task_stop();
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		// 使能
 		group.robotList[worker->displayData->selectedRobot]->switch_enable(true);
 	});
@@ -494,13 +537,13 @@ void FSAIApp::connect_slot() {
 	// 重启机器人
 	QObject::connect(mainWindow->ui->pushButton_11, &QPushButton::pressed, this, [&]() {
 		if (worker->displayData->interpAlgo == 0) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZMotionRobot.zar");
+			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZMotionRobot.zar", 0);
 		}
 		else if (worker->displayData->interpAlgo == 1) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZRVRobot.zar");
+			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZRVRobot.zar", 0);
 		}
 		else if (worker->displayData->interpAlgo == 2) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/FSAIRobot.zar");
+			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/FSAIRobot.zar", 0);
 		}
 	});
 
@@ -559,28 +602,28 @@ void FSAIApp::connect_slot() {
 		}
 
 		DiscreteTrajectory traj;
-
 		append_teached_trajectory(row, traj);
-
 		int ret = group.robotList[0]->push_new_trajectory(traj);
 		if (ret)
 			mainWindow->ui->textBrowser->append("send traj error: " + QString::number(ret));
 
-
 	});
-	// 暂停
+	// 暂停/继续
 	QObject::connect(mainWindow->ui->pushButton_5, &QPushButton::pressed, this, [&]() {
 		// 当前处于暂停状态
 		if (FSAIRobotInterface::get_bit(worker->displayData->runStatus[0], 3)) {
-			group.robotList[worker->displayData->selectedRobot]->task_resume();
+			//group.robotList[worker->displayData->selectedRobot]->task_resume();
+			group.robot_group_resume(worker->displayData->selectedRobot);
 		}
 		else {
-			group.robotList[worker->displayData->selectedRobot]->task_pause();
+			//group.robotList[worker->displayData->selectedRobot]->task_pause();
+			group.robot_group_pause(worker->displayData->selectedRobot);
 		}
 	});
 	// 停止
 	QObject::connect(mainWindow->ui->pushButton_6, &QPushButton::pressed, this, [&]() {
-		group.robotList[worker->displayData->selectedRobot]->emergency_stop();
+		//group.robotList[worker->displayData->selectedRobot]->emergency_stop();
+		group.robot_group_stop(worker->displayData->selectedRobot);
 	});
 
 	// 记录示教点
@@ -606,7 +649,8 @@ void FSAIApp::connect_slot() {
 
 		// 下发指令，获取返回值
 		std::string ack;
-		int ret = group.robotList[0]->send_command(cmd.toStdString(), ack);
+		std::string cmdString = cmd.toStdString();
+		int ret = group.robotList[0]->send_command(cmd.toStdString(), ack, 0);
 
 		if (ret)
 			mainWindow->ui->textBrowser->append("error return: " + QString::number(ret));
@@ -619,7 +663,7 @@ void FSAIApp::connect_slot() {
 
 		// 下发指令，获取返回值
 		std::string ack;
-		int ret = group.robotList[0]->send_command(cmd.toStdString(), ack);
+		int ret = group.robotList[0]->send_command(cmd.toStdString(), ack, 0);
 		if (ret)
 			mainWindow->ui->textBrowser->append("error return: " + QString::number(ret));
 		else
@@ -1007,6 +1051,33 @@ int FSAIApp::insert_teach_point_config_button(const std::vector<int>& idxList) {
 			procedureWindow->show();
 			procedureWindow->activateWindow();
 
+		});
+
+		// 轨迹类型
+		QComboBox* typeComboBox = (QComboBox*)(mainWindow->ui->tableWidget->cellWidget(row, 1));
+		QObject::connect(typeComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, [&](int idx) {
+			int row = mainWindow->ui->tableWidget->currentRow();
+			// 下一条运动类型为圆弧终点
+			if (idx == 2 && row + 1 < mainWindow->ui->tableWidget->rowCount()) {
+				QWidget* preItem = mainWindow->ui->tableWidget->cellWidget(row + 1, 1);
+				((QComboBox*)preItem)->setCurrentIndex(-1);
+			}
+			// 如果上一条运动为圆弧中间点，则当前类型为圆弧终点
+			if (row > 0) {
+				QWidget* preItem = mainWindow->ui->tableWidget->cellWidget(row - 1, 1);
+				if (((QComboBox*)preItem)->currentIndex() == 2) {
+					QWidget* preItem = mainWindow->ui->tableWidget->cellWidget(row, 1);
+					((QComboBox*)preItem)->setCurrentIndex(-1);
+				}
+			}
+			// 没有下一条轨迹则无法设置为圆弧中间点
+			if (row + 1 >= mainWindow->ui->tableWidget->rowCount()) {
+				QWidget* curItem = mainWindow->ui->tableWidget->cellWidget(row, 1);
+				if (((QComboBox*)curItem)->currentIndex() == 2) {
+					mainWindow->ui->textBrowser->append("Record end point of arc trajectory first");
+					((QComboBox*)curItem)->setCurrentIndex(0);
+				}
+			}
 		});
 	}
 	return 0;

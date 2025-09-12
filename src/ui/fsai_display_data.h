@@ -18,8 +18,10 @@ struct MainWindowDisplayData {
 
 	// 运行状态: <在线, 空闲, 运行, 警告, 异常>
 	std::vector<int> runStatus = { 0,0,0,0 };
-	// 机器人状态
-	//std::vector<int> errorStatus = { 0,0,0,0 };
+	// 下位机异常码
+	std::vector<int> LErrCode = { 0,0,0,0 };
+	// 上位机异常码
+	std::vector<int> UErrCode = { 0,0,0,0 };
 	// 机器人运行状态 <手动/自动>
 	std::vector<int> robotMode = { 0,0,0,0 };
 

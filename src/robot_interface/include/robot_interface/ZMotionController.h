@@ -89,6 +89,12 @@ public:
 	int controller_reboot();
 
 	/**
+	* @brief 保存设备信息
+	*
+	* 如控制卡型号，固件版本，节点数等
+	*/
+	int save_device_info();
+	/**
 	* @brief load_basic_project
 	*        烧录 basic 工程到控制器
 	* @param basPath    basic 程序路径
@@ -175,6 +181,13 @@ public:
 	int set_base_param(int axis, const char* paramName, const std::vector<float>& value);
 
 	int set_axis_connect(const std::vector<int>& master, const std::vector<int>& slave, const std::vector<float>& ratio);
+
+	/**
+	* @brief 轴叠加
+	* @param axis      被叠加轴
+	* @param addAxis   叠加轴
+	*/
+	int addax(const std::vector<int>& axis, const std::vector<int>& addAxis);
 
 	/**
 	* @brief 读取寄存器值

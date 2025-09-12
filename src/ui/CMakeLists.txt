@@ -1,6 +1,6 @@
 
 set(QT5_DIR "D:/Qt/Qt5.12.8/5.12.8/msvc2017_64")
-find_package(Qt5 PATHS "${QT5_DIR}/lib/cmake/Qt5" REQUIRED COMPONENTS Core Widgets LinguistTools Concurrent)
+find_package(Qt5 PATHS "${QT5_DIR}/lib/cmake/Qt5" REQUIRED COMPONENTS Core Widgets LinguistTools Concurrent Network)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -17,6 +17,7 @@ target_link_libraries(qt_ui PUBLIC
   Qt5::Gui
   Qt5::Widgets
   Qt5::Concurrent
+  Qt5::Network
 )
 target_include_directories(qt_ui PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/qt_ui_autogen/include$<$<BOOL:${CMAKE_CONFIGURATION_TYPES}>:_$<CONFIG>>>"

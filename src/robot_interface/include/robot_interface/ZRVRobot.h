@@ -93,6 +93,8 @@ public:
 	int device_operation() override;
 
 	/* *************************** 可修改接口 *************************** */
+	// 轨迹下发后处理
+	int process_after_send_traj() override;
 
 private:
 
@@ -117,6 +119,9 @@ public:
 	int swing_off(float displacement);
 
 	TrajectoryPoint partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode);
+
+	int switch_kinematics(int mode, int retry = 10);
+
 };
 
 } // namespace FSAIRobotInterface

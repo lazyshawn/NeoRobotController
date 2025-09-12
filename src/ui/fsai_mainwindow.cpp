@@ -38,6 +38,12 @@ MainWindow::~MainWindow(){
 void MainWindow::set_up_ui() {
 
 	/* ********************** 控制页面 ********************** */
+	// 连接地址
+	ui->comboBox->addItem("LOCAL");
+	ui->comboBox->addItem("127.0.0.1");
+	ui->comboBox->addItem("192.168.1.14");
+	ui->comboBox->addItem("0");
+	// 急停按钮
 	ui->pushButton_34->setStyleSheet("font-weight: bold;border - radius: 10px;");
 
 	/* ********************** 点动页面 ********************** */
@@ -220,6 +226,16 @@ void MainWindow::update_display(const MainWindowDisplayData& data) {
 	// 异常
 	if ((curRunStatus >> 4) % 2) {
 		runStatusLabel += "\nError";
+		ui->pushButton_30->setStyleSheet("background-color: rgb(255,0,0)");
+	}
+	// 下位机异常
+	if (data.LErrCode[0] >> 2) {
+		runStatusLabel += "\nL" + QString::number(data.LErrCode[0]);
+		ui->pushButton_30->setStyleSheet("background-color: rgb(255,0,0)");
+	}
+	// 上位机异常
+	if (data.UErrCode[0] > 0) {
+		runStatusLabel += "\nU" + QString::number(data.UErrCode[0]);
 		ui->pushButton_30->setStyleSheet("background-color: rgb(255,0,0)");
 	}
 	// 改用 mouseMoveEvent

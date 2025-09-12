@@ -233,38 +233,59 @@ int ZMotionRobot::update_swing_config() {
 	Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
 
 	bool sendPlainTraj = false;
-	// 修改摆动参数
-	int numPeriod = get_swing_num();
-	if (waveCfg.Id > 0 && numPeriod > 0 && waveCfg.Shape == 0) {
-		// 计算旋转平面方向
-		auto trajInfo = calc_traj_info(prePoint, midPoint, curPoint, curTraj.isArc());
-		std::vector<float> nDir = { trajInfo[4], trajInfo[5], trajInfo[6] };
-		double norm = std::sqrt(nDir[0] * nDir[0] + nDir[1] * nDir[1] + nDir[2] * nDir[2]);
-		for (size_t i = 0; i < nDir.size(); ++i) {
-			nDir[i] /= norm;
+	// 摆焊开启
+	if (waveCfg.Id > 0) {
+		// 正弦摆
+		if (waveCfg.Shape == 0) {
+			// 修改摆动参数
+			int numPeriod = get_swing_num();
+
+			// 摆焊周期数大于0
+			if (numPeriod > 0) {
+				// 计算旋转平面方向
+				auto trajInfo = calc_traj_info(prePoint, midPoint, curPoint, curTraj.isArc());
+				std::vector<float> nDir = { trajInfo[4], trajInfo[5], trajInfo[6] };
+				double norm = std::sqrt(nDir[0] * nDir[0] + nDir[1] * nDir[1] + nDir[2] * nDir[2]);
+				for (size_t i = 0; i < nDir.size(); ++i) {
+					nDir[i] /= norm;
+				}
+
+				// 点位转到世界坐标系
+				auto wCPos = prePoint;
+				cpos_base_to_world(wCPos);
+
+				// 计算摆焊方向
+				std::vector<float> zDir(3), zEuler = { static_cast<float>(wCPos[3] * DT_PI / 180),
+					static_cast<float>(wCPos[4] * DT_PI / 180), static_cast<float>(wCPos[5] * DT_PI / 180) };
+
+				zDir[0] = sin(zEuler[2]) * sin(zEuler[0]) + cos(zEuler[2]) * cos(zEuler[0]) * sin(zEuler[1]);
+				zDir[1] = cos(zEuler[0]) * sin(zEuler[2]) * sin(zEuler[1]) - cos(zEuler[2]) * sin(zEuler[0]);
+				zDir[2] = cos(zEuler[0]) * cos(zEuler[1]);
+
+				// 设置摆焊
+				update_swing_table(waveCfg);
+
+				ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
+
+				int swingMode = curTraj.isLine() ? 3 : 5;
+				//ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
+				ret = swing_on((trajectory.get_dist() - 0.00) / numPeriod, waveCfg, swingMode, zDir, nDir);
+
+				// 计算轴运动距离
+				//ret += swing_off(trajectory.get_dist() - 0.02);
+
+			}
 		}
+		// 三角摆
+		else if (waveCfg.Shape == 3) {
 
-		// 点位转到世界坐标系
-		auto wCPos = prePoint;
-		cpos_base_to_world(wCPos);
+		}
+	}
 
-		// 计算摆焊方向
-		std::vector<float> zDir(3), zEuler = { static_cast<float>(wCPos[3] * DT_PI / 180),
-			static_cast<float>(wCPos[4] * DT_PI / 180), static_cast<float>(wCPos[5] * DT_PI / 180) };
-
-		zDir[0] = sin(zEuler[2]) * sin(zEuler[0]) + cos(zEuler[2]) * cos(zEuler[0]) * sin(zEuler[1]);
-		zDir[1] = cos(zEuler[0]) * sin(zEuler[2]) * sin(zEuler[1]) - cos(zEuler[2]) * sin(zEuler[0]);
-		zDir[2] = cos(zEuler[0]) * cos(zEuler[1]);
-
-		// 设置摆焊
-		update_swing_table(waveCfg);
-
-		int swingMode = curTraj.isLine() ? 3 : 5;
-		//ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
-		ret = swing_on((trajectory.get_dist() - 0.00) / numPeriod, waveCfg, swingMode, zDir, nDir);
-
-		// 计算轴运动距离
-		//ret += swing_off(trajectory.get_dist() - 0.02);
+	if (waveCfg.Id > 0 && !sendPlainTraj) {
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Update swing config: " <<
+			vector_to_string(serialize_Weave(waveCfg).second, 2)
+		);
 	}
 
 	return 0;
@@ -548,6 +569,11 @@ int ZMotionRobot::execute_single_cartesian() {
 		ZController->set_axis_param(axis[0], "ZSMOOTH", curTraj.get_smooth());
 	// 设置速度
 	ZController->set_axis_param(axis[0], "FORCE_SPEED", curTraj.get_speed());
+	// 修改加速度
+	Weave preWaveCfg = deserialize_Weave(curTraj.get_appendix());
+	// 前一条摆焊，当前不摆焊
+	if (preWaveCfg.Id > 0 && waveCfg.Id <= 0) {
+	}
 
 	// 开始记录位置
 	save_task_status(true, axis[0]);
@@ -1811,9 +1837,9 @@ int ZMotionRobot::swing_on(float dist, const Weave& waveCfg, int mode, const std
 	//调用命令执行函数
 	ZController->sendCmd(cmdbuff, cmdbuffAck);
 
-	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Update swing config: " <<
-		vector_to_string(serialize_Weave(waveCfg).second, 2)
-	);
+	//LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Update swing config: " <<
+	//	vector_to_string(serialize_Weave(waveCfg).second, 2)
+	//);
 
 	return ret;
 }

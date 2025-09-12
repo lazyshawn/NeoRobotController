@@ -142,15 +142,23 @@ int Controller::connect_pci(uint32 cardNum, bool local, bool log) {
 }
 
 int Controller::lazy_connect() {
-	if (this->connect_eth((char *)"127.0.0.1") == 0) {
+	// 750
+	if (this->connect_pci(0, true, true) == 0) {
 		return 0;
 	}
+	// 仿真器
+	else if (this->connect_eth((char *)"127.0.0.1") == 0) {
+		return 0;
+	}
+	// 默认实体控制卡 IP
 	else if (this->connect_eth((char *)"192.168.1.14") == 0) {
 		return 0;
 	}
+	// 协作臂 IP
 	else if (this->connect_eth((char *)"169.254.180.11") == 0) {
 		return 0;
 	}
+	// PCI 卡
 	else if (this->connect_pci(0) == 0) {
 		return 0;
 	}
@@ -472,6 +480,18 @@ int Controller::set_axis_connect(const std::vector<int>& master, const std::vect
 	}
 
 	return 0;
+}
+
+
+int Controller::addax(const std::vector<int>& axis, const std::vector<int>& addAxis) {
+	int ret = 0;
+	int num = (std::min)(axis.size(), addAxis.size());
+
+	for (size_t i = 0; i < num; ++i) {
+		ret = ZAux_Direct_Single_Addax(handle, axis[i], addAxis[i]);
+	}
+	
+	return ret;
 }
 
 int Controller::get_register(int start, int numes, std::vector<float>& pfValue, int type) {

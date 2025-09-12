@@ -219,6 +219,8 @@ public:
 	// 迭代器移动到下一条轨迹
 	int next();
 	void clear();
+	// 当前轨迹是最后一条
+	bool atLast() const;
 	// 获取当前轨迹
 	SingleTrajectory get_curTraj() const;
 	// 获取上一条轨迹
