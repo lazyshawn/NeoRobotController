@@ -79,22 +79,31 @@ private:
 	QThread workerThread;
 	Worker *worker;
 
-	// 
+	// 控制卡句柄
 	std::shared_ptr<FSAIRobotInterface::Controller> ZController;
-	std::shared_ptr<FSAIRobotInterface::RobotBase> robot;
 
 	void connect_slot();
 	std::vector<float> read_list_from_tableWidget(const QTableWidget* table, int row, const std::vector<int>& idxList);
 
+	// 获取需要操作的机器人ID
+	std::vector<int> get_selected_robot_idx();
+
 	// 显示工艺参数
 	void display_procedure_data(int procIdx, int cmdIdx);
+	// 保存工艺参数
 	void save_procedure_data();
-
-	// 执行示教轨迹
-	void append_teached_trajectory(int row, DiscreteTrajectory& traj);
 
 	// 插入示教点参数设置按钮
 	int insert_teach_point_config_button(const std::vector<int>& idxList);
+
+	// 加载示教点
+	int display_teach_point(const std::string& teachPointStr);
+
+	// 示教点转为轨迹类
+	int teach_point_to_trajectory(const std::string teachPointStr, int row, DiscreteTrajectory& traj);
+
+	// 示教点保存
+	int save_teach_point(const std::vector<int> rowList, std::string& result);
 
 	// 保存工程
 	int save_project(std::string fileName);
@@ -104,7 +113,8 @@ public:
 	~FSAIApp();
 
 signals:
-	void startWork(); // 触发Worker开始工作的信号
+	// 触发Worker开始工作的信号
+	void startWork();
 
 public slots:
 	//void switch_online();

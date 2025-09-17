@@ -18,8 +18,6 @@ namespace FSAIRobotInterface {
  */
 struct RobotConfig {
 	// 机器人配置参数
-	// 耦合比
-	bool couple;
 	// 连杆参数: LargeZ,L1,L2,L3,L4,D5,DiffY
 	std::vector<float> linkLength = {};
 	// 编码器位数
@@ -30,6 +28,8 @@ struct RobotConfig {
 	std::vector<float> transRatioNumerator = {};
 	// 减速比分母
 	std::vector<float> transRatioDenominator = {};
+	// 耦合比
+	std::vector<float> couplingConfig = {};
 	// TCP 参数: SmalLX,SmalLY,SmalLZ,InitRx,InitRy,InitRz(更新tcp)
 	std::vector<float> eefPose = {}, tcpPose = {};
 	// 关节上限位(更改)
@@ -146,6 +146,7 @@ struct RobotStatus {
 	std::vector<int> encoder = {};        // 编码器值
 	std::vector<float> posOffset = {};    // 随动偏移
 	std::vector<float> cPosR = {};        // 机器人坐标系位置
+	std::vector<float> subErrorCode = {}; // 异常码辅码
 
 	RobotStatus() {};
 	~RobotStatus() {};
@@ -231,6 +232,8 @@ public:
 	inline int get_lineNum() {
 		return cmdNum;
 	}
+	std::vector<int> get_joint_axis();
+	std::vector<int> get_axis_idx();
 
 	//! 唤醒等待中的线程
 	int notify_waiting_robot();
@@ -246,6 +249,14 @@ public:
 	int get_rt_robot_status(RobotStatus& status);
 	//! 获取保存的机器人配置参数
 	int get_register_config(RobotConfig& config);
+	/**
+	* @brief 读取VR寄存器中的配置参数
+	*/
+	int read_register_config();
+	/**
+	* @brief 更新VR寄存器中的配置参数
+	*/
+	int write_register_config(const RobotConfig& config);
 	/**
 	* @brief 屏蔽共用附加轴
 	* @param axis       屏蔽轴号
@@ -298,6 +309,13 @@ public:
 
 	// 获取自定义的下位机缓存数据: 如电弧跟踪、激光跟踪数据
 	int get_slave_buffer();
+
+	/**
+	* @brief  单轴使能
+	* @param  enable      运动类型
+	* @param  action    运动参数
+	*/
+	int single_axis_enable(bool enable, int axis = -1);
 
 	/* *************************** 底层可修改接口 *************************** */
 	/**
@@ -373,11 +391,11 @@ public:
 	/**
 	* @brief 读取VR寄存器中的配置参数
 	*/
-	virtual int read_register_config() = 0;
+	//virtual int read_register_config() = 0;
 	/**
 	* @brief 更新VR寄存器中的配置参数
 	*/
-	virtual int write_register_config(const RobotConfig& config) = 0;
+	//virtual int write_register_config(const RobotConfig& config) = 0;
 	virtual int read_saved_status(RobotStatus& status) = 0;
 
 	virtual int get_local_world_dpos(std::vector<float>& dpos) = 0;

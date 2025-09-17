@@ -19,12 +19,13 @@ int ZMotionRobot::update_rt_robot_status() {
 	RobotStatus tmp;
 	// !减少读取次数，优化读取速度
 	std::vector<float> value;
-	std::vector<int> idx(50, stateIdxBase);
-	for (size_t i = 0; i < idx.size(); ++i) {
-		idx[i] += i;
-	}
+	//std::vector<int> idx(50, stateIdxBase);
+	//for (size_t i = 0; i < idx.size(); ++i) {
+	//	idx[i] += i;
+	//}
+	//ZController->get_axis_param(idx, "TABLE", value);
+	ZController->get_register(stateIdxBase, 50, value);
 
-	ZController->get_axis_param(idx, "TABLE", value);
 	// 运动状态
 	tmp.lowerStatus = static_cast<int>(value[0]);
 	// 手动/自动模式
@@ -33,8 +34,8 @@ int ZMotionRobot::update_rt_robot_status() {
 	tmp.fkMode = static_cast<int>(value[2]);
 	// 运动行号
 	tmp.lineNum = static_cast<int>(value[3]);
-	// 轨迹编号
-	//tmp.cmdNum = static_cast<int>(value[7]);
+	// 轨迹指令编号
+	tmp.cmdNum = static_cast<int>(value[7]);
 	// 关节位置
 	tmp.jPos = std::vector<float>(value.begin() + 10, value.begin() + 16);
 	tmp.jPos.insert(tmp.jPos.end(), value.begin() + 22, value.begin() + 25);
@@ -87,7 +88,7 @@ int ZMotionRobot::get_all_robot_status(RobotStatus& status) {
 	axis = get_composed_axis({ get_robot_tcp_axis(), robotConfig.appAxisIdxRead });
 	ZController->get_axis_param(axis, "DPOS", status.cPosR);
 	// 编码器值
-	axis = get_composed_axis({ get_joint_axis(), robotConfig.appAxisIdxRead });
+	axis = get_composed_axis({ get_axis_idx(), robotConfig.appAxisIdxRead });
 	ZController->get_axis_param(axis, "ENCODER", value);
 	status.encoder = std::vector<int>(value.size(), 0);
 	for (size_t i = 0; i < axis.size(); ++i) {
@@ -239,6 +240,8 @@ int ZMotionRobot::update_swing_config() {
 		if (waveCfg.Shape == 0) {
 			// 修改摆动参数
 			int numPeriod = get_swing_num();
+			// 停留1ms，减小抖动
+			ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
 
 			// 摆焊周期数大于0
 			if (numPeriod > 0) {
@@ -265,7 +268,7 @@ int ZMotionRobot::update_swing_config() {
 				// 设置摆焊
 				update_swing_table(waveCfg);
 
-				ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
+				//ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
 
 				int swingMode = curTraj.isLine() ? 3 : 5;
 				//ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
@@ -275,6 +278,7 @@ int ZMotionRobot::update_swing_config() {
 				//ret += swing_off(trajectory.get_dist() - 0.02);
 
 			}
+
 		}
 		// 三角摆
 		else if (waveCfg.Shape == 3) {
@@ -400,8 +404,8 @@ int ZMotionRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 
 	// 轨迹预处理
 	// 按主从标定矩阵，将世界坐标系姿态转换为基坐标系姿态
-	//auto rotMat = robotConfig.get_slave_calibratino_mat().inverse();
-	//trajList.apply_rotate(rotMat);
+	auto rotMat = robotConfig.get_slave_calibratino_mat().inverse();
+	trajList.apply_rotate(rotMat);
 
 	std::unique_lock<std::mutex> lock(mtx);
 	// 等待条件置反
@@ -570,9 +574,13 @@ int ZMotionRobot::execute_single_cartesian() {
 	// 设置速度
 	ZController->set_axis_param(axis[0], "FORCE_SPEED", curTraj.get_speed());
 	// 修改加速度
-	Weave preWaveCfg = deserialize_Weave(curTraj.get_appendix());
-	// 前一条摆焊，当前不摆焊
-	if (preWaveCfg.Id > 0 && waveCfg.Id <= 0) {
+	Weave preWaveCfg = deserialize_Weave(preTraj.get_appendix());
+	// 前一条不摆焊，当前摆焊，修改加速度
+	if (preWaveCfg.Id <= 0 && waveCfg.Id > 0) {
+		execute_move_action({ { 7, { 1 } } }, 0);
+	}
+	else if (preWaveCfg.Id > 0 && waveCfg.Id <= 0) {
+		execute_move_action({ { 7, { 2 } } }, 0);
 	}
 
 	// 开始记录位置
@@ -1104,223 +1112,6 @@ int ZMotionRobot::separate_trajectory() {
 }
 
 /* *************************** 上层自定义接口 *************************** */
-/**
-* @brief 读取VR寄存器中的配置参数
-*/
-int ZMotionRobot::read_register_config() {
-	int cfgIdxBase = get_config_idx_base();
-	int ret = 0;
-	std::vector<int> configIdx;
-	std::vector<float> readValue;
-
-	// 连杆长度
-	configIdx = std::vector<int>(12, cfgIdxBase + 2);
-	for (size_t i = 0; i < configIdx.size(); ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", readValue);
-	robotConfig.linkLength = std::vector<float>(configIdx.size(), 0);
-	for (size_t i = 0; i < configIdx.size(); ++i) {
-		robotConfig.linkLength[i] = readValue[i];
-	}
-
-	// 附加轴编号
-	configIdx = { cfgIdxBase + 205, cfgIdxBase + 206, cfgIdxBase + 207, cfgIdxBase + 208, cfgIdxBase + 209, cfgIdxBase + 210 };
-	ret = ZController->get_axis_param(configIdx, "VR", readValue);
-	robotConfig.appAxisIdx.resize(3);
-	robotConfig.appAxisIdxRead.resize(3);
-	for (size_t i = 0; i < robotConfig.appAxisIdx.size(); ++i) {
-		// 下发
-		robotConfig.appAxisIdx[i] = static_cast<int>(readValue[i]);
-		// 读取
-		robotConfig.appAxisIdxRead[i] = static_cast<int>(readValue[i + 3]);
-	}
-
-	// 编码器位数
-	configIdx = std::vector<int>(9, cfgIdxBase + 20);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.encoderBit);
-
-	// 传动比
-	//configIdx = std::vector<int>(9, cfgIdxBase + 30);
-	//for (size_t i = 0; i < 9; ++i) {
-	//	configIdx[i] += i;
-	//}
-	//ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatio);
-	// 传动比分子
-	configIdx = std::vector<int>(9, cfgIdxBase + 140);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatioNumerator);
-	// 传动比分母
-	configIdx = std::vector<int>(9, cfgIdxBase + 150);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatioDenominator);
-
-	// TCP
-	configIdx = std::vector<int>(6, cfgIdxBase + 111);
-	for (size_t i = 0; i < 6; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.tcpPose);
-
-	// 关节上限位
-	configIdx = std::vector<int>(9, cfgIdxBase + 50);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.jointSupremum);
-
-	// 关节下限位
-	configIdx = std::vector<int>(9, cfgIdxBase + 40);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.jointInfimum);
-
-	// 最大关节速度(自动)
-	configIdx = std::vector<int>(9, cfgIdxBase + 60);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxJointSpeedAuto);
-
-	// 最大关节速度(手动)
-	configIdx = std::vector<int>(9, cfgIdxBase + 70);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxJointSpeedManual);
-
-	// 最大末端速度(手动)
-	configIdx = { cfgIdxBase + 85, cfgIdxBase + 86 };
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxCartSpeedManual);
-
-	// IO 配置
-
-	// 附加轴标定结果
-	configIdx = std::vector<int>(9, cfgIdxBase + 91);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.auxCalbration);
-
-	// 零点编码器值
-	configIdx = std::vector<int>(9, cfgIdxBase + 100);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.zeroEncoder);
-
-	// 主从机标定结果
-	configIdx = std::vector<int>(6, cfgIdxBase + 130);
-	for (size_t i = 0; i < 6; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->get_axis_param(configIdx, "VR", robotConfig.slaveCalibration);
-
-	return ret;
-}
-
-/**
-* @brief 更新VR寄存器中的配置参数
-*/
-int ZMotionRobot::write_register_config(const RobotConfig& config) {
-
-	int cfgIdxBase = get_config_idx_base();
-	int ret = 0;
-	std::vector<int> configIdx;
-	std::vector<float> readValue;
-
-	configIdx = std::vector<int>(9, cfgIdxBase + 20);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", robotConfig.encoderBit);
-
-	// 传动比
-	//configIdx = std::vector<int>(9, cfgIdxBase + 30);
-	//for (size_t i = 0; i < 9; ++i) {
-	//	configIdx[i] += i;
-	//}
-	//ret = ZController->set_axis_param(configIdx, "VR", config.transRatio);
-	// 传动比分子
-	configIdx = std::vector<int>(9, cfgIdxBase + 140);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.transRatioNumerator);
-	// 传动比分母
-	configIdx = std::vector<int>(9, cfgIdxBase + 150);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.transRatioDenominator);
-
-	// TCP
-	configIdx = std::vector<int>(6, cfgIdxBase + 111);
-	for (size_t i = 0; i < 6; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.tcpPose);
-
-	// 关节上限位
-	configIdx = std::vector<int>(9, cfgIdxBase + 50);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.jointSupremum);
-
-	// 关节下限位
-	configIdx = std::vector<int>(9, cfgIdxBase + 40);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.jointInfimum);
-
-	// 最大关节速度(自动)
-	configIdx = std::vector<int>(9, cfgIdxBase + 60);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.maxJointSpeedAuto);
-
-	// IO 配置
-
-	// 附加轴标定结果
-	configIdx = std::vector<int>(9, cfgIdxBase + 91);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.auxCalbration);
-
-	// 零点编码器值
-	configIdx = std::vector<int>(9, cfgIdxBase + 100);
-	for (size_t i = 0; i < 9; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.zeroEncoder);
-
-	// 主从机标定结果
-	configIdx = std::vector<int>(6, cfgIdxBase + 130);
-	for (size_t i = 0; i < 6; ++i) {
-		configIdx[i] += i;
-	}
-	ret = ZController->set_axis_param(configIdx, "VR", config.slaveCalibration);
-
-	// 写入控制卡后读取到本地
-	read_register_config();
-
-	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " write register config.");
-
-	return 0;
-}
-
 int ZMotionRobot::switch_auto(bool enableAuto) {
 
 	int stateIdxBase = get_state_idx_base();
@@ -1430,7 +1221,7 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 		return 1;
 	}
 	// 暂停状态下不可移动附加轴
-	if ((robotStatus.lowerStatus & 0x02) == 1 && idx > 5) {
+	if (get_bit(robotStatus.lowerStatus, 1) == 1 && idx > 5) {
 		robotStatus.upperStatus |= 0x04;
 		return 2;
 	}
@@ -1622,12 +1413,6 @@ ZMotionRobot::~ZMotionRobot() {
 std::vector<int> ZMotionRobot::get_cam_axis() {
 	int base = robotId * 32;
 	std::vector<int> axis = { base + 27,base + 28,base + 29 };
-	return axis;
-}
-
-std::vector<int> ZMotionRobot::get_joint_axis() {
-	int base = robotId * 32;
-	std::vector<int> axis = { base + 0,base + 1,base + 2,base + 3,base + 4,base + 5 };
 	return axis;
 }
 

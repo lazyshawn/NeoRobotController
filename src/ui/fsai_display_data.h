@@ -4,6 +4,8 @@
 struct MainWindowDisplayData {
 
 	// 全局配置
+	// 工程名称
+	std::string projectName;
 	// 机器人数量
 	int robotNum = 4;
 	// 算法类型
@@ -26,7 +28,8 @@ struct MainWindowDisplayData {
 	std::vector<int> robotMode = { 0,0,0,0 };
 
 	// 示教轨迹<运动类型, 工艺号, 关节位置, TCP位置, 地轨位置, 速度>
-	std::vector<std::vector<std::vector<float>>> trajectory;
+	//std::vector<std::vector<std::vector<float>>> trajectory;
+	std::vector<std::string> teachPoints;
 	
 };
 Q_DECLARE_METATYPE(MainWindowDisplayData);

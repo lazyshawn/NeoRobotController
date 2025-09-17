@@ -76,14 +76,6 @@ public:
 
 	/* *************************** 上层自定义接口 *************************** */
 	/**
-	* @brief 读取VR寄存器中的配置参数
-	*/
-	int read_register_config() override;
-	/**
-	* @brief 更新VR寄存器中的配置参数
-	*/
-	int write_register_config(const RobotConfig& config) override;
-	/**
 	* @brief  读取保存点位
 	*/
 	int read_saved_status(RobotStatus& status) override;

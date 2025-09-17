@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.0.3.5\n"
-		<< "Release Date:    250910");
+		<< "Version:         0.3.0.3\n"
+		<< "Release Date:    250917");
 }
 
 
@@ -104,6 +104,25 @@ int RobotBase::set_ZController(std::shared_ptr<Controller> ZController_, int id)
 	return 0;
 }
 
+std::vector<int> RobotBase::get_joint_axis() {
+	int base = robotId * 32;
+	std::vector<int> axis = { base + 0,base + 1,base + 2,base + 3,base + 4,base + 5 };
+	return axis;
+}
+
+std::vector<int> RobotBase::get_axis_idx() {
+	int base = robotId * 32;
+	bool coupling = static_cast<int>(robotConfig.couplingConfig[0]);
+
+	std::vector<int> axis = { base + 0,base + 1,base + 2,base + 3,base + 4,base + 5 };
+	if (coupling == 1) {
+		axis[4] = base + 30;
+		axis[5] = base + 31;
+	}
+
+	return axis;
+}
+
 std::vector<int> RobotBase::get_composed_axis(const std::vector<std::vector<int>>& axisList) {
 
 	std::vector<int> ans;
@@ -163,6 +182,254 @@ int RobotBase::get_register_config(RobotConfig& config) {
 
 }
 
+int RobotBase::read_register_config() {
+	int ret = 0, cfgNum = 0, cfgIdx = 0;
+	//int cfgIdxBase = get_config_idx_base();
+	std::vector<int> configIdx;
+
+	// 读取配置
+	std::vector<float> readValue;
+	ZController->get_register(get_config_idx_base(), 300, readValue, 1);
+
+	// 连杆长度: 从序号2开始，读取12个配置参数
+	cfgIdx = 2;
+	cfgNum = 12;
+	robotConfig.linkLength.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.linkLength[i] = readValue[cfgIdx + i];
+	}
+
+	// 附加轴编号
+	cfgNum = 3;
+	// 下发
+	cfgIdx = 205;
+	robotConfig.appAxisIdx.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.appAxisIdx[i] = readValue[cfgIdx + i];
+	}
+	// 读取
+	cfgIdx = 208;
+	robotConfig.appAxisIdxRead.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.appAxisIdxRead[i] = readValue[cfgIdx + i];
+	}
+
+	// 编码器位数
+	cfgIdx = 20;
+	cfgNum = 9;
+	robotConfig.encoderBit.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.encoderBit[i] = readValue[cfgIdx + i];
+	}
+
+	// 传动比
+	cfgNum = 9;
+	// 分子
+	cfgIdx = 140;
+	robotConfig.transRatioNumerator.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.transRatioNumerator[i] = readValue[cfgIdx + i];
+	}
+	//分母
+	cfgIdx = 150;
+	robotConfig.transRatioDenominator.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.transRatioDenominator[i] = readValue[cfgIdx + i];
+	}
+
+	// 耦合比
+	cfgNum = 4;
+	cfgIdx = 160;
+	robotConfig.couplingConfig.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.couplingConfig[i] = readValue[cfgIdx + i];
+	}
+
+	// TCP
+	cfgIdx = 111;
+	cfgNum = 6;
+	robotConfig.tcpPose.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.tcpPose[i] = readValue[cfgIdx + i];
+	}
+
+	// 关节上限位
+	cfgIdx = 50;
+	cfgNum = 9;
+	robotConfig.jointSupremum.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.jointSupremum[i] = readValue[cfgIdx + i];
+	}
+
+	// 关节下限位
+	cfgIdx = 40;
+	cfgNum = 9;
+	robotConfig.jointInfimum.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.jointInfimum[i] = readValue[cfgIdx + i];
+	}
+
+	// 最大关节速度(自动)
+	cfgIdx = 60;
+	cfgNum = 9;
+	robotConfig.maxJointSpeedAuto.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.maxJointSpeedAuto[i] = readValue[cfgIdx + i];
+	}
+
+	// 最大关节速度(手动)
+	cfgIdx = 70;
+	cfgNum = 9;
+	robotConfig.maxJointSpeedManual.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.maxJointSpeedManual[i] = readValue[cfgIdx + i];
+	}
+
+	// 最大末端速度(手动)
+	cfgIdx = 85;
+	cfgNum = 2;
+	robotConfig.maxCartSpeedManual.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.maxCartSpeedManual[i] = readValue[cfgIdx + i];
+	}
+
+	// 附加轴标定结果
+	cfgIdx = 91;
+	cfgNum = 9;
+	robotConfig.auxCalbration.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.auxCalbration[i] = readValue[cfgIdx + i];
+	}
+
+	// 零点编码器值
+	cfgIdx = 100;
+	cfgNum = 9;
+	robotConfig.zeroEncoder.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.zeroEncoder[i] = readValue[cfgIdx + i];
+	}
+
+	// 主从机标定结果
+	cfgIdx = 130;
+	cfgNum = 9;
+	robotConfig.slaveCalibration.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.slaveCalibration[i] = readValue[cfgIdx + i];
+	}
+
+	// IO 配置
+
+	return ret;
+}
+
+int RobotBase::write_register_config(const RobotConfig& config) {
+
+	int ret = 0, cfgNum = 0, cfgIdx = 0;
+	int idxBase = get_config_idx_base();
+	std::vector<int> configIdx;
+
+	// 输入配置的合法性检查
+
+	// 拷贝到当前程序
+	robotConfig = config;
+
+	// 配置缓存数组
+	std::vector<float> readValue;
+
+	// 连杆长度
+	cfgIdx = 2;
+	readValue = robotConfig.linkLength;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 附加轴编号
+	// 下发
+	cfgIdx = 205;
+	for (size_t i = 0; i < robotConfig.appAxisIdx.size(); ++i) {
+		readValue[i] = static_cast<float>(robotConfig.appAxisIdx[i]);
+	}
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 读取
+	cfgIdx = 208;
+	for (size_t i = 0; i < robotConfig.appAxisIdxRead.size(); ++i) {
+		readValue[i] = static_cast<float>(robotConfig.appAxisIdxRead[i]);
+	}
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 编码器位数
+	cfgIdx = 20;
+	readValue = robotConfig.encoderBit;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 传动比
+	// 分子
+	cfgIdx = 140;
+	readValue = robotConfig.transRatioNumerator;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+	//分母
+	cfgIdx = 150;
+	readValue = robotConfig.transRatioDenominator;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 耦合比
+	cfgIdx = 160;
+	readValue = robotConfig.couplingConfig;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// TCP
+	cfgIdx = 111;
+	readValue = robotConfig.tcpPose;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+
+	// 关节上限位
+	cfgIdx = 50;
+	readValue = robotConfig.jointSupremum;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 关节下限位
+	cfgIdx = 40;
+	readValue = robotConfig.jointInfimum;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 最大关节速度(自动)
+	cfgIdx = 60;
+	readValue = robotConfig.maxJointSpeedAuto;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 最大关节速度(手动)
+	cfgIdx = 70;
+	readValue = robotConfig.maxJointSpeedManual;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 最大末端速度(手动)
+	cfgIdx = 85;
+	readValue = robotConfig.maxCartSpeedManual;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 附加轴标定结果
+	cfgIdx = 91;
+	readValue = robotConfig.auxCalbration;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 零点编码器值
+	cfgIdx = 100;
+	readValue = robotConfig.zeroEncoder;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// 主从机标定结果
+	cfgIdx = 130;
+	readValue = robotConfig.slaveCalibration;
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	// IO 配置
+
+	//read_register_config();
+
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " write register config.");
+
+	return ret;
+}
 
 int RobotBase::capture_controller_log() {
 	ZController->read_message();
@@ -509,6 +776,17 @@ int RobotBase::get_slave_buffer() {
 	
 	int begIdx = get_data_idx_base();
 	int ret = ZController->get_register(begIdx + 21000, 500, statusBuffer.slaveBuffer, 0);
+
+	return 0;
+}
+
+int RobotBase::single_axis_enable(bool enable, int axis) {
+	// 总开关
+	if (axis = -1) {
+
+	}
+
+	// 单轴使能
 
 	return 0;
 }
@@ -903,7 +1181,6 @@ bool RobotGroupManager::robot_warning(int idx) {
 
 	if (get_bit(statusList[idx].lowerStatus, 1) == 0) {
 		set_bit(coopState[idx], 0, false);
-		//return false;
 	}
 	// 机器人处于暂停状态
 	else {
@@ -918,9 +1195,9 @@ bool RobotGroupManager::robot_warning(int idx) {
 	}
 
 	// 上位机未触发暂停
-	if (get_bit(coopState[idx], 8)) {
-		return true;
-	}
+	//if (get_bit(coopState[idx], 8)) {
+	//	return true;
+	//}
 
 	return false;
 

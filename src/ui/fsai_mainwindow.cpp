@@ -44,12 +44,9 @@ void MainWindow::set_up_ui() {
 	ui->comboBox->addItem("192.168.1.14");
 	ui->comboBox->addItem("0");
 	// 急停按钮
-	ui->pushButton_34->setStyleSheet("font-weight: bold;border - radius: 10px;");
+	ui->pushButton_34->setStyleSheet("font-weight: bold; border - radius: 10px;");
 
 	/* ********************** 点动页面 ********************** */
-	for (size_t i= 0; i < robotButton.size(); ++i) {
-		robotButton[i]->setDisabled(i == 0);
-	}
 
 	/* ********************** 监控页面 ********************** */
 	// 设置表头
@@ -112,14 +109,13 @@ void MainWindow::set_up_ui() {
 void MainWindow::connect_slot() {
 	/* ********************** 控制页面 ********************** */
 	// 选择机器人
-	for (size_t i = 0; i < 4; ++i) {
-		QObject::connect(robotButton[i], &QPushButton::pressed, this, [&, i]() {
-			for (size_t j = 0; j < robotButton.size(); ++j) {
-				robotButton[j]->setDisabled(j == i);
-			}
-			ui->textBrowser->append("Switch to robot " + QString::number(i));
-		});
-	}
+	//for (size_t i = 0; i < 4; ++i) {
+	//	QObject::connect(robotButton[i], &QPushButton::pressed, this, [&, i]() {
+	//		for (size_t j = 0; j < robotButton.size(); ++j) {
+	//			robotButton[j]->setDisabled(j == i);
+	//		}
+	//	});
+	//}
 
 	// 按键下发指令
 	QObject::connect(ui->pushButton_8, &QPushButton::pressed, this, [&]() {
@@ -187,60 +183,15 @@ void MainWindow::update_display(const MainWindowDisplayData& data) {
 	// 当前选中机器人
 	int idx = data.selectedRobot;
 
+	// 切换选中机器人
+	for (size_t i = 0; i < robotButton.size(); ++i) {
+		robotButton[i]->setDisabled(i == idx);
+	}
+
 	// 手自动模式
 	int autoMode = data.robotMode[idx] % 2;
 	ui->checkBox_2->setChecked(autoMode);
 	ui->checkBox_2->setText(autoMode ? "Auto  " : "Manual");
-
-	// 机器人运行模式
-	int curRunStatus = data.runStatus[0];
-	QString runStatusLabel;
-	// 在线
-	if (curRunStatus % 2) {
-		runStatusLabel += "Online";
-		ui->pushButton_30->setStyleSheet("background-color: rgb(96,96,96)");
-	}
-	else {
-		runStatusLabel += "Offline";
-	}
-	// 空闲
-	if ((curRunStatus >> 1) % 2) {
-		runStatusLabel += "\nIdle";
-		ui->pushButton_30->setStyleSheet("");
-	}
-	// 运行中
-	else if ((curRunStatus >> 2) % 2) {
-		runStatusLabel += "\nRunning";
-		ui->pushButton_30->setStyleSheet("background-color: rgb(0,255,0)");
-	}
-	// 暂停 / 警告
-	if ((curRunStatus >> 3) % 2) {
-		runStatusLabel += "\nWarnning";
-		ui->pushButton_30->setStyleSheet("background-color: rgb(255,255,51)");
-
-		ui->pushButton_5->setText("Resume");
-	}
-	else {
-		ui->pushButton_5->setText("Pause");
-	}
-	// 异常
-	if ((curRunStatus >> 4) % 2) {
-		runStatusLabel += "\nError";
-		ui->pushButton_30->setStyleSheet("background-color: rgb(255,0,0)");
-	}
-	// 下位机异常
-	if (data.LErrCode[0] >> 2) {
-		runStatusLabel += "\nL" + QString::number(data.LErrCode[0]);
-		ui->pushButton_30->setStyleSheet("background-color: rgb(255,0,0)");
-	}
-	// 上位机异常
-	if (data.UErrCode[0] > 0) {
-		runStatusLabel += "\nU" + QString::number(data.UErrCode[0]);
-		ui->pushButton_30->setStyleSheet("background-color: rgb(255,0,0)");
-	}
-	// 改用 mouseMoveEvent
-	ui->pushButton_30->setToolTip(runStatusLabel);
-
 
 	// 位置监控
 	for (size_t i = 0; i < 9; ++i) {
@@ -254,6 +205,56 @@ void MainWindow::update_display(const MainWindowDisplayData& data) {
 		pos = data.cPos.size() <= i ? 0 : data.cPos[i];
 		seqItem = new QTableWidgetItem(QString::number(pos));
 		ui->tableWidget_2->setItem(i, 2, seqItem);
+	}
+
+	// 机器人运行模式
+	int curRunStatus = data.runStatus[idx];
+	// 暂停 / 继续 按钮
+	ui->pushButton_5->setText((curRunStatus >> 3) % 2 ? "Resume" : "Pause");
+	// 机器人按钮颜色与浮窗
+	for (size_t i = 0; i < data.robotNum; ++i) {
+		curRunStatus = data.runStatus[i];
+		QString runStatusLabel;
+		// 在线
+		if (curRunStatus % 2) {
+			runStatusLabel += "Online";
+			robotButton[i]->setStyleSheet("background-color: rgb(96,96,96)");
+		}
+		else {
+			runStatusLabel += "Offline";
+		}
+		// 空闲
+		if ((curRunStatus >> 1) % 2) {
+			runStatusLabel += "\nIdle";
+			robotButton[i]->setStyleSheet("");
+		}
+		// 运行中
+		else if ((curRunStatus >> 2) % 2) {
+			runStatusLabel += "\nRunning";
+			robotButton[i]->setStyleSheet("background-color: rgb(0,255,0)");
+		}
+		// 暂停 / 警告
+		if ((curRunStatus >> 3) % 2) {
+			runStatusLabel += "\nWarnning";
+			robotButton[i]->setStyleSheet("background-color: rgb(255,255,51)");
+		}
+		// 异常
+		if ((curRunStatus >> 4) % 2) {
+			runStatusLabel += "\nError";
+			robotButton[i]->setStyleSheet("background-color: rgb(255,0,0)");
+		}
+		// 下位机异常
+		if (data.LErrCode[i] >> 2) {
+			runStatusLabel += "\nL" + QString::number(data.LErrCode[i]);
+			robotButton[i]->setStyleSheet("background-color: rgb(255,0,0)");
+		}
+		// 上位机异常
+		if (data.UErrCode[i] > 0) {
+			runStatusLabel += "\nU" + QString::number(data.UErrCode[i]);
+			robotButton[i]->setStyleSheet("background-color: rgb(255,0,0)");
+		}
+		// 改用 mouseMoveEvent
+		robotButton[i]->setToolTip(runStatusLabel);
 	}
 
 }

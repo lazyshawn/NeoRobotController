@@ -58,15 +58,6 @@ public:
 	int separate_trajectory() override;
 
 	/* *************************** 上层自定义接口 *************************** */
-	/**
-	* @brief 读取VR寄存器中的配置参数
-	*/
-	int read_register_config() override;
-	/**
-	* @brief 更新VR寄存器中的配置参数
-	*/
-	int write_register_config(const RobotConfig& config) override;
-
 	int read_saved_status(RobotStatus& status) override;
 
 	int get_local_world_dpos(std::vector<float>& dpos) override;
@@ -96,7 +87,6 @@ public:
 	~ZMotionRobot();
 
 	std::vector<int> get_cam_axis();
-	std::vector<int> get_joint_axis();
 	std::vector<int> get_tcp_axis();
 	std::vector<int> get_robot_tcp_axis();
 

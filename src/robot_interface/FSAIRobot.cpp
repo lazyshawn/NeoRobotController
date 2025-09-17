@@ -67,206 +67,6 @@ namespace FSAIRobotInterface {
 
 	
 	/* *************************** 上层接口实现 *************************** */
-	int FSAIRobot::read_register_config() {
-		int cfgIdxBase = get_config_idx_base();
-		int ret = 0;
-		std::vector<int> configIdx;
-		std::vector<float> readValue;
-
-		// 连杆长度
-		configIdx = std::vector<int>(12, cfgIdxBase + 2);
-		for (size_t i = 0; i < configIdx.size(); ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", readValue);
-		robotConfig.linkLength = std::vector<float>(configIdx.size(), 0);
-		for (size_t i = 0; i < configIdx.size(); ++i) {
-			robotConfig.linkLength[i] = readValue[i];
-		}
-
-		// 编码器位数
-		configIdx = std::vector<int>(9, cfgIdxBase + 20);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.encoderBit);
-
-		// 传动比
-		//configIdx = std::vector<int>(9, cfgIdxBase + 30);
-		//for (size_t i = 0; i < 9; ++i) {
-		//	configIdx[i] += i;
-		//}
-		//ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatio);
-		// 传动比分子
-		configIdx = std::vector<int>(9, cfgIdxBase + 140);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatioNumerator);
-		// 传动比分母
-		configIdx = std::vector<int>(9, cfgIdxBase + 150);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.transRatioDenominator);
-
-		// TCP
-		configIdx = std::vector<int>(6, cfgIdxBase + 111);
-		for (size_t i = 0; i < 6; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.tcpPose);
-
-		// 关节上限位
-		configIdx = std::vector<int>(9, cfgIdxBase + 50);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.jointSupremum);
-
-		// 关节下限位
-		configIdx = std::vector<int>(9, cfgIdxBase + 40);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.jointInfimum);
-
-		// 最大关节速度(自动)
-		configIdx = std::vector<int>(9, cfgIdxBase + 60);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxJointSpeedAuto);
-
-		// 最大关节速度(手动)
-		configIdx = std::vector<int>(9, cfgIdxBase + 70);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxJointSpeedManual);
-
-		// 最大末端速度(手动)
-		configIdx = { cfgIdxBase + 85, cfgIdxBase + 86 };
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.maxCartSpeedManual);
-
-		// IO 配置
-
-		// 附加轴标定结果
-		configIdx = std::vector<int>(9, cfgIdxBase + 91);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.auxCalbration);
-
-		// 零点编码器值
-		configIdx = std::vector<int>(9, cfgIdxBase + 100);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.zeroEncoder);
-
-		// 主从机标定结果
-		configIdx = std::vector<int>(6, cfgIdxBase + 130);
-		for (size_t i = 0; i < 6; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->get_axis_param(configIdx, "VR", robotConfig.slaveCalibration);
-
-		return ret;
-	}
-
-	int FSAIRobot::write_register_config(const RobotConfig& config) {
-
-		int cfgIdxBase = get_config_idx_base();
-		int ret = 0;
-		std::vector<int> configIdx;
-		std::vector<float> readValue;
-
-		configIdx = std::vector<int>(9, cfgIdxBase + 20);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", robotConfig.encoderBit);
-
-		// 传动比
-		//configIdx = std::vector<int>(9, cfgIdxBase + 30);
-		//for (size_t i = 0; i < 9; ++i) {
-		//	configIdx[i] += i;
-		//}
-		//ret = ZController->set_axis_param(configIdx, "VR", config.transRatio);
-		// 传动比分子
-		configIdx = std::vector<int>(9, cfgIdxBase + 140);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.transRatioNumerator);
-		// 传动比分母
-		configIdx = std::vector<int>(9, cfgIdxBase + 150);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.transRatioDenominator);
-
-		// TCP
-		configIdx = std::vector<int>(6, cfgIdxBase + 111);
-		for (size_t i = 0; i < 6; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.tcpPose);
-
-		// 关节上限位
-		configIdx = std::vector<int>(9, cfgIdxBase + 50);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.jointSupremum);
-
-		// 关节下限位
-		configIdx = std::vector<int>(9, cfgIdxBase + 40);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.jointInfimum);
-
-		// 最大关节速度(自动)
-		configIdx = std::vector<int>(9, cfgIdxBase + 60);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.maxJointSpeedAuto);
-
-		// IO 配置
-
-		// 附加轴标定结果
-		configIdx = std::vector<int>(9, cfgIdxBase + 91);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.auxCalbration);
-
-		// 零点编码器值
-		configIdx = std::vector<int>(9, cfgIdxBase + 100);
-		for (size_t i = 0; i < 9; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.zeroEncoder);
-
-		// 主从机标定结果
-		configIdx = std::vector<int>(6, cfgIdxBase + 130);
-		for (size_t i = 0; i < 6; ++i) {
-			configIdx[i] += i;
-		}
-		ret = ZController->set_axis_param(configIdx, "VR", config.slaveCalibration);
-
-		// 写入控制卡后读取到本地
-		read_register_config();
-
-		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " write register config.");
-
-		return 0;
-
-	}
-
 	int FSAIRobot::cpos_base_to_world(std::vector<float>& cPos) {
 
 		float tmp = cPos[3];
@@ -351,19 +151,22 @@ namespace FSAIRobotInterface {
 		//// 机器人坐标系
 		//axis = get_robot_tcp_axis();
 		//ZController->get_axis_param(axis, "DPOS", status.cPosR);
-		//// 编码器值
-		//axis = get_joint_axis();
-		//ZController->get_axis_param(axis, "ENCODER", value);
-		//status.encoder = std::vector<int>(value.size(), 0);
-		//for (size_t i = 0; i < axis.size(); ++i) {
-		//	status.encoder[i] = static_cast<int>(value[i]);
-		//}
+		// 编码器值
+		axis = get_composed_axis({ get_axis_idx(), robotConfig.appAxisIdxRead });
+		ZController->get_axis_param(axis, "ENCODER", value);
+		status.encoder = std::vector<int>(value.size(), 0);
+		for (size_t i = 0; i < axis.size(); ++i) {
+			status.encoder[i] = static_cast<int>(value[i]);
+		}
 		// 轴状态
 		ZController->get_axis_param(axis, "AXISSTATUS", value);
 		status.axisStatus = std::vector<int>(value.size(), 0);
 		for (size_t i = 0; i < axis.size(); ++i) {
 			status.axisStatus[i] = static_cast<int>(value[i]);
 		}
+
+		// 异常码辅码
+		ZController->get_axis_param({ get_cmd_idx_base() + 24110 }, "TABLE", status.subErrorCode);
 
 		return 0;
 	}
@@ -1016,7 +819,7 @@ namespace FSAIRobotInterface {
 
 		status.fkMode = static_cast<int>(data[1]);
 
-		status.lineNum = static_cast<int>(data[2]);
+		status.cmdNum = static_cast<int>(data[2]);
 
 		status.jPos = std::vector<float>(data.begin() + 3, data.begin() + 9);
 		status.jPos.insert(status.jPos.end(), data.begin() + 15, data.begin() + 18);
