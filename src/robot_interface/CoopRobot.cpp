@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.3.0.3\n"
-		<< "Release Date:    250917");
+		<< "Version:         0.3.1.4\n"
+		<< "Release Date:    250925");
 }
 
 
@@ -68,6 +68,7 @@ int RobotBase::notify_waiting_robot() {
 
 	// 清空轨迹
 	//clear_trajectory();
+	trajectory.clear();
 
 	// 唤醒线程
 	cvMotion.notify_one();
@@ -698,7 +699,7 @@ int RobotBase::reset_dual_axis_home_position() {
 
 	strcpy(cmdbuff, "RUNTASK 6, SET_DUAL_AXIS_ZERO");
 
-	int ret = ZController->sendCmd(cmdbuff, cmdbuffAck);
+	int ret = ZController->sendCmd(cmdbuff, cmdbuffAck, 0);
 
 	return ret;
 }
@@ -894,7 +895,7 @@ void RobotGroupManager::processCommandThread() {
 		
 		for (size_t i = 0; i < robotList.size(); ++i) {
 			// 开始执行轨迹: 设定上条轨迹，计算协同轨迹时间
-			robotList[i]->set_ready_for_consistent_traj();
+			robotList[i]->set_ready_for_consistent_traj(coopState[i]);
 
 			// 更新每台机器人当前的同步设置
 			set_group_sync_config(i);

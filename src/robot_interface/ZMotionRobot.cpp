@@ -50,6 +50,11 @@ int ZMotionRobot::update_rt_robot_status() {
 	// 主轴运动距离
 	tmp.masterAxisDist = static_cast<float>(value[29]);
 
+	// 电流
+	tmp.current = value[33];
+	// 电压
+	tmp.voltage = value[34];
+
 	// 焊接总时长
 	tmp.weldTime = static_cast<long>(value[30]);
 	// 起弧时间
@@ -635,7 +640,7 @@ int ZMotionRobot::execute_single_cartesian() {
 					return ret;
 
 				// 记录电流
-				if (i > 0 && i < numPeriod - 1)
+				if (/*i > 0 && */i < numPeriod - 1)
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 2, axis[0]);
 				else
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 1, axis[0]);
@@ -673,7 +678,7 @@ int ZMotionRobot::execute_single_cartesian() {
 					return ret;
 
 				// 记录电流
-				if (i > 0 && i < numPeriod - 1)
+				if (/*i > 0 && */i < numPeriod - 1)
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 3, axis[0]);
 				else
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 1, axis[0]);
@@ -878,7 +883,10 @@ int ZMotionRobot::send_running_line_num(int axis, const SingleTrajectory &curTra
 	int stateIdxBase = get_state_idx_base();
 	int ret = 0;
 
+	// 下发轨迹编号
 	ret = ZController->set_axis_param(stateIdxBase + 7, "TABLE", curTraj.saveSeq, axis);
+	// 下发轨迹类型
+	ret = ZController->set_axis_param(stateIdxBase + 102, "TABLE", curTraj.isJoint() ? 1 : -1, axis);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(),
 		"R" << aliasId << " ready to send traj num: " << curTraj.saveSeq
@@ -908,7 +916,7 @@ int ZMotionRobot::remain_buffer_free() {
 }
 
 // 一致性轨迹预处理，可以连续下发的轨迹
-int ZMotionRobot::set_ready_for_consistent_traj() {
+int ZMotionRobot::set_ready_for_consistent_traj(int& state) {
 
 	if (trajectory.trajectory_loaded())
 		return 0;
@@ -916,6 +924,7 @@ int ZMotionRobot::set_ready_for_consistent_traj() {
 	int ret = 0;
 	auto curTraj = trajectory.get_curTraj();
 	auto preTraj = trajectory.get_preTraj();
+	bool trajReady = false;
 
 	// 正逆解切换完成
 	if (kinematics_mached()) {
@@ -945,7 +954,12 @@ int ZMotionRobot::set_ready_for_consistent_traj() {
 
 		}
 
+		trajReady = true;
+
 	}
+
+	set_bit(state, 9, trajReady);
+
 	return 0;
 }
 
@@ -956,8 +970,8 @@ int ZMotionRobot::consistent_traj_ready(int& state) {
 	auto preTraj = trajectory.get_preTraj();
 	int ret = 0;
 
-	// 正逆解变化
-	if (!kinematics_mached()) {
+	// 正逆解变化: 此处应使用辅助判断，避免检测结果与预处理部分不同，从而引发因时序问题导致下发异常
+	if (!kinematics_mached() || !get_bit(state, 9)) {
 
 		int switchRet = 0;
 		// 运动未完成，无法切换
@@ -1220,8 +1234,8 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 		robotStatus.upperStatus |= 0x10;
 		return 1;
 	}
-	// 暂停状态下不可移动附加轴
-	if (get_bit(robotStatus.lowerStatus, 1) == 1 && idx > 5) {
+	// 暂停状态下不可移动附加轴，允许停止
+	if (get_bit(robotStatus.lowerStatus, 1) == 1 && idx > 5 && dir != 0) {
 		robotStatus.upperStatus |= 0x04;
 		return 2;
 	}

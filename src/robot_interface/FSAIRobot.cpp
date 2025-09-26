@@ -123,6 +123,11 @@ namespace FSAIRobotInterface {
 		// ¹ì¼£±àºÅ
 		tmp.lineNum = static_cast<int>(value[3]);
 
+		// µçÁ÷
+		tmp.current = value[33];
+		// µçÑ¹
+		tmp.voltage = value[34];
+
 		// 
 		//ZController->get_axis_param({ stateIdxBase + 24117 }, "TABLE", value);
 		//tmp.lineNum = static_cast<int>(value[0]);
@@ -700,7 +705,7 @@ namespace FSAIRobotInterface {
 		return ret;
 	}
 
-	int FSAIRobot::set_ready_for_consistent_traj() {
+	int FSAIRobot::set_ready_for_consistent_traj(int& state) {
 		if (trajectory.trajectory_loaded())
 			return 0;
 

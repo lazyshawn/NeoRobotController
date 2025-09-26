@@ -129,6 +129,9 @@ struct RobotStatus {
 	float masterAxisDist;                 // 主轴运动距离
 	int remainBuffer;					  // 剩余缓冲数
 
+	float current;                        // 实时电流
+	float voltage;                        // 实时电压
+
 	long slaveTime;                       // 下位机时间戳
 	long weldTime;                        // 焊接时间
 	long weldBegTime;                     // 上次起弧时间戳
@@ -370,15 +373,17 @@ public:
 	virtual int remain_buffer_free() = 0;
 
 	/**
-	* @brief 一致性轨迹预处理
+	* @brief  一致性轨迹预处理
+	* @param  state  机器人组状态
 	* 
 	* 不同算法，可能轨迹段开始前需要预存数据，或其他预处理
 	* 该功能用于检测是否可以进行预处理，并修改下发标识，让轨迹可以通过后续的一致性检测
 	*/
-	virtual int set_ready_for_consistent_traj() = 0;
+	virtual int set_ready_for_consistent_traj(int& state) = 0;
 
 	/**
-	* @brief 一致性轨迹就绪检测
+	* @brief  一致性轨迹就绪检测
+	* @param  state  机器人组状态
 	* 
 	* 检测是否当前轨迹可以开始下发，若不能则判断并执行切换动作，等待下次判断
 	* 该功能可以阻止未进行预处理的轨迹被下发

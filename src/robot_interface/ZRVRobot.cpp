@@ -58,6 +58,11 @@ namespace FSAIRobotInterface {
 		// 息弧时间
 		tmp.weldEndTime = static_cast<long>(value[32]);
 
+		// 电流
+		tmp.current = value[33];
+		// 电压
+		tmp.voltage = value[34];
+
 		// 局部坐标系转世界坐标系
 		tmp.cPos = tmp.cPosRaw;
 		cpos_base_to_world(tmp.cPos);
@@ -727,7 +732,7 @@ namespace FSAIRobotInterface {
 	}
 
 	// 一致性轨迹预处理，可以连续下发的轨迹
-	int ZRVRobot::set_ready_for_consistent_traj() {
+	int ZRVRobot::set_ready_for_consistent_traj(int& state) {
 
 		if (trajectory.trajectory_loaded())
 			return 0;

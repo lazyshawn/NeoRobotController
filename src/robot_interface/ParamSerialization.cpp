@@ -67,9 +67,9 @@ std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_Weldi
 	// 焊接参数 0
 	param.push_back(weldCfg.Id);                  // 0 起弧标志
 	param.push_back(weldCfg.WeldingCrt_Spd);      // 1 焊接电流
-	param.push_back(weldCfg.WeldingVtg_Strth);    // 2 焊接电压
+	param.push_back(weldCfg.WeldingVtg_Strth);    // 2 焊接电压: 下发电压/修正，往同一个地址下发的，不区分两个变量
 	param.push_back(weldCfg.WeldingWorkMode);     // 3 焊接工作模式
-	param.push_back(weldCfg.VtgUniCorrection);    // 4 焊接电压修正值
+	param.push_back(weldCfg.VtgUniCorrection);    // 4 焊接电压修正值 -> 电感
 
 	// 起弧参数 5
 	param.push_back(weldCfg.ArcOnWorkMode);        // 0 起弧模式

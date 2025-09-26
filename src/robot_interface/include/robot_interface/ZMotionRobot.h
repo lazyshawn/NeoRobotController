@@ -50,7 +50,7 @@ public:
 	int remain_buffer_free() override;
 
 	// 一致性轨迹预处理，可以连续下发的轨迹
-	int set_ready_for_consistent_traj() override;
+	int set_ready_for_consistent_traj(int& state) override;
 
 	// 一致性轨迹就绪
 	int consistent_traj_ready(int& state) override;
