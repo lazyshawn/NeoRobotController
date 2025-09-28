@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.3.1.4\n"
-		<< "Release Date:    250925");
+		<< "Version:         0.3.2.2\n"
+		<< "Release Date:    250928");
 }
 
 
@@ -1145,11 +1145,13 @@ void RobotGroupManager::updateStatusThread() {
 		wakeUpTime += std::chrono::milliseconds(duration);
 		// 休眠
 		auto now = std::chrono::steady_clock::now();
+
+
 		if ((now - wakeUpTime).count() > 0) {
 			// 周期时间耗尽
 			long long detTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - wakeUpTime).count();
 			wakeUpTime += std::chrono::milliseconds((detTime / duration + 1) * duration);
-			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted." << detTime);
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted:" << detTime);
 		}
 		else
 			std::this_thread::sleep_until(wakeUpTime);
@@ -1211,6 +1213,14 @@ bool RobotGroupManager::robot_idle(int idx) {
 
 		if (get_bit(coopState[idx], 7) == 0) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << idx << " task complete.");
+
+			// 重新设定上条轨迹类型
+			TrajectoryPoint point;
+			auto preTraj = robotList[idx]->trajectory.get_preTraj();
+			point = preTraj.get_point();
+			point.trajType = TrajType::None;
+			preTraj.set_point(point);
+
 			set_bit(coopState[idx], 7, true);
 		}
 

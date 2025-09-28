@@ -39,6 +39,7 @@ void MainWindow::set_up_ui() {
 
 	/* ********************** 控制页面 ********************** */
 	// 连接地址
+	ui->comboBox->addItem("");
 	ui->comboBox->addItem("LOCAL");
 	ui->comboBox->addItem("127.0.0.1");
 	ui->comboBox->addItem("192.168.1.14");

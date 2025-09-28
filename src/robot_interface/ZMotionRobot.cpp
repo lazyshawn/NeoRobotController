@@ -544,6 +544,23 @@ int ZMotionRobot::execute_single_cartesian() {
 	auto prePoint = preTraj.mainPoint;
 	auto midPoint = curTraj.auxPoint;
 
+	// 计算姿态变化
+	Eigen::Quaternionf preOri = Eigen::AngleAxisf(prePoint[5] * DT_PI / 180, Eigen::Vector3f::UnitZ()) *
+		Eigen::AngleAxisf(prePoint[4] * DT_PI / 180, Eigen::Vector3f::UnitY()) *
+		Eigen::AngleAxisf(prePoint[3] * DT_PI / 180, Eigen::Vector3f::UnitX());
+	Eigen::Quaternionf curOri = Eigen::AngleAxisf(curPoint[5] * DT_PI / 180, Eigen::Vector3f::UnitZ()) *
+		Eigen::AngleAxisf(curPoint[4] * DT_PI / 180, Eigen::Vector3f::UnitY()) *
+		Eigen::AngleAxisf(curPoint[3] * DT_PI / 180, Eigen::Vector3f::UnitX());
+	float detOri = preOri.angularDistance(curOri) * 180 / DT_PI;
+	// 假定最大45 deg/s
+	float oriTime = detOri / 45;
+	// 速度修正
+	float cartTime = trajectory.get_dist() / curTraj.get_speed();
+	float correctSpeed = -1.0;
+	if (oriTime > cartTime) {
+		correctSpeed = curTraj.get_speed() * oriTime / cartTime;
+	}
+
 	if (curTraj.isArc()) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveCABS: " << vector_to_string(curPoint)
 			<< ";\nmid: " << vector_to_string(midPoint)
@@ -554,8 +571,9 @@ int ZMotionRobot::execute_single_cartesian() {
 	}
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 		<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
-		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")
-		<< ". traj dist: " << trajectory.get_dist()
+		<< (correctSpeed > 0 ? ", correct: " + std::to_string(correctSpeed) : "")    // 速度修正
+		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // 轴掩码
+		<< ". traj dist: " << trajectory.get_dist() << ", " << detOri
 	);
 
 	// 轨迹点维度与驱动轴维度的较小值
@@ -577,7 +595,7 @@ int ZMotionRobot::execute_single_cartesian() {
 	if (curTraj.get_smooth() >= 0)
 		ZController->set_axis_param(axis[0], "ZSMOOTH", curTraj.get_smooth());
 	// 设置速度
-	ZController->set_axis_param(axis[0], "FORCE_SPEED", curTraj.get_speed());
+	ZController->set_axis_param(axis[0], "FORCE_SPEED", correctSpeed > 0 ? correctSpeed : curTraj.get_speed());
 	// 修改加速度
 	Weave preWaveCfg = deserialize_Weave(preTraj.get_appendix());
 	// 前一条不摆焊，当前摆焊，修改加速度
@@ -933,29 +951,31 @@ int ZMotionRobot::set_ready_for_consistent_traj(int& state) {
 		if (preTraj.trajType == TrajType::None || curTraj.isJoint() ^ preTraj.isJoint() ||
 			(!curTraj.isJoint() && !preTraj.isJoint() && curTraj.isBaseMotion() ^ preTraj.isBaseMotion())) {
 
-			// 正逆解切换完成，重新设定上条轨迹
-			TrajectoryPoint point;
-			point.trajType = curTraj.trajType;
-			point.mainPoint = curTraj.isJoint() ? robotStatus.jPos : robotStatus.cPosRaw;
-			point.auxPoint = robotStatus.cPosRaw;
+			// 下发轨迹编号运动完成
+			if (preTraj.lineNum == robotStatus.lineNum && robotStatus.lowerStatus == 0) {
+				// 正逆解切换完成，重新设定上条轨迹
+				TrajectoryPoint point;
+				point.trajType = curTraj.trajType;
+				point.mainPoint = curTraj.isJoint() ? robotStatus.jPos : robotStatus.cPosRaw;
+				point.auxPoint = robotStatus.cPosRaw;
 
-			trajectory.set_preTraj(point);
+				trajectory.set_preTraj(point);
 
-			auto printPoint = curTraj.isJoint() ? robotStatus.jPos : robotStatus.cPos;
-			LOG4CPLUS_INFO(RobotLog::getLogger(),
-				"R" << aliasId << " switch to " << (curTraj.isJoint() ? "forward" : "inverse") << " kinematics"
-				<< (curTraj.isBaseMotion() ? " (base)" : "") << ".\n"
-				<< "CurPos: " << vector_to_string(printPoint) << "\n"
-				<< "RawPos: " << vector_to_string(point.mainPoint)
-			);
+				auto printPoint = curTraj.isJoint() ? robotStatus.jPos : robotStatus.cPos;
+				LOG4CPLUS_INFO(RobotLog::getLogger(),
+					"R" << aliasId << " switch to " << (curTraj.isJoint() ? "forward" : "inverse") << " kinematics"
+					<< (curTraj.isBaseMotion() ? " (base)" : "") << ".\n"
+					<< "CurPos: " << vector_to_string(printPoint) << "\n"
+					<< "RawPos: " << vector_to_string(point.mainPoint)
+				);
 
-			// 计算协同段距离
-			//calc_sync_duration(robotIdx);
+				// 计算协同段距离
+				//calc_sync_duration(robotIdx);
+			}
 
 		}
 
 		trajReady = true;
-
 	}
 
 	set_bit(state, 9, trajReady);
@@ -974,7 +994,7 @@ int ZMotionRobot::consistent_traj_ready(int& state) {
 	if (!kinematics_mached() || !get_bit(state, 9)) {
 
 		int switchRet = 0;
-		// 运动未完成，无法切换
+		// 运动未完成，不进行切换
 		if (preTraj.lineNum != robotStatus.lineNum || robotStatus.lowerStatus != 0) {
 			// 共用轴正在运动，无法切换
 			//return -10;
@@ -1148,7 +1168,6 @@ int ZMotionRobot::switch_auto(bool enableAuto) {
 
 	// 设定轨迹起点
 	TrajectoryPoint point;
-
 	if (tmpStatus.fkMode >= 0) {
 		point.mainPoint = tmpStatus.jPos;
 		point.auxPoint = tmpStatus.jPos;
@@ -1157,9 +1176,8 @@ int ZMotionRobot::switch_auto(bool enableAuto) {
 		point.mainPoint = tmpStatus.cPos;
 		point.auxPoint = tmpStatus.cPos;
 	}
-	point.trajType = TrajType::None;
-	trajectory.set_preTraj(point);
-
+	//point.trajType = TrajType::None;
+	//trajectory.set_preTraj(point);
 	LOG4CPLUS_INFO(RobotLog::getLogger(),
 		"R" << aliasId << " switch to " << (enableAuto ? "auto" : "manual") << " mode."
 		<< " upperStatus: " << robotStatus.upperStatus << ", "
