@@ -9,7 +9,9 @@
 #include "ZMotionController.h"
 #include "RobotTrajectory.h"
 #include "ParamSerialization.h"
+#include "BufferSynchronizer.h"
 
+//#include "BaseDef.h"
 
 namespace FSAIRobotInterface {
 
@@ -53,7 +55,7 @@ struct RobotConfig {
 	// 从属设备ID(更改)
 	std::vector<int> slaveDeviceID = {};
 	//! 从属设备类型
-	std::vector<int> deviceType = {};
+	std::vector<int> slaveDeviceType = {};
 
 	// 附加轴轴号
 	std::vector<int> appAxisIdx;
@@ -194,7 +196,9 @@ protected:
 	//! 机器人状态
 	RobotStatus robotStatus;
 	//! 状态缓存
-	RobotStatusBuffer statusBuffer;
+	//RobotStatusBuffer statusBuffer;
+	//！ 跟踪数据
+	BufferSynchronizer bufferSync;
 
 public:
 	virtual ~RobotBase();
@@ -295,8 +299,13 @@ public:
 	*/
 	int export_tracking_data();
 
+	// IO 有效状态
 	int get_input_effective_state(const std::vector<int>& ioNum, std::vector<int>& state);
 	int set_input_effective_state(const std::vector<int>& ioNum, const std::vector<int>& state);
+
+	// IO 触发动作
+	int get_input_action(const std::vector<int>& ioNum, std::vector<int>& action);
+	int set_input_action(const std::vector<int>& ioNum, const std::vector<int>& action);
 
 	int get_input(int ioNum);
 	int get_input_invert(int ioNum);
@@ -315,10 +324,21 @@ public:
 
 	/**
 	* @brief  单轴使能
-	* @param  enable      运动类型
-	* @param  action    运动参数
+	* @param  enable    使能标志
+	* @param  axis      >=0   使能轴号
+	*                   < 0   所有轴号
 	*/
 	int single_axis_enable(bool enable, int axis = -1);
+
+	/**
+	* @brief  上位机与下位机缓冲数据同步
+	*/
+	int synchronize_slave_buffer(long long masterStamp);
+
+	/**
+	* @brief  查询下位机缓冲数据
+	*/
+	int query_slave_buffer(long long stamp, std::vector<float>& data);
 
 	/* *************************** 底层可修改接口 *************************** */
 	/**

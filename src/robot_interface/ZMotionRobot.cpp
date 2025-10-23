@@ -246,7 +246,7 @@ int ZMotionRobot::update_swing_config() {
 			// 修改摆动参数
 			int numPeriod = get_swing_num();
 			// 停留1ms，减小抖动
-			ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
+			ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 0.0 });
 
 			// 摆焊周期数大于0
 			if (numPeriod > 0) {
@@ -558,7 +558,7 @@ int ZMotionRobot::execute_single_cartesian() {
 	float cartTime = trajectory.get_dist() / curTraj.get_speed();
 	float correctSpeed = -1.0;
 	if (oriTime > cartTime) {
-		correctSpeed = curTraj.get_speed() * oriTime / cartTime;
+		correctSpeed = curTraj.get_speed() * cartTime / oriTime;
 	}
 
 	if (curTraj.isArc()) {
@@ -706,11 +706,11 @@ int ZMotionRobot::execute_single_cartesian() {
 					ZController->set_axis_param(stateIdxBase + 160, "TABLE", 3, axis[0]);
 
 				// 记录多层多道点位
-				if (i == numPeriod / 2) {
-					ZController->set_axis_param(stateIdxBase + 101, "TABLE", (curTraj.isLine() ? 1 : 2), axis[0]);
-				}
-				else if (i == numPeriod - 1) {
+				if (i == numPeriod - 1) {
 					ZController->set_axis_param(stateIdxBase + 101, "TABLE", 3, axis[0]);
+				}
+				else if (i == numPeriod / 2) {
+					ZController->set_axis_param(stateIdxBase + 101, "TABLE", (curTraj.isLine() ? 1 : 2), axis[0]);
 				}
 			}
 
@@ -1384,6 +1384,8 @@ int ZMotionRobot::task_stop() {
 
 	// 停止记录位置
 	save_task_status(false, -1);
+	// 焊接标志位复位
+	ZController->set_axis_param(get_state_idx_base()+6, "TABLE", 0);
 
 	// 清空执行轴，摆焊轴
 	std::vector<int> axis;

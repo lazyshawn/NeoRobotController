@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(ZauxRobot VERSION 1.0.0)
+project(RobotInterface VERSION 1.0.0)
 
 if(WIN32)
   # create symbol for exporting lib for dynmic library
@@ -10,15 +10,17 @@ if(WIN32)
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
   # Remove 'lib' prefix for shared libraries on Windows
-  # set(CMAKE_SHARED_LIBRARY_PREFIX "")
+  set(CMAKE_SHARED_LIBRARY_PREFIX "")
   # Build static in windows
-  option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
+  #option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+  set(BUILD_SHARED_LIBS ON CACHE BOOL "Build using shared libraries"  FORCE)
   # Set the runtime lib for MSCV (global)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 else()
   option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 endif()
 
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/output/${PROJECT_NAME})
 include(GNUInstallDirs)
 
 add_subdirectory(extern)

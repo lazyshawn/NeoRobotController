@@ -98,9 +98,11 @@ ZMC_HANDLE Controller::get_handle() {
 /* ******************************** ¿ØÖÆ¿¨Á¬½Ó ********************************* */
 int Controller::connect_eth(const char *ip_addr) {
 	printf("Connecting to: %s... ", ip_addr);
-	if (ERR_SUCCESS != ZAux_OpenEth(const_cast<char *>(ip_addr), &handle)) {
+	int ret = ZAux_OpenEth(const_cast<char *>(ip_addr), &handle);
+	if (ERR_SUCCESS != ret) {
 		printf("Failed!\n");
 		handle = NULL;
+		LOG4CPLUS_INFO(ControllerLog::getLogger(), cardName << " connected failed: " << ret);
 		return errCodeBeg + 1;
 	}
 	printf("Succeed\n");

@@ -347,6 +347,22 @@ void FSAIApp::connect_slot() {
 		advanceWindow->export_display_data(*(worker->displayData));
 
 	});
+	// 测试按钮1
+	QObject::connect(advanceWindow->ui->pushButton_9, &QPushButton::released, this, [&]() {
+		// 获取当前上位机时间戳
+		//auto start = std::chrono::steady_clock::now();
+		auto start = std::chrono::steady_clock::now();
+		auto masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
+		// 时间对齐
+		int slaveStamp = group.robotList[0]->synchronize_slave_buffer(masterStamp);
+
+		mainWindow->ui->textBrowser->append("Test 1: " + QString::number(masterStamp) + ", " + QString::number(slaveStamp) + ", "
+		+ QString::number(masterStamp - slaveStamp));
+	});
+	// 测试按钮2
+	QObject::connect(advanceWindow->ui->pushButton_10, &QPushButton::released, this, [&]() {
+		mainWindow->ui->textBrowser->append("Test 2: ");
+	});
 
 	// 工艺窗口
 	// 切换工艺

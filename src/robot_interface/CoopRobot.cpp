@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.3.2.2\n"
-		<< "Release Date:    250928");
+		<< "Version:         0.3.3.8\n"
+		<< "Release Date:    251020");
 }
 
 
@@ -97,7 +97,7 @@ int RobotBase::set_ZController(std::shared_ptr<Controller> ZController_, int id)
 	read_register_config();
 
 	// 重置轨迹序号
-	reset_line_num();
+	//reset_line_num();
 
 	// 读取机械臂当前状态
 	update_rt_robot_status();
@@ -320,6 +320,22 @@ int RobotBase::read_register_config() {
 
 	// IO 配置
 
+	// 从属设备
+	cfgIdx = 250;
+	cfgNum = 10;
+	robotConfig.slaveDeviceID.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.slaveDeviceID[i] = readValue[cfgIdx + i];
+	}
+
+	cfgIdx = 270;
+	cfgNum = 10;
+	robotConfig.slaveDeviceType.resize(cfgNum);
+	for (size_t i = 0; i < cfgNum; ++i) {
+		robotConfig.slaveDeviceType[i] = readValue[cfgIdx + i];
+	}
+
+
 	return ret;
 }
 
@@ -424,6 +440,19 @@ int RobotBase::write_register_config(const RobotConfig& config) {
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
 	// IO 配置
+
+	// 从属设备
+	cfgIdx = 250;
+	for (size_t i = 0; i < robotConfig.slaveDeviceID.size(); ++i) {
+		readValue[i] = static_cast<float>(robotConfig.slaveDeviceID[i]);
+	}
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
+
+	cfgIdx = 270;
+	for (size_t i = 0; i < robotConfig.slaveDeviceType.size(); ++i) {
+		readValue[i] = static_cast<float>(robotConfig.slaveDeviceType[i]);
+	}
+	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
 	//read_register_config();
 
@@ -614,6 +643,38 @@ int RobotBase::set_input_effective_state(const std::vector<int>& ioNum, const st
 
 }
 
+int RobotBase::get_input_action(const std::vector<int>& ioNum, std::vector<int>& action) {
+	int num = ioNum.size();
+
+	std::vector<float> value(num, 0.0);
+	std::vector<int> vrIdx(num, get_config_idx_base() + 300);
+	for (size_t i = 0; i < num; ++i) {
+		vrIdx[i] += 2 * ioNum[i] + 1;
+	}
+
+	int ret = ZController->get_axis_param(vrIdx, "VR", value);
+	action.clear();
+	for (size_t i = 0; i < value.size(); ++i) {
+		action.push_back(static_cast<int>(value[i]));
+	}
+
+	return 0;
+}
+
+int RobotBase::set_input_action(const std::vector<int>& ioNum, const std::vector<int>& action) {
+	int num = (std::min)(ioNum.size(), action.size());
+
+	std::vector<float> value = std::vector<float>(action.begin(), action.end());
+	std::vector<int> vrIdx(num, get_config_idx_base() + 300);
+	for (size_t i = 0; i < num; ++i) {
+		vrIdx[i] += 2 * ioNum[i] + 1;
+	}
+
+	int ret = ZController->set_axis_param(vrIdx, "VR", value);
+
+	return 0;
+}
+
 int RobotBase::get_input(int ioNum) {
 	return ZController->get_in(ioNum);
 }
@@ -691,13 +752,16 @@ int RobotBase::send_command(const std::string& cmd, std::string& ack, int type) 
 	int ret = ZController->sendCmd(cmd.c_str(), cmdbuffAck, type);
 	ack = cmdbuffAck;
 
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " send command return: " << ret<< ", "
+		<< "cmd: " << cmd << ", ack: " << ack);
+
 	return ret;
 }
 
 int RobotBase::reset_dual_axis_home_position() {
 	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
-	strcpy(cmdbuff, "RUNTASK 6, SET_DUAL_AXIS_ZERO");
+	strcpy(cmdbuff, "RUNTASK 9, SET_DUAL_AXIS_ZERO");
 
 	int ret = ZController->sendCmd(cmdbuff, cmdbuffAck, 0);
 
@@ -774,21 +838,66 @@ int RobotBase::get_multilayer_pos(std::vector<float>& pos) {
 }
 
 int RobotBase::get_slave_buffer() {
-	
+
 	int begIdx = get_data_idx_base();
-	int ret = ZController->get_register(begIdx + 21000, 500, statusBuffer.slaveBuffer, 0);
+
+	std::vector<float> data;
+	int bufAddr0 = begIdx + 21000;
+	int bufAddr1 = begIdx + 21500;
+	int dataNum = 5, dataLen = 10;
+
+	// 读取标志位
+	ZController->get_axis_param({ bufAddr0, bufAddr0 }, "TABLE", data);
+
+	// 缓存区地址
+	int buffAddr = bufAddr0 + 1, buffLen = dataLen * dataNum;
+	if (int(data[0]) < int(data[1])) {
+		buffAddr = bufAddr1 + 1;
+	}
+
+	// 读取有效缓存区
+	ZController->get_register(buffAddr, buffLen, data, 0);
+
+	// 保存下位机缓存数据
+	for (size_t i = 0; i < dataNum; ++i) {
+		long long stamp = static_cast<long long>(data[i * dataLen]);
+		std::vector<float> tmp = std::vector<float>(data.begin() + i * dataLen + 1, data.begin() + (i + 1)*dataLen);
+		bufferSync.push_slave_buffer(stamp, tmp);
+	}
+
+	//int ret = ZController->get_register(begIdx + 21000, 500, statusBuffer.slaveBuffer, 0);
 
 	return 0;
 }
 
 int RobotBase::single_axis_enable(bool enable, int axis) {
-	// 总开关
-	if (axis = -1) {
-
-	}
 
 	// 单轴使能
+	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
+	sprintf(cmdbuff, "RUNTASK 9, SINGLE_AXIS_ENABLE");
+	sprintf(tempbuff, "(%d,%d,%d)", robotId,  axis, enable);
+	strcat(cmdbuff, tempbuff);
+
+	int ret = ZController->sendCmd(cmdbuff, cmdbuffAck, 0);
+
+	return ret;
+
+}
+
+int RobotBase::synchronize_slave_buffer(long long masterStamp) {
+
+	// 获取当前下位机时间戳
+	float slaveStamp;
+	ZController->get_axis_param(get_state_idx_base() + 28, "TABLE", slaveStamp);
+
+	// 时间戳同步
+	//bufferSync.stamp_synchronize(masterStamp, static_cast<long long>(-slaveStamp));
+
+	return -slaveStamp;
+}
+
+int RobotBase::query_slave_buffer(long long stamp, std::vector<float>& data) {
 	return 0;
 }
 
@@ -1013,6 +1122,7 @@ void RobotGroupManager::processCommandThread() {
 				if (ret != 0) {
 					LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " send command failed: " << ret);
 					robotList[i]->set_upperStatus(0x20);
+					robot_group_stop(i);
 					break;
 				}
 
@@ -1088,9 +1198,9 @@ void RobotGroupManager::updateStatusThread() {
 		}
 
 		// 获取下位机缓冲数据
-		//for (size_t i = 0; i < robotList.size(); ++i) {
-		//	robotList[i]->get_slave_buffer();
-		//}
+		for (size_t i = 0; i < robotList.size(); ++i) {
+			robotList[i]->get_slave_buffer();
+		}
 
 		// 获取下位机缓冲数据
 		for (size_t i = 0; i < robotList.size(); ++i) {

@@ -4,6 +4,7 @@ add_library(FSAIRobotInterface
   CoopRobot.cpp
   RobotTrajectory.cpp
   ParamSerialization.cpp
+  BufferSynchronizer.cpp
 
   FSAIRobot.cpp
   ZMotionRobot.cpp

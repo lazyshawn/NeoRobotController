@@ -3,6 +3,8 @@ add_subdirectory(robot_interface)
 add_subdirectory(seam_tracker)
 add_subdirectory(ui)
 
+add_subdirectory(interpolation)
+
 install(EXPORT ${PROJECT_NAME}Targets
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}/cmake
   NAMESPACE ${PROJECT_NAME}::

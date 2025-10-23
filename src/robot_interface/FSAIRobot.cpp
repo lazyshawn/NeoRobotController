@@ -105,8 +105,9 @@ namespace FSAIRobotInterface {
 		tmp.cPos = tmp.cPosRaw;
 		cpos_base_to_world(tmp.cPos);
 
-		// 相对本体坐标系的空间点位
-		tmp.cPosR = tmp.cPos;
+		// 本体坐标系位置
+		ZController->get_axis_param({ 50,51,52,53,54,55,6,7,8 }, "DPOS", tmp.cPosR);
+		cpos_base_to_world(tmp.cPosR);
 
 		idx = std::vector<int>(50, get_state_idx_base());
 		for (size_t i = 0; i < idx.size(); ++i) {
@@ -123,10 +124,20 @@ namespace FSAIRobotInterface {
 		// 轨迹编号
 		tmp.lineNum = static_cast<int>(value[3]);
 
+		// 当前时间戳
+		tmp.slaveTime = static_cast<long>(value[28]);
+
 		// 电流
 		tmp.current = value[33];
 		// 电压
 		tmp.voltage = value[34];
+
+		// 焊接总时长
+		tmp.weldTime = static_cast<long>(value[30]);
+		// 起弧时间
+		tmp.weldBegTime = static_cast<long>(value[31]);
+		// 息弧时间
+		tmp.weldEndTime = static_cast<long>(value[32]);
 
 		// 
 		//ZController->get_axis_param({ stateIdxBase + 24117 }, "TABLE", value);
@@ -234,12 +245,12 @@ namespace FSAIRobotInterface {
 		if (enableAuto) {
 			ZController->set_axis_param(TableStartNum + 24000, "TABLE", 1);
 			// 开始信号
-			ZController->set_axis_param(TableStartNum + 23996, "TABLE", 1);
+			//ZController->set_axis_param(TableStartNum + 23996, "TABLE", 1);
 		}
 		else {
 			ZController->set_axis_param(TableStartNum + 24001, "TABLE", 1);
 			// 开始信号
-			ZController->set_axis_param(TableStartNum + 23996, "TABLE", 0);
+			//ZController->set_axis_param(TableStartNum + 23996, "TABLE", 0);
 		}
 
 		RobotStatus tmpStatus;
