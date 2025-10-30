@@ -1410,43 +1410,14 @@ int ZMotionRobot::task_stop() {
 
 	return 0;
 
-	// 停止记录位置
-	save_task_status(false, -1);
-	// 焊接标志位复位
-	ZController->set_axis_param(get_state_idx_base()+6, "TABLE", 0);
-
-	// 清空执行轴，摆焊轴
-	std::vector<int> axis;
-	auto camAxis = get_execute_axis();
-	axis.push_back(camAxis[0]);
-	//camAxis = get_tcp_axis();
-	//axis.push_back(camAxis[0]);
-	camAxis = get_cam_axis();
-	axis.insert(axis.end(), camAxis.begin(), camAxis.end());
-
-	// 轴停止，清空已下发任务
-	ZController->axis_stop(axis);
-
-	// 摆焊轴位置回零
-	auto zeroPos = std::vector<float>(camAxis.size(), 0);
-	ZController->set_axis_param(camAxis, "DPOS", zeroPos);
-
-	// 轨迹序号复位
-	reset_line_num();
-
-	// 下位机复位
-	ZController->set_axis_param(get_state_idx_base(), "TABLE", 0);
-
-	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
-
-	return 0;
 }
 
 int ZMotionRobot::emergency_stop() {
 
 	int stateIdxBase = get_state_idx_base();
 	trajectory.clear();
-	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+	// 保留旧版本急停按钮，后续版本将取消
+	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 	ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
 
 	// 上位机下发停止
