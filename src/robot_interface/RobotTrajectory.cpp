@@ -1,4 +1,4 @@
-
+ï»¿
 #include "robot_interface/RobotTrajectory.h"
 
 //namespace RobotTrajectory {
@@ -67,7 +67,7 @@ Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 
 		}
 	}
 
-	// Å·À­½ÇÏà¶ÔÖµ
+	// æ¬§æ‹‰è§’ç›¸å¯¹å€¼
 	Eigen::Matrix<DT_scale, 3, 1> endRel(0, 0, 0), equivRel(0, 0, 0);
 	DT_scale endSum = 0.0, equivSum = 0.0;
 	for (size_t i = 0; i < 3; ++i) {
@@ -77,7 +77,7 @@ Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 
 			endRel[i] = directDist;
 		}
 		else {
-			// ´ËÊ± begEuler[i] £¡= 0 ³ÉÁ¢
+			// æ­¤æ—¶ begEuler[i] ï¼= 0 æˆç«‹
 			endRel[i] = begEuler[i] < 0 ? -hopDist : hopDist;
 		}
 		endSum += std::fabs(endRel[i]);
@@ -93,7 +93,7 @@ Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 
 		equivSum += std::fabs(equivRel[i]);
 	}
 
-	// Ñ¡Ôñ×î¶Ì / ×î³¤µÄÏà¶ÔÔË¶¯¾àÀë
+	// é€‰æ‹©æœ€çŸ­ / æœ€é•¿çš„ç›¸å¯¹è¿åŠ¨è·ç¦»
 	if (chooseMimumDist) {
 		//ans = endSum < equivSum ? endRel : equivRel;
 		if (endSum < equivSum) {
@@ -119,7 +119,7 @@ Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 
 }
 
 Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 1>& begEuler, Eigen::Matrix<DT_scale, 3, 1>& midEuler, Eigen::Matrix<DT_scale, 3, 1>& endEuler) {
-	// Å·À­½Ç×ª»»µ½Ïà¶ÔÔË¶¯: beg -> mid -> end
+	// æ¬§æ‹‰è§’è½¬æ¢åˆ°ç›¸å¯¹è¿åŠ¨: beg -> mid -> end
 	Eigen::Matrix<DT_scale, 3, 1> relEuler = get_zyx_euler_distance(begEuler, midEuler);
 	relEuler += get_zyx_euler_distance(midEuler, endEuler);
 
@@ -137,30 +137,30 @@ std::vector<DT_scale> calc_traj_info(const std::vector<DT_scale>& begPnt, const 
 
 	if (mode == 1) {
 		Eigen::Matrix<DT_scale, 3, 1> a = begPos - midPos, b = endPos - midPos;
-		// µ±Ö±Ïß´¦Àí
+		// å½“ç›´çº¿å¤„ç†
 		//if (a.cross(b).squaredNorm() < 1e-9) {
 		//	info.head(3) = (endPos - begPos).normalized();
 		//	info[3] = (endPos - begPos).norm();
 		//	isLine = true;
 		//}
 
-		// Ô²ĞÄÎ»ÖÃ
+		// åœ†å¿ƒä½ç½®
 		Eigen::Matrix<DT_scale, 3, 1> cent = (a.squaredNorm()*b - b.squaredNorm()*a).cross(a.cross(b)) / (2 * (a.cross(b)).squaredNorm()) + midPos;
 		//Eigen::Matrix<DT_scale, 3, 1> cent;
 		//make_circle({ begPos, midPos, endPos }, cent);
-		// °ë¾¶·½Ïò
+		// åŠå¾„æ–¹å‘
 		Eigen::Matrix<DT_scale, 3, 1> op1 = (begPos - cent).normalized(), op2 = (midPos - cent).normalized(), op3 = (endPos - cent).normalized();
-		// ·¨Ïß·½Ïò
+		// æ³•çº¿æ–¹å‘
 		Eigen::Matrix<DT_scale, 3, 1> n12 = op1.cross(op2), n13 = op1.cross(op3);
-		// Ô²»¡ÔË¶¯Æ½ÃæµÄ·¨Ïß·½Ïò
+		// åœ†å¼§è¿åŠ¨å¹³é¢çš„æ³•çº¿æ–¹å‘
 		Eigen::Matrix<DT_scale, 3, 1> normal = op1.cross(op3);
-		// °ë¾¶¼Ğ½Ç
+		// åŠå¾„å¤¹è§’
 		DT_scale q12 = std::acos(op1.dot(op2)), q13 = std::acos(op1.dot(op3));
-		// Ô²ĞÄ½Ç¶È
+		// åœ†å¿ƒè§’åº¦
 		DT_scale theta = std::acos(op1.dot(op3));
 
-		// ĞŞÕıÔ²ĞÄ½ÇºÍ·¨ÏòÁ¿
-		// 2,3 ÔÚ 1 µÄÁ½²à
+		// ä¿®æ­£åœ†å¿ƒè§’å’Œæ³•å‘é‡
+		// 2,3 åœ¨ 1 çš„ä¸¤ä¾§
 		if (n12.dot(n13) < 0) {
 			normal = -n13;
 			theta = 2 * DT_PI - theta;
@@ -184,7 +184,7 @@ std::vector<DT_scale> calc_traj_info(const std::vector<DT_scale>& begPnt, const 
 	if (isLine) {
 		Eigen::Matrix<DT_scale, 3, 1> lineDir = (endPos - begPos).normalized();
 
-		// ¼ÆËã¹ì¼£ĞÅÏ¢
+		// è®¡ç®—è½¨è¿¹ä¿¡æ¯
 		knot.assign(begPos.data(), begPos.data() + 3);
 		dist = (endPos - begPos).norm();
 		dir.assign(lineDir.data(), lineDir.data() + 3);
@@ -202,22 +202,22 @@ std::vector<DT_scale> calc_traj_info(const std::vector<DT_scale>& begPnt, const 
 
 //TrajectoryPoint partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode) {
 //
-//	// »ñÈ¡½ÚµãÄ¿±êÎ»ÖÃ
+//	// è·å–èŠ‚ç‚¹ç›®æ ‡ä½ç½®
 //	auto curPoint = curTraj.mainPoint;
 //	auto prePoint = preTraj.mainPoint;
 //	auto midPoint = curTraj.auxPoint;
 //
 //	int num = curPoint.size();
-//	// ·Ö¶Î½á¹û
+//	// åˆ†æ®µç»“æœ
 //	TrajectoryPoint ans(num);
 //	ans.trajType = curTraj.trajType;
 //	std::vector<DT_scale> relEndMove(num, 0);
 //
-//	// ¸½¼ÓÖáÏà¶Ô±ä»¯Á¿
+//	// é™„åŠ è½´ç›¸å¯¹å˜åŒ–é‡
 //	for (size_t i = 0; i < num; ++i)
 //		relEndMove[i] = curPoint[i] - prePoint[i];
 //
-//	// Å·À­½ÇÏà¶Ô±ä»¯Á¿
+//	// æ¬§æ‹‰è§’ç›¸å¯¹å˜åŒ–é‡
 //	if (curPoint.size() > 5) {
 //		auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(prePoint[3], prePoint[4], prePoint[5]);
 //		auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(midPoint[3], midPoint[4], midPoint[5]);
@@ -230,51 +230,51 @@ std::vector<DT_scale> calc_traj_info(const std::vector<DT_scale>& begPnt, const 
 //
 //	bool isArc = (curTraj.trajType == TrajType::Arc);
 //
-//	// ¼ÆËãÎ»ÖÃ·ÖÁ¿
+//	// è®¡ç®—ä½ç½®åˆ†é‡
 //	auto trajInfo = calc_traj_info(prePoint, midPoint, curPoint, isArc);
 //	DT_scale partial = 0;
-//	// Ô²»¡ÔË¶¯
+//	// åœ†å¼§è¿åŠ¨
 //	if (isArc) {
-//		// Eigen ÀàĞÍµÄµãÎ»£¬ÓÃÓÚ¼ÆËã
+//		// Eigen ç±»å‹çš„ç‚¹ä½ï¼Œç”¨äºè®¡ç®—
 //		Eigen::Vector3f rotNorm(trajInfo[4], trajInfo[5], trajInfo[6]), centerPos(trajInfo[0], trajInfo[1], trajInfo[2]);
 //
-//		// ¹ì¼£×ÜĞı×ª½Ç¶È
+//		// è½¨è¿¹æ€»æ—‹è½¬è§’åº¦
 //		DT_scale theta = rotNorm.norm();
 //		rotNorm.normalize();
-//		// Æğµã´¦µÄ°ë¾¶
+//		// èµ·ç‚¹å¤„çš„åŠå¾„
 //		Eigen::Vector3f radiusDir(0, 0, 0);
 //		for (size_t i = 0; i < 3; ++i) {
 //			radiusDir[i] = prePoint[i] - centerPos[i];
 //		}
-//		// ·Ö¶ÎµãÎ»ÖÃ
+//		// åˆ†æ®µç‚¹ä½ç½®
 //		Eigen::Vector3f arcPos;
 //
-//		// ÖĞ¼äµã´¦µÄ±ÈÀı
+//		// ä¸­é—´ç‚¹å¤„çš„æ¯”ä¾‹
 //		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / (theta * radiusDir.norm());
 //		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
-//		// Î»ÖÃ·ÖÁ¿µ¥¶À¼ÆËã£¬×ËÌ¬ºÍ¸½¼ÓÖµ°´ÏßĞÔÀÛ¼Ó
+//		// ä½ç½®åˆ†é‡å•ç‹¬è®¡ç®—ï¼Œå§¿æ€å’Œé™„åŠ å€¼æŒ‰çº¿æ€§ç´¯åŠ 
 //		for (size_t i = 0; i < num; ++i) {
 //			ans.auxPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
 //		}
 //
-//		// ÖÕµã´¦µÄ±ÈÀı
+//		// ç»ˆç‚¹å¤„çš„æ¯”ä¾‹
 //		partial = (mode == 0) ? endRatio : endRatio / (theta * radiusDir.norm());
 //		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
-//		// Î»ÖÃ·ÖÁ¿µ¥¶À¼ÆËã£¬×ËÌ¬ºÍ¸½¼ÓÖµ°´ÏßĞÔÀÛ¼Ó
+//		// ä½ç½®åˆ†é‡å•ç‹¬è®¡ç®—ï¼Œå§¿æ€å’Œé™„åŠ å€¼æŒ‰çº¿æ€§ç´¯åŠ 
 //		for (size_t i = 0; i < num; ++i) {
 //			ans.mainPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
 //		}
 //	}
-//	// Ö±ÏßÔË¶¯
+//	// ç›´çº¿è¿åŠ¨
 //	else {
-//		// ±ÈÀı
+//		// æ¯”ä¾‹
 //		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / trajInfo[3];
 //		//if (partial > 1)
 //		//	partial = 1;
 //		for (size_t i = 0; i < num; ++i)
 //			ans.auxPoint[i] = prePoint[i] + relEndMove[i] * partial;
 //
-//		// ±ÈÀı
+//		// æ¯”ä¾‹
 //		partial = (mode == 0) ? endRatio : endRatio / trajInfo[3];
 //		//if (partial > 1)
 //		//	partial = 1;
@@ -293,16 +293,16 @@ std::vector<DT_scale> get_relative_distance(const std::vector<DT_scale>& beg, co
 
 	int num = end.size();
 	std::vector<DT_scale> relEndMove(num, 0);
-	// ÖÕµãµ½ÆğµãµÄÏà¶ÔÔË¶¯
+	// ç»ˆç‚¹åˆ°èµ·ç‚¹çš„ç›¸å¯¹è¿åŠ¨
 	for (int i = 0; i < num; ++i) {
 		relEndMove[i] = end[i] - beg[i];
 	}
 
-	// Å·À­½Ç×ª»»µ½Ïà¶ÔÔË¶¯: beg -> mid -> end
+	// æ¬§æ‹‰è§’è½¬æ¢åˆ°ç›¸å¯¹è¿åŠ¨: beg -> mid -> end
 	auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(beg[3], beg[4], beg[5]);
 	auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(mid[3], mid[4], mid[5]);
 	auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(end[3], end[4], end[5]);
-	// Å·À­½ÇÏà¶ÔÖµ
+	// æ¬§æ‹‰è§’ç›¸å¯¹å€¼
 	Eigen::Matrix<DT_scale, 3, 1> relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
 	for (size_t i = 0; i < 3; ++i) {
 		relEndMove[3 + i] = relEuler[i];
@@ -433,7 +433,7 @@ int DiscreteTrajectory::calc_traj_info() {
 	if (curTraj.isLine()) {
 		Eigen::Matrix<DT_scale, 3, 1> lineDir = (endPos - begPos).normalized();
 
-		// ¼ÆËã¹ì¼£ĞÅÏ¢
+		// è®¡ç®—è½¨è¿¹ä¿¡æ¯
 		this->knot.assign(begPos.data(), begPos.data() + 3);
 		this->dist = (endPos - begPos).norm();
 		this->dir.assign(lineDir.data(), lineDir.data() + 3);
@@ -442,33 +442,33 @@ int DiscreteTrajectory::calc_traj_info() {
 		//Eigen::Matrix<DT_scale, 7, 1> info;
 
 		Eigen::Matrix<DT_scale, 3, 1> a = begPos - midPos, b = endPos - midPos;
-		// µ±Ö±Ïß´¦Àí
+		// å½“ç›´çº¿å¤„ç†
 		//if (a.cross(b).squaredNorm() < 1e-9) {
 		//	info.head(3) = (endPos - begPos).normalized();
 		//	info[3] = (endPos - begPos).norm();
 		//	return -1;
 		//}
 
-		// Ô²ĞÄÎ»ÖÃ
+		// åœ†å¿ƒä½ç½®
 		Eigen::Matrix<DT_scale, 3, 1> cent = (a.squaredNorm()*b - b.squaredNorm()*a).cross(a.cross(b)) / (2 * (a.cross(b)).squaredNorm()) + midPos;
 		//Eigen::Matrix<DT_scale, 3, 1> cent;
 		//make_circle({ begPos, midPos, endPos }, cent);
-		// °ë¾¶·½Ïò
+		// åŠå¾„æ–¹å‘
 		Eigen::Matrix<DT_scale, 3, 1> op1 = (begPos - cent).normalized(), op2 = (midPos - cent).normalized(), op3 = (endPos - cent).normalized();
-		// ·¨Ïß·½Ïò
+		// æ³•çº¿æ–¹å‘
 		Eigen::Matrix<DT_scale, 3, 1> n12 = op1.cross(op2), n13 = op1.cross(op3);
 		n12.normalize();
 		n13.normalize();
-		// Ô²»¡ÔË¶¯Æ½ÃæµÄ·¨Ïß·½Ïò
+		// åœ†å¼§è¿åŠ¨å¹³é¢çš„æ³•çº¿æ–¹å‘
 		//Eigen::Matrix<DT_scale, 3, 1> normal = op1.cross(op3);
 		Eigen::Matrix<DT_scale, 3, 1> normal = n13;
-		// °ë¾¶¼Ğ½Ç
+		// åŠå¾„å¤¹è§’
 		DT_scale q12 = std::acos(op1.dot(op2)), q13 = std::acos(op1.dot(op3));
-		// Ô²ĞÄ½Ç¶È
+		// åœ†å¿ƒè§’åº¦
 		DT_scale theta = std::acos(op1.dot(op3));
 
-		// ĞŞÕıÔ²ĞÄ½ÇºÍ·¨ÏòÁ¿
-		// 2,3 ÔÚ 1 µÄÁ½²à
+		// ä¿®æ­£åœ†å¿ƒè§’å’Œæ³•å‘é‡
+		// 2,3 åœ¨ 1 çš„ä¸¤ä¾§
 		if (n12.dot(n13) < 0) {
 			normal = -n13;
 			theta = 2 * DT_PI - theta;
@@ -488,14 +488,14 @@ int DiscreteTrajectory::calc_traj_info() {
 
 	}
 
-	// Å·À­½Ç×ª»»µ½Ïà¶ÔÔË¶¯: beg -> mid -> end
+	// æ¬§æ‹‰è§’è½¬æ¢åˆ°ç›¸å¯¹è¿åŠ¨: beg -> mid -> end
 	auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(beg[3], beg[4], beg[5]);
 	auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(mid[3], mid[4], mid[5]);
 	auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(end[3], end[4], end[5]);
-	// Å·À­½ÇÏà¶ÔÖµ
+	// æ¬§æ‹‰è§’ç›¸å¯¹å€¼
 	auto relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
 	for (size_t i = 0; i < 3; ++i) {
-		// ĞŞÕıÅ·À­½Ç
+		// ä¿®æ­£æ¬§æ‹‰è§’
 		curTraj.mainPoint[3 + i] = begEuler[i] + relEuler[i];
 		curTraj.auxPoint[3 + i] = begEuler[i] + relEuler[i] / 2;
 		//curTraj.auxPoint[3 + i] = midEuler[i];
@@ -519,16 +519,16 @@ std::vector<DT_scale> DiscreteTrajectory::get_relative_distance() {
 
 	int num = curPoint.size();
 	std::vector<DT_scale> relEndMove(num, 0);
-	// ÖÕµãµ½ÆğµãµÄÏà¶ÔÔË¶¯
+	// ç»ˆç‚¹åˆ°èµ·ç‚¹çš„ç›¸å¯¹è¿åŠ¨
 	for (int i = 0; i < num; ++i) {
 		relEndMove[i] = curPoint[i] - prePoint[i];
 	}
 
-	// Å·À­½Ç×ª»»µ½Ïà¶ÔÔË¶¯: beg -> mid -> end
+	// æ¬§æ‹‰è§’è½¬æ¢åˆ°ç›¸å¯¹è¿åŠ¨: beg -> mid -> end
 	auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(prePoint[3], prePoint[4], prePoint[5]);
 	auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(midPoint[3], midPoint[4], midPoint[5]);
 	auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(curPoint[3], curPoint[4], curPoint[5]);
-	// Å·À­½ÇÏà¶ÔÖµ
+	// æ¬§æ‹‰è§’ç›¸å¯¹å€¼
 	auto relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
 	for (size_t i = 0; i < 3; ++i) {
 		relEndMove[3 + i] = relEuler[i];
@@ -544,16 +544,16 @@ DiscreteTrajectory::DiscreteTrajectory() {
 
 int DiscreteTrajectory::moveJABS(const std::vector<DT_scale>& end, const TrajectoryConfig& config) {
 
-	// Éè¶¨¹ì¼£µã
+	// è®¾å®šè½¨è¿¹ç‚¹
 	TrajectoryPoint trajPoint;
 	trajPoint.mainPoint = end;
 	trajPoint.trajType = TrajType::Joint;
 
-	// ¶¨ÒåĞÂ¹ì¼£
+	// å®šä¹‰æ–°è½¨è¿¹
 	SingleTrajectory traj(trajPoint, config);
 	traj.saveSeq = trajList.size();
 
-	// Ìí¼Ó¹ì¼£
+	// æ·»åŠ è½¨è¿¹
 	trajList.push_back(traj);
 	traj.saveSeq = trajList.size();
 
@@ -570,7 +570,7 @@ int DiscreteTrajectory::moveLABS(const std::vector<DT_scale>& end, const Traject
 	if (config.get_moveInBase()) {
 		trajPoint.trajType = TrajType::Line_R;
 
-		// ÆÁ±ÎµØ¹ìÖ¸Áî
+		// å±è”½åœ°è½¨æŒ‡ä»¤
 		if (trajPoint.mainPoint.size() > 6) {
 			trajPoint.mainPoint.erase(trajPoint.mainPoint.begin() + 6, trajPoint.mainPoint.end());
 			trajPoint.auxPoint.erase(trajPoint.auxPoint.begin() + 6, trajPoint.auxPoint.end());
@@ -599,7 +599,7 @@ int DiscreteTrajectory::moveCABS(const std::vector<DT_scale>& mid, const std::ve
 	if (config.get_moveInBase()) {
 		trajPoint.trajType = TrajType::Arc_R;
 
-		// ÆÁ±ÎµØ¹ìÖ¸Áî
+		// å±è”½åœ°è½¨æŒ‡ä»¤
 		if (trajPoint.mainPoint.size() > 6) {
 			trajPoint.mainPoint.erase(trajPoint.mainPoint.begin() + 6, trajPoint.mainPoint.end());
 			trajPoint.auxPoint.erase(trajPoint.auxPoint.begin() + 6, trajPoint.auxPoint.end());
@@ -631,19 +631,19 @@ int DiscreteTrajectory::apply_rotate(const Eigen::Matrix<DT_scale, 3, 3>& rotMat
 
 	for (auto& traj : trajList) {
 
-		// ·Ç±¾ÌåÔË¶¯£¬µÑ¿¨¶ûÔË¶¯
+		// éæœ¬ä½“è¿åŠ¨ï¼Œç¬›å¡å°”è¿åŠ¨
 		if (!traj.isJoint() && !traj.isBaseMotion()) {
-			// µ±Ç°×ËÌ¬
+			// å½“å‰å§¿æ€
 			auto curEuler = std::vector<DT_scale>(traj.mainPoint.begin() + 3, traj.mainPoint.begin() + 6);
 
 			Eigen::Matrix3f curRotMat = Eigen::AngleAxisf(curEuler[2] * DT_PI / 180, Eigen::Vector3f::UnitZ()) *
 				Eigen::AngleAxisf(curEuler[1] * DT_PI / 180, Eigen::Vector3f::UnitY()) *
 				Eigen::AngleAxisf(curEuler[0] * DT_PI / 180, Eigen::Vector3f::UnitX()).matrix();
 
-			// Ğı×ªºó×ËÌ¬
+			// æ—‹è½¬åå§¿æ€
 			Eigen::Matrix3f aftRotMat = rotMat * curRotMat;
 
-			// ×ª»»ÎªÅ·À­½Ç
+			// è½¬æ¢ä¸ºæ¬§æ‹‰è§’
 			auto aftEuler = aftRotMat.eulerAngles(2, 1, 0);
 			for (size_t i = 0; i < 3; ++i) {
 				traj.mainPoint[3 + i] = aftEuler[2 - i] * 180 / DT_PI;
@@ -654,10 +654,10 @@ int DiscreteTrajectory::apply_rotate(const Eigen::Matrix<DT_scale, 3, 3>& rotMat
 				Eigen::AngleAxisf(curEuler[1] * DT_PI / 180, Eigen::Vector3f::UnitY()) *
 				Eigen::AngleAxisf(curEuler[0] * DT_PI / 180, Eigen::Vector3f::UnitX()).matrix();
 
-			// Ğı×ªºó×ËÌ¬
+			// æ—‹è½¬åå§¿æ€
 			aftRotMat = rotMat * curRotMat;
 
-			// ×ª»»ÎªÅ·À­½Ç
+			// è½¬æ¢ä¸ºæ¬§æ‹‰è§’
 			aftEuler = aftRotMat.eulerAngles(2, 1, 0);
 			for (size_t i = 0; i < 3; ++i) {
 				traj.auxPoint[3 + i] = aftEuler[2 - i] * 180 / DT_PI;
@@ -672,7 +672,7 @@ int DiscreteTrajectory::apply_rotate(const Eigen::Matrix<DT_scale, 3, 3>& rotMat
 bool DiscreteTrajectory::trajectory_loaded() {
 	return trajList.empty();
 }
-// µü´úµ½ÏÂÒ»Ìõ¹ì¼£
+// è¿­ä»£åˆ°ä¸‹ä¸€æ¡è½¨è¿¹
 int DiscreteTrajectory::next() {
 
 	if (trajList.empty()) {
@@ -706,10 +706,10 @@ SingleTrajectory DiscreteTrajectory::get_aftTraj() const {
 
 int DiscreteTrajectory::set_preTraj(const SingleTrajectory& traj) {
 
-	// µ±Ç°´¢´æµÄÇ°Ò»Ìõ¹ì¼£Óë¸ø¶¨¹ì¼£ÀàĞÍÏàÍ¬
+	// å½“å‰å‚¨å­˜çš„å‰ä¸€æ¡è½¨è¿¹ä¸ç»™å®šè½¨è¿¹ç±»å‹ç›¸åŒ
 	//if (preTraj.trajType == traj.trajType) {
 	//}
-	// µ±Ç°´¢´æµÄÇ°Ò»Ìõ¹ì¼£Óë¸ø¶¨¹ì¼£²»¾ùÎª¿Õ¼äÔË¶¯£¬ÎŞĞèÉèÖÃ
+	// å½“å‰å‚¨å­˜çš„å‰ä¸€æ¡è½¨è¿¹ä¸ç»™å®šè½¨è¿¹ä¸å‡ä¸ºç©ºé—´è¿åŠ¨ï¼Œæ— éœ€è®¾ç½®
 	//if (trajList.front().isCartesian() ^ traj.isCartesian()) {
 	//	return 1;
 	//}
@@ -746,8 +746,8 @@ bool make_circle(const std::vector<Eigen::Matrix<DT_scale, 3, 1>>& pts, Eigen::M
 		return false;
 	}
 	double cost = (n1 * n1 + n3 * n3 - n2 * n2) / (2 * n1*n3);
-	cost = cost<-1.0 ? -1.0 : cost>1.0 ? 1.0 : cost;//Ô²ÖÜ½Ç*2=Ô²ĞÄ½Ç
-	r = sqrt(n2*n2*0.25 / (1 - cost * cost)); //µÈÑüÈı½ÇĞÎ£¬¼´0.5*Ô²ĞÄ½Ç
+	cost = cost<-1.0 ? -1.0 : cost>1.0 ? 1.0 : cost;//åœ†å‘¨è§’*2=åœ†å¿ƒè§’
+	r = sqrt(n2*n2*0.25 / (1 - cost * cost)); //ç­‰è…°ä¸‰è§’å½¢ï¼Œå³0.5*åœ†å¿ƒè§’
 
 	Eigen::Matrix<DT_scale, 3, 1> mp = (p2 + p3)*0.5;
 	Eigen::Matrix<DT_scale, 3, 1> norm = v1.cross(v2);

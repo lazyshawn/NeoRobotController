@@ -1,75 +1,84 @@
-
+ï»¿
 #include "robot_interface/ZMotionRobot.h"
 
 #include "RobotLogger.h"
 
 namespace FSAIRobotInterface {
 
-//! »ñÈ¡ÏÂ·¢Ö¸ÁîÖáºÅ£¬Ö÷ÒªÓÃÓÚÈ·¶¨ÔË¶¯Ö÷Öá
+//! è·å–ä¸‹å‘æŒ‡ä»¤è½´å·ï¼Œä¸»è¦ç”¨äºç¡®å®šè¿åŠ¨ä¸»è½´
 std::vector<int> ZMotionRobot::get_execute_axis() {
 	int base = robotId * 32;
 	std::vector<int> axis = { base + 18,base + 19,base + 20,base + 21,base + 22,base + 23 };
 	return axis;
 }
 
-// »úÆ÷ÈË×´Ì¬
+// æœºå™¨äººçŠ¶æ€
 int ZMotionRobot::update_rt_robot_status() {
 
 	int stateIdxBase = get_state_idx_base();
 	RobotStatus tmp;
-	// !¼õÉÙ¶ÁÈ¡´ÎÊı£¬ÓÅ»¯¶ÁÈ¡ËÙ¶È
+	// !å‡å°‘è¯»å–æ¬¡æ•°ï¼Œä¼˜åŒ–è¯»å–é€Ÿåº¦
 	std::vector<float> value;
 	//std::vector<int> idx(50, stateIdxBase);
 	//for (size_t i = 0; i < idx.size(); ++i) {
 	//	idx[i] += i;
 	//}
 	//ZController->get_axis_param(idx, "TABLE", value);
-	ZController->get_register(stateIdxBase, 50, value);
-
-	// ÔË¶¯×´Ì¬
+	ZController->get_register(stateIdxBase, 50, value, 0);
+	
+	// è¿åŠ¨çŠ¶æ€
 	tmp.lowerStatus = static_cast<int>(value[0]);
-	// ÊÖ¶¯/×Ô¶¯Ä£Ê½
+	// æ‰‹åŠ¨/è‡ªåŠ¨æ¨¡å¼
 	tmp.autoMode = static_cast<int>(value[1]);
-	// ÕıÄæ½âÄ£Ê½
+	// æ­£é€†è§£æ¨¡å¼
 	tmp.fkMode = static_cast<int>(value[2]);
-	// ÔË¶¯ĞĞºÅ
+	// è¿åŠ¨è¡Œå·
 	tmp.lineNum = static_cast<int>(value[3]);
-	// ¹ì¼£Ö¸Áî±àºÅ
+	// è½¨è¿¹æŒ‡ä»¤ç¼–å·
 	tmp.cmdNum = static_cast<int>(value[7]);
-	// ¹Ø½ÚÎ»ÖÃ
+	// å…³èŠ‚ä½ç½®
 	tmp.jPos = std::vector<float>(value.begin() + 10, value.begin() + 16);
 	tmp.jPos.insert(tmp.jPos.end(), value.begin() + 22, value.begin() + 25);
-	// ¿Õ¼äÎ»ÖÃ
+	// ç©ºé—´ä½ç½®
 	tmp.cPosRaw = std::vector<float>(value.begin() + 16, value.begin() + 22);
 	tmp.cPosRaw.insert(tmp.cPosRaw.end(), value.begin() + 22, value.begin() + 25);
 
 	tmp.remainBuffer = static_cast<int>(value[5]);
 
-	// µ±Ç°Ê±¼ä´Á
+	// å½“å‰æ—¶é—´æˆ³
 	tmp.slaveTime = static_cast<long>(value[28]);
-	// Ö÷ÖáÔË¶¯¾àÀë
+	// ä¸»è½´è¿åŠ¨è·ç¦»
 	tmp.masterAxisDist = static_cast<float>(value[29]);
 
-	// µçÁ÷
+	// ç”µæµ
 	tmp.current = value[33];
-	// µçÑ¹
+	// ç”µå‹
 	tmp.voltage = value[34];
 
-	// º¸½Ó×ÜÊ±³¤
+	// ç„Šæ¥æ€»æ—¶é•¿
 	tmp.weldTime = static_cast<long>(value[30]);
-	// Æğ»¡Ê±¼ä
+	// èµ·å¼§æ—¶é—´
 	tmp.weldBegTime = static_cast<long>(value[31]);
-	// Ï¢»¡Ê±¼ä
+	// æ¯å¼§æ—¶é—´
 	tmp.weldEndTime = static_cast<long>(value[32]);
 
-	// ¾Ö²¿×ø±êÏµ×ªÊÀ½ç×ø±êÏµ
+	// å±€éƒ¨åæ ‡ç³»è½¬ä¸–ç•Œåæ ‡ç³»
 	tmp.cPos = tmp.cPosRaw;
 	cpos_base_to_world(tmp.cPos);
 
-	// ¼ÓËø
-	std::lock_guard<std::mutex> lock(mtx);
-	// ĞèÒª±£³ÖµÄ×´Ì¬
-	tmp.upperStatus = robotStatus.upperStatus;
+	// å¼‚å¸¸ç 
+	ZController->get_register(stateIdxBase + 250, 20, value, 0);
+	tmp.subErrorCode = std::vector<int>(value.size(), 0);
+	for (size_t i = 0; i < value.size(); ++i) {
+		tmp.subErrorCode[i] = static_cast<int>(value[i]);
+	}
+
+	{
+		// åŠ é”
+		std::lock_guard<std::mutex> lock(mtx);
+		// éœ€è¦ä¿æŒçš„çŠ¶æ€
+		tmp.upperStatus = robotStatus.upperStatus; 
+	}
 
 	robotStatus = tmp;
 
@@ -78,33 +87,35 @@ int ZMotionRobot::update_rt_robot_status() {
 
 int ZMotionRobot::get_all_robot_status(RobotStatus& status) {
 	{
-		// ¼ÓËø
+		// åŠ é”
 		std::lock_guard<std::mutex> lock(mtx);
 
-		// ¸üĞÂ»úÆ÷ÈË×´Ì¬
+		// æ›´æ–°æœºå™¨äººçŠ¶æ€
 		status = robotStatus;
 	}
 
-	// ÖáºÅ
+	// è½´å·
 	std::vector<int> axis;
-	// ¶ÁÈ¡·ÇÊµÊ±²ÎÊı
+	// è¯»å–éå®æ—¶å‚æ•°
 	std::vector<float> value;
-	// »úÆ÷ÈË×ø±êÏµ
+	// æœºå™¨äººåæ ‡ç³»
 	axis = get_composed_axis({ get_robot_tcp_axis(), robotConfig.appAxisIdxRead });
 	ZController->get_axis_param(axis, "DPOS", status.cPosR);
-	// ±àÂëÆ÷Öµ
+	// ç¼–ç å™¨å€¼
 	axis = get_composed_axis({ get_axis_idx(), robotConfig.appAxisIdxRead });
 	ZController->get_axis_param(axis, "ENCODER", value);
 	status.encoder = std::vector<int>(value.size(), 0);
 	for (size_t i = 0; i < axis.size(); ++i) {
 		status.encoder[i] = static_cast<int>(value[i]);
 	}
-	// Öá×´Ì¬
+	// è½´çŠ¶æ€
 	ZController->get_axis_param(axis, "AXISSTATUS", value);
 	status.axisStatus = std::vector<int>(value.size(), 0);
 	for (size_t i = 0; i < axis.size(); ++i) {
 		status.axisStatus[i] = static_cast<int>(value[i]);
 	}
+
+
 
 	return 0;
 }
@@ -125,18 +136,18 @@ int ZMotionRobot::moveJABS(const std::vector<int>& axis, const std::vector<float
 
 int ZMotionRobot::moveL(const std::vector<int>& axis, const std::vector<float>& relMove, const std::vector<int>& mask) {
 
-	// ¹ì¼£µãÎ¬¶ÈÓëÇı¶¯ÖáÎ¬¶ÈµÄ½ÏĞ¡Öµ
+	// è½¨è¿¹ç‚¹ç»´åº¦ä¸é©±åŠ¨è½´ç»´åº¦çš„è¾ƒå°å€¼
 	size_t num = (std::min)(relMove.size(), axis.size());
 
 	return ZController->move(axis, relMove, 0, mask);
 
 }
 int ZMotionRobot::moveLABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& end, const std::vector<int>& mask) {
-	// ¹ì¼£µãÎ¬¶ÈÓëÇı¶¯ÖáÎ¬¶ÈµÄ½ÏĞ¡Öµ
+	// è½¨è¿¹ç‚¹ç»´åº¦ä¸é©±åŠ¨è½´ç»´åº¦çš„è¾ƒå°å€¼
 	size_t num = (std::min)(beg.size(), axis.size());
 	int ret = 0;
 
-	// ¼ÆËãÏà¶ÔÖµ
+	// è®¡ç®—ç›¸å¯¹å€¼
 	auto relEndMove = get_relative_distance(beg, end, end);
 
 	return ZController->move(axis, relEndMove, 0, mask);
@@ -150,35 +161,35 @@ int ZMotionRobot::moveCABS(const std::vector<int>& axis, const std::vector<float
 	size_t num = (std::min)(beg.size(), axis.size());
 	num = (std::min)(num, mid.size());
 
-	// ÖĞ¼äµãÏà¶ÔÖµ
+	// ä¸­é—´ç‚¹ç›¸å¯¹å€¼
 	std::vector<float> relMidMove(num);
 	for (size_t i = 0; i < num; ++i) {
 		relMidMove[i] = mid[i] - beg[i];
 	}
 
-	// ÖÕµãÏà¶ÔÖµ
+	// ç»ˆç‚¹ç›¸å¯¹å€¼
 	std::vector<float> relEndMove(num);
 	for (size_t i = 0; i < num; ++i) {
 		relEndMove[i] = end[i] - beg[i];
 	}
 
-	// Å·À­½Ç×ª»»µ½Ïà¶ÔÔË¶¯: beg -> mid -> end
+	// æ¬§æ‹‰è§’è½¬æ¢åˆ°ç›¸å¯¹è¿åŠ¨: beg -> mid -> end
 	auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(beg[3], beg[4], beg[5]);
 	auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(mid[3], mid[4], mid[5]);
 	auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(end[3], end[4], end[5]);
-	// Å·À­½ÇÏà¶ÔÖµ
+	// æ¬§æ‹‰è§’ç›¸å¯¹å€¼
 	auto relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
 	for (size_t i = 0; i < 3; ++i) {
-		// ĞŞÕıÅ·À­½Ç
+		// ä¿®æ­£æ¬§æ‹‰è§’
 		relEndMove[3 + i] = relEuler[i];
 	}
 
-	// Éú³ÉÃüÁî
+	// ç”Ÿæˆå‘½ä»¤
 	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
 	strcpy(cmdbuff, "BASE(");
 	for (size_t i = 0; i < num - 1; i++) {
-		// ÖáÆÁ±Î
+		// è½´å±è”½
 		if (mask.size() > i && mask[i] <= 0) {
 			continue;
 		}
@@ -193,7 +204,7 @@ int ZMotionRobot::moveCABS(const std::vector<int>& axis, const std::vector<float
 	sprintf(tempbuff, "MSPHERICALSP(%f,%f,%f,%f,%f,%f,%d", relEndMove[0], relEndMove[1], relEndMove[2], relMidMove[0], relMidMove[1], relMidMove[2], imode);
 	strcat(cmdbuff, tempbuff);
 	for (size_t i = 3; i < num; ++i) {
-		// ÖáÆÁ±Î
+		// è½´å±è”½
 		if (mask.size() > i && mask[i] <= 0) {
 			continue;
 		}
@@ -203,7 +214,7 @@ int ZMotionRobot::moveCABS(const std::vector<int>& axis, const std::vector<float
 	}
 	strcat(cmdbuff, ")");
 
-	//µ÷ÓÃÃüÁîÖ´ĞĞº¯Êı
+	//è°ƒç”¨å‘½ä»¤æ‰§è¡Œå‡½æ•°
 	return ZController->sendCmd(cmdbuff, cmdbuffAck);
 }
 
@@ -214,7 +225,7 @@ int ZMotionRobot::set_manual_speed(float ratio) {
 		return 1;
 	}
 
-	// ±£´æµ½ table, ´¥·¢ËÙ¶ÈË¢ĞÂ
+	// ä¿å­˜åˆ° table, è§¦å‘é€Ÿåº¦åˆ·æ–°
 	ZController->set_axis_param({ stateIdxBase + 4, stateIdxBase + 53 }, "TABLE", { static_cast<float>(ratio / 100.0), 1.0 });
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " set speed ratio: " << ratio / 100.0);
@@ -222,35 +233,35 @@ int ZMotionRobot::set_manual_speed(float ratio) {
 	return 0;
 }
 
-// ×Ô¶¯ÈÎÎñ
+// è‡ªåŠ¨ä»»åŠ¡
 int ZMotionRobot::update_swing_config() {
 
 	int ret;
-	// »ñÈ¡µ±Ç°¹ì¼£
+	// è·å–å½“å‰è½¨è¿¹
 	auto curTraj = trajectory.get_curTraj();
 	auto preTraj = trajectory.get_preTraj();
 
-	// »ñÈ¡½ÚµãÄ¿±êÎ»ÖÃ
+	// è·å–èŠ‚ç‚¹ç›®æ ‡ä½ç½®
 	auto curPoint = curTraj.mainPoint;
 	auto prePoint = preTraj.mainPoint;
 	auto midPoint = curTraj.auxPoint;
 
-	// ¶ÁÈ¡º¸½Ó²ÎÊı
+	// è¯»å–ç„Šæ¥å‚æ•°
 	Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
 
 	bool sendPlainTraj = false;
-	// °Úº¸¿ªÆô
+	// æ‘†ç„Šå¼€å¯
 	if (waveCfg.Id > 0) {
-		// ÕıÏÒ°Ú
+		// æ­£å¼¦æ‘†
 		if (waveCfg.Shape == 0) {
-			// ĞŞ¸Ä°Ú¶¯²ÎÊı
+			// ä¿®æ”¹æ‘†åŠ¨å‚æ•°
 			int numPeriod = get_swing_num();
-			// Í£Áô1ms£¬¼õĞ¡¶¶¶¯
+			// åœç•™1msï¼Œå‡å°æŠ–åŠ¨
 			ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 0.0 });
 
-			// °Úº¸ÖÜÆÚÊı´óÓÚ0
+			// æ‘†ç„Šå‘¨æœŸæ•°å¤§äº0
 			if (numPeriod > 0) {
-				// ¼ÆËãĞı×ªÆ½Ãæ·½Ïò
+				// è®¡ç®—æ—‹è½¬å¹³é¢æ–¹å‘
 				auto trajInfo = calc_traj_info(prePoint, midPoint, curPoint, curTraj.isArc());
 				std::vector<float> nDir = { trajInfo[4], trajInfo[5], trajInfo[6] };
 				double norm = std::sqrt(nDir[0] * nDir[0] + nDir[1] * nDir[1] + nDir[2] * nDir[2]);
@@ -258,11 +269,11 @@ int ZMotionRobot::update_swing_config() {
 					nDir[i] /= norm;
 				}
 
-				// µãÎ»×ªµ½ÊÀ½ç×ø±êÏµ
+				// ç‚¹ä½è½¬åˆ°ä¸–ç•Œåæ ‡ç³»
 				auto wCPos = prePoint;
 				cpos_base_to_world(wCPos);
 
-				// ¼ÆËã°Úº¸·½Ïò
+				// è®¡ç®—æ‘†ç„Šæ–¹å‘
 				std::vector<float> zDir(3), zEuler = { static_cast<float>(wCPos[3] * DT_PI / 180),
 					static_cast<float>(wCPos[4] * DT_PI / 180), static_cast<float>(wCPos[5] * DT_PI / 180) };
 
@@ -270,7 +281,7 @@ int ZMotionRobot::update_swing_config() {
 				zDir[1] = cos(zEuler[0]) * sin(zEuler[2]) * sin(zEuler[1]) - cos(zEuler[2]) * sin(zEuler[0]);
 				zDir[2] = cos(zEuler[0]) * cos(zEuler[1]);
 
-				// ÉèÖÃ°Úº¸
+				// è®¾ç½®æ‘†ç„Š
 				update_swing_table(waveCfg);
 
 				//ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
@@ -279,13 +290,13 @@ int ZMotionRobot::update_swing_config() {
 				//ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
 				ret = swing_on((trajectory.get_dist() - 0.00) / numPeriod, waveCfg, swingMode, zDir, nDir);
 
-				// ¼ÆËãÖáÔË¶¯¾àÀë
+				// è®¡ç®—è½´è¿åŠ¨è·ç¦»
 				//ret += swing_off(trajectory.get_dist() - 0.02);
 
 			}
 
 		}
-		// Èı½Ç°Ú
+		// ä¸‰è§’æ‘†
 		else if (waveCfg.Shape == 3) {
 
 		}
@@ -302,7 +313,7 @@ int ZMotionRobot::update_swing_config() {
 
 int ZMotionRobot::update_track_config() {
 
-	// »ñÈ¡µ±Ç°¹ì¼£
+	// è·å–å½“å‰è½¨è¿¹
 	auto curTraj = trajectory.get_curTraj();
 	Track trackCfg = deserialize_Track(curTraj.get_appendix());
 
@@ -312,12 +323,12 @@ int ZMotionRobot::update_track_config() {
 	size_t configTableStart = stateIdxBase + 180;
 	int ret = 0;
 
-	// ¸ú×ÙÎ´Ê¹ÄÜ
+	// è·Ÿè¸ªæœªä½¿èƒ½
 	if (trackCfg.Id > 0) {
-		// µç»¡¸ú×Ù±êÖ¾Î»£¬Çø·Öµç»¡¸ú×ÙºÍÏß¼¤¹â¸ú×Ù
+		// ç”µå¼§è·Ÿè¸ªæ ‡å¿—ä½ï¼ŒåŒºåˆ†ç”µå¼§è·Ÿè¸ªå’Œçº¿æ¿€å…‰è·Ÿè¸ª
 		ZController->set_axis_param(stateIdxBase + 150, "TABLE", trackCfg.Id, axis[0]);
 
-		// ÏÂ·¢¸ú×Ù²ÎÊı
+		// ä¸‹å‘è·Ÿè¸ªå‚æ•°
 		for (size_t i = 0; i < config.size(); ++i) {
 			ZController->set_axis_param(configTableStart + i, "TABLE", config[i], axis[0]);
 		}
@@ -334,24 +345,24 @@ int ZMotionRobot::update_track_config() {
 }
 int ZMotionRobot::update_welder_config() {
 
-	// »ñÈ¡µ±Ç°¹ì¼£
+	// è·å–å½“å‰è½¨è¿¹
 	auto curTraj = trajectory.get_curTraj();
 	Arc_WeldingParaItem weldCfg = deserialize_Arc_WeldingParaItem(curTraj.get_appendix());
 
-	// ²»Æğ»¡£¬ÎŞĞèĞŞ¸Äº¸½Ó²ÎÊı
+	// ä¸èµ·å¼§ï¼Œæ— éœ€ä¿®æ”¹ç„Šæ¥å‚æ•°
 	if (weldCfg.Id <= 0) {
 		return 1;
 	}
 
 	float current, voltage;
-	// µçÁ÷
+	// ç”µæµ
 	current = weldCfg.WeldingCrt_Spd;
-	// µçÑ¹·Ö±ğÄ£Ê½
+	// ç”µå‹åˆ†åˆ«æ¨¡å¼
 	//if (weldCfg.WeldingWorkMode == 4) {
 	if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1) {
 		voltage = weldCfg.WeldingVtg_Strth;
 	}
-	// Ò»ÔªÄ£Ê½
+	// ä¸€å…ƒæ¨¡å¼
 	else {
 		voltage = weldCfg.VtgUniCorrection + 30;
 	}
@@ -373,9 +384,9 @@ int ZMotionRobot::update_welder_config() {
 	data.push_back(current);
 	data.push_back(voltage);
 
-	// Ğ´Èë±ä¹¤ÒÕ²ÎÊı
+	// å†™å…¥å˜å·¥è‰ºå‚æ•°
 	ZController->set_axis_param(tableList, "TABLE", data, get_execute_axis()[0]);
-	// ±ä¹¤ÒÕÊ¹ÄÜ
+	// å˜å·¥è‰ºä½¿èƒ½
 	ZController->set_axis_param(stateBase + 170, "TABLE", 1, get_execute_axis()[0]);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId <<
@@ -395,28 +406,28 @@ int ZMotionRobot::get_remain_buffer() {
 
 int ZMotionRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 
-	// Î´ÉèÖÃ×Ô¶¯Ä£Ê½
+	// æœªè®¾ç½®è‡ªåŠ¨æ¨¡å¼
 	if (robotStatus.autoMode <= 0) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
 		set_upperStatus(0x10);
 		return -1;
 	}
 
-	// ¹ì¼£Îª¿Õ
+	// è½¨è¿¹ä¸ºç©º
 	if (trajList.size() == 0) {
 		return -2;
 	}
 
-	// ¹ì¼£Ô¤´¦Àí
-	// °´Ö÷´Ó±ê¶¨¾ØÕó£¬½«ÊÀ½ç×ø±êÏµ×ËÌ¬×ª»»Îª»ù×ø±êÏµ×ËÌ¬
+	// è½¨è¿¹é¢„å¤„ç†
+	// æŒ‰ä¸»ä»æ ‡å®šçŸ©é˜µï¼Œå°†ä¸–ç•Œåæ ‡ç³»å§¿æ€è½¬æ¢ä¸ºåŸºåæ ‡ç³»å§¿æ€
 	auto rotMat = robotConfig.get_slave_calibratino_mat().inverse();
 	trajList.apply_rotate(rotMat);
 
 	std::unique_lock<std::mutex> lock(mtx);
-	// µÈ´ıÌõ¼şÖÃ·´
+	// ç­‰å¾…æ¡ä»¶ç½®å
 	motionDone = false;
 
-	// ¹ì¼£ÈëÕ»
+	// è½¨è¿¹å…¥æ ˆ
 	trajectory.push_new_trajectory(trajList);
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " receive new trajectory, trajectory buffer size is " << trajectory.size());
 
@@ -427,21 +438,21 @@ int ZMotionRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 
 int ZMotionRobot::execute_single_joint() {
 	int ret = 0;
-	// Ç°Ò»Ìõ¹ì¼£
+	// å‰ä¸€æ¡è½¨è¿¹
 	auto preTraj = trajectory.get_preTraj();
-	// »ñÈ¡µ±Ç°¹ì¼£
+	// è·å–å½“å‰è½¨è¿¹
 	auto curTraj = trajectory.get_curTraj();
 
 	std::vector<int> axis = get_composed_axis({ get_execute_axis(), robotConfig.appAxisIdx });
 
-	// ÖáÆÁ±Î
+	// è½´å±è”½
 	std::vector<int> mask(axis.size(), 1);
 	auto trajAxisMask = curTraj.get_axisMask();
 	for (size_t i = 0; i < axis.size(); ++i) {
-		// »úÆ÷ÈËÖ¸¶¨µÄÆÁ±Î
+		// æœºå™¨äººæŒ‡å®šçš„å±è”½
 		if (axisMask.count(i) > 0)
 			mask[i] = -1;
-		// ¹ì¼£Ö¸¶¨µÄÆÁ±Î
+		// è½¨è¿¹æŒ‡å®šçš„å±è”½
 		for (size_t j = 0; j < trajAxisMask.size(); ++j) {
 			if (i == trajAxisMask[j])
 				mask[i] = -1;
@@ -453,15 +464,15 @@ int ZMotionRobot::execute_single_joint() {
 			maskF.push_back(static_cast<float>(axis[i]));
 	}
 
-	// ËÙ¶ÈÖµ
+	// é€Ÿåº¦å€¼
 	std::vector<float> speed(axis.size(), 1);
 
-	// ÔË¶¯ÀàĞÍ¼ì²é
+	// è¿åŠ¨ç±»å‹æ£€æŸ¥
 
-	// »ñÈ¡½ÚµãÄ¿±êÎ»ÖÃ
+	// è·å–èŠ‚ç‚¹ç›®æ ‡ä½ç½®
 	auto pnt = curTraj.mainPoint;
 
-	// ÉèÖÃËÙ¶È
+	// è®¾ç½®é€Ÿåº¦
 	float speedRatio = curTraj.get_speed() / 100.0;
 	if (speedRatio > 0) {
 		for (int i = 0; i < axis.size(); ++i) {
@@ -469,7 +480,7 @@ int ZMotionRobot::execute_single_joint() {
 		}
 		ZController->set_axis_param(axis, (char*)"SPEED", speed);
 	}
-	// ÉèÖÃÆ½»¬¶È
+	// è®¾ç½®å¹³æ»‘åº¦
 	if (curTraj.get_smooth() >= 0) {
 		ZController->set_axis_param(axis[0], (char*)"ZSMOOTH", curTraj.get_smooth());
 	}
@@ -479,27 +490,27 @@ int ZMotionRobot::execute_single_joint() {
 		<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
 		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : ""));
 
-	// ¿ªÊ¼¼ÇÂ¼Î»ÖÃ
+	// å¼€å§‹è®°å½•ä½ç½®
 	save_task_status(true, axis[0]);
-	// ÏÂ·¢¹ì¼£±àºÅ
+	// ä¸‹å‘è½¨è¿¹ç¼–å·
 	send_running_line_num(axis[0], trajectory.get_curTraj());
 
-	// »ñÈ¡Ç°Ò»Ìõ¹ì¼£Î»ÖÃ
+	// è·å–å‰ä¸€æ¡è½¨è¿¹ä½ç½®
 	auto beg = preTraj.get_mainPoint();
-	// ÏÂ·¢¹ì¼£
+	// ä¸‹å‘è½¨è¿¹
 	ret = moveJABS(axis, beg, pnt, mask);
 	if (ret != 0)
 		return ret;
 
-	// ¸üĞÂ¹ì¼£±àºÅ
+	// æ›´æ–°è½¨è¿¹ç¼–å·
 	trajectory.trajList.front().lineNum = ++cmdNum;
 
-	// ÏÂ·¢¹ì¼£ĞòºÅ
+	// ä¸‹å‘è½¨è¿¹åºå·
 	send_line_num(axis[0], trajectory.get_curTraj());
-	// Í£Ö¹¼ÇÂ¼Î»ÖÃ
+	// åœæ­¢è®°å½•ä½ç½®
 	save_task_status(false, axis[0]);
 
-	// ¹ì¼£³öÕ»
+	// è½¨è¿¹å‡ºæ ˆ
 	if (ret == 0) {
 		trajectory.set_current_line_num(cmdNum);
 		trajectory.next();
@@ -514,7 +525,7 @@ int ZMotionRobot::execute_single_joint() {
 int ZMotionRobot::execute_single_cartesian() {
 
 	int stateIdxBase = get_state_idx_base();
-	// »ñÈ¡µ±Ç°¹ì¼£
+	// è·å–å½“å‰è½¨è¿¹
 	auto curTraj = trajectory.get_curTraj();
 	auto preTraj = trajectory.get_preTraj();
 
@@ -522,7 +533,7 @@ int ZMotionRobot::execute_single_cartesian() {
 	std::vector<int> axis = get_composed_axis({ get_execute_axis(), robotConfig.appAxisIdx });
 	std::vector<int> camAxis = get_cam_axis();
 
-	// ÖáÆÁ±Î
+	// è½´å±è”½
 	std::vector<int> mask(axis.size(), 1);
 	auto trajAxisMask = curTraj.get_axisMask();
 	for (size_t i = 0; i < axis.size(); ++i) {
@@ -539,12 +550,12 @@ int ZMotionRobot::execute_single_cartesian() {
 			maskF.push_back(static_cast<float>(axis[i]));
 	}
 
-	// »ñÈ¡½ÚµãÄ¿±êÎ»ÖÃ
+	// è·å–èŠ‚ç‚¹ç›®æ ‡ä½ç½®
 	auto curPoint = curTraj.mainPoint;
 	auto prePoint = preTraj.mainPoint;
 	auto midPoint = curTraj.auxPoint;
 
-	// ¼ÆËã×ËÌ¬±ä»¯
+	// è®¡ç®—å§¿æ€å˜åŒ–
 	Eigen::Quaternionf preOri = Eigen::AngleAxisf(prePoint[5] * DT_PI / 180, Eigen::Vector3f::UnitZ()) *
 		Eigen::AngleAxisf(prePoint[4] * DT_PI / 180, Eigen::Vector3f::UnitY()) *
 		Eigen::AngleAxisf(prePoint[3] * DT_PI / 180, Eigen::Vector3f::UnitX());
@@ -552,9 +563,9 @@ int ZMotionRobot::execute_single_cartesian() {
 		Eigen::AngleAxisf(curPoint[4] * DT_PI / 180, Eigen::Vector3f::UnitY()) *
 		Eigen::AngleAxisf(curPoint[3] * DT_PI / 180, Eigen::Vector3f::UnitX());
 	float detOri = preOri.angularDistance(curOri) * 180 / DT_PI;
-	// ¼Ù¶¨×î´ó45 deg/s
+	// å‡å®šæœ€å¤§45 deg/s
 	float oriTime = detOri / 45;
-	// ËÙ¶ÈĞŞÕı
+	// é€Ÿåº¦ä¿®æ­£
 	float cartTime = trajectory.get_dist() / curTraj.get_speed();
 	float correctSpeed = -1.0;
 	if (oriTime > cartTime) {
@@ -571,34 +582,34 @@ int ZMotionRobot::execute_single_cartesian() {
 	}
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 		<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
-		<< (correctSpeed > 0 ? ", correct: " + std::to_string(correctSpeed) : "")    // ËÙ¶ÈĞŞÕı
-		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // ÖáÑÚÂë
+		<< (correctSpeed > 0 ? ", correct: " + std::to_string(correctSpeed) : "")    // é€Ÿåº¦ä¿®æ­£
+		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // è½´æ©ç 
 		<< ". traj dist: " << trajectory.get_dist() << ", " << detOri
 	);
 
-	// ¹ì¼£µãÎ¬¶ÈÓëÇı¶¯ÖáÎ¬¶ÈµÄ½ÏĞ¡Öµ
+	// è½¨è¿¹ç‚¹ç»´åº¦ä¸é©±åŠ¨è½´ç»´åº¦çš„è¾ƒå°å€¼
 	size_t num = (std::min)(curPoint.size(), axis.size());
 
-	// ¶ÁÈ¡º¸½Ó²ÎÊı
+	// è¯»å–ç„Šæ¥å‚æ•°
 	Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
 	Arc_WeldingParaItem weldCfg = deserialize_Arc_WeldingParaItem(curTraj.get_appendix());
 	Track trackCfg = deserialize_Track(curTraj.get_appendix());
 
-	// ĞŞ¸Äº¸½Ó²ÎÊı
+	// ä¿®æ”¹ç„Šæ¥å‚æ•°
 	update_welder_config();
-	// ĞŞ¸Ä¸ú×Ù²ÎÊı
+	// ä¿®æ”¹è·Ÿè¸ªå‚æ•°
 	update_track_config();
-	// ĞŞ¸Ä°Úº¸²ÎÊı
+	// ä¿®æ”¹æ‘†ç„Šå‚æ•°
 	update_swing_config();
 
-	// ÉèÖÃÆ½»¬¶È
+	// è®¾ç½®å¹³æ»‘åº¦
 	if (curTraj.get_smooth() >= 0)
 		ZController->set_axis_param(axis[0], "ZSMOOTH", curTraj.get_smooth());
-	// ÉèÖÃËÙ¶È
+	// è®¾ç½®é€Ÿåº¦
 	ZController->set_axis_param(axis[0], "FORCE_SPEED", correctSpeed > 0 ? correctSpeed : curTraj.get_speed());
-	// ĞŞ¸Ä¼ÓËÙ¶È
+	// ä¿®æ”¹åŠ é€Ÿåº¦
 	Weave preWaveCfg = deserialize_Weave(preTraj.get_appendix());
-	// Ç°Ò»Ìõ²»°Úº¸£¬µ±Ç°°Úº¸£¬ĞŞ¸Ä¼ÓËÙ¶È
+	// å‰ä¸€æ¡ä¸æ‘†ç„Šï¼Œå½“å‰æ‘†ç„Šï¼Œä¿®æ”¹åŠ é€Ÿåº¦
 	if (preWaveCfg.Id <= 0 && waveCfg.Id > 0) {
 		execute_move_action({ { 7, { 1 } } }, 0);
 	}
@@ -606,21 +617,21 @@ int ZMotionRobot::execute_single_cartesian() {
 		execute_move_action({ { 7, { 2 } } }, 0);
 	}
 
-	// ¿ªÊ¼¼ÇÂ¼Î»ÖÃ
+	// å¼€å§‹è®°å½•ä½ç½®
 	save_task_status(true, axis[0]);
-	// ÏÂ·¢¹ì¼£±àºÅ
+	// ä¸‹å‘è½¨è¿¹ç¼–å·
 	send_running_line_num(axis[0], trajectory.get_curTraj());
 
 
-	// µ±Ç°¹ì¼£µÄÏà¶ÔÔË¶¯Á¿
+	// å½“å‰è½¨è¿¹çš„ç›¸å¯¹è¿åŠ¨é‡
 	std::vector<float> relEndMove = trajectory.get_relative_distance();
 
-	// ¿ªÆô°Úº¸
+	// å¼€å¯æ‘†ç„Š
 	int numPeriod = get_swing_num();
 	if (waveCfg.Id > 0 && numPeriod > 0) {
-		// ÕıÏÒ°Ú
+		// æ­£å¼¦æ‘†
 		if (waveCfg.Shape == 0) {
-			// µÚÒ»¸ö1/4ÖÜÆÚÕ¼ÓÃµÄÏàÎ»½Ç
+			// ç¬¬ä¸€ä¸ª1/4å‘¨æœŸå ç”¨çš„ç›¸ä½è§’
 			float detQ = std::asin((waveCfg.LeftWidth - waveCfg.RightWidth) / (waveCfg.LeftWidth + waveCfg.RightWidth));
 			float rightPartial = 1.0 / numPeriod * (DT_PI / 2 - detQ) / (2 * DT_PI);
 			float leftPartial = 1.0 / numPeriod * (DT_PI / 2 + detQ) / (2 * DT_PI);
@@ -628,7 +639,7 @@ int ZMotionRobot::execute_single_cartesian() {
 			float begPartial = 0, endPartial = 0;
 			auto segmentBeg = preTraj.mainPoint;
 			for (size_t i = 0; i < numPeriod; ++i) {
-				// ÏòÓÒ1/4
+				// å‘å³1/4
 				begPartial = endPartial;
 				endPartial += rightPartial;
 				auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 0);
@@ -643,7 +654,7 @@ int ZMotionRobot::execute_single_cartesian() {
 				if (ret != 0)
 					return ret;
 
-				// ÓÒ1/4
+				// å³1/4
 				begPartial = endPartial;
 				endPartial += rightPartial;
 				segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 0);
@@ -657,17 +668,17 @@ int ZMotionRobot::execute_single_cartesian() {
 				if (ret != 0)
 					return ret;
 
-				// ¼ÇÂ¼µçÁ÷
+				// è®°å½•ç”µæµ
 				if (/*i > 0 && */i < numPeriod - 1)
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 2, axis[0]);
 				else
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 1, axis[0]);
 
-				// ÓÒ²à´¥·¢¸ú×Ù
+				// å³ä¾§è§¦å‘è·Ÿè¸ª
 				if (i > 0 && i < numPeriod - 1)
 					ZController->set_axis_param(stateIdxBase + 160, "TABLE", 2, axis[0]);
 
-				// ×ó1/4
+				// å·¦1/4
 				begPartial = endPartial;
 				endPartial += leftPartial;
 				segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 0);
@@ -681,7 +692,7 @@ int ZMotionRobot::execute_single_cartesian() {
 				if (ret != 0)
 					return ret;
 
-				// ×ó1/4
+				// å·¦1/4
 				begPartial = endPartial;
 				endPartial += leftPartial;
 				segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 0);
@@ -695,17 +706,17 @@ int ZMotionRobot::execute_single_cartesian() {
 				if (ret != 0)
 					return ret;
 
-				// ¼ÇÂ¼µçÁ÷
+				// è®°å½•ç”µæµ
 				if (/*i > 0 && */i < numPeriod - 1)
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 3, axis[0]);
 				else
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 1, axis[0]);
 
-				// ×ó²à´¥·¢¸ú×Ù
+				// å·¦ä¾§è§¦å‘è·Ÿè¸ª
 				if (i > 0 && i < numPeriod - 1)
 					ZController->set_axis_param(stateIdxBase + 160, "TABLE", 3, axis[0]);
 
-				// ¼ÇÂ¼¶à²ã¶àµÀµãÎ»
+				// è®°å½•å¤šå±‚å¤šé“ç‚¹ä½
 				if (i == numPeriod - 1) {
 					ZController->set_axis_param(stateIdxBase + 101, "TABLE", 3, axis[0]);
 				}
@@ -714,49 +725,49 @@ int ZMotionRobot::execute_single_cartesian() {
 				}
 			}
 
-			// Í£Ö¹ÒÔ·ÀËÙ¶ÈÍ»±ä
+			// åœæ­¢ä»¥é˜²é€Ÿåº¦çªå˜
 			//ZController->set_base_param(axis[0], "MOVE_WA", { 1.0 });
-			// °Úº¸½áÊø
+			// æ‘†ç„Šç»“æŸ
 			ret += swing_off(trajectory.get_dist() - 0.02);
 		}
 		else if (waveCfg.Shape == 3) {
-			// ¼ÓÈë°Ú¶¯Öá
+			// åŠ å…¥æ‘†åŠ¨è½´
 			axis.insert(axis.end(), camAxis.begin(), camAxis.end());
 
-			// Èı½Ç°Ú: °Ú·ù¡¢Ç°½ø±ÈÀı¡¢ºóÍË±ÈÀı
+			// ä¸‰è§’æ‘†: æ‘†å¹…ã€å‰è¿›æ¯”ä¾‹ã€åé€€æ¯”ä¾‹
 			float triWidth = waveCfg.LeftWidth + waveCfg.RightWidth, feedRatio = waveCfg.Length, backRatio = waveCfg.Bias;
-			// ºáÒÆËÙ¶È
+			// æ¨ªç§»é€Ÿåº¦
 			float shiftVel = triWidth / 2 * waveCfg.Freq;
-			// º¸½ÓËÙ¶È
+			// ç„Šæ¥é€Ÿåº¦
 			float weldVel = curTraj.get_speed();
-			// Ç°½ø¾àÀë
+			// å‰è¿›è·ç¦»
 			float feedDist = weldVel / shiftVel * triWidth / 2 * feedRatio;
-			// ÍêÕûµÄÈı½Ç°ÚÖÜÆÚ
+			// å®Œæ•´çš„ä¸‰è§’æ‘†å‘¨æœŸ
 			int numPeriod = std::ceil((trajectory.get_dist()/* - feedDist*/) / (feedDist * (feedRatio - backRatio) / feedRatio));
-			// Ç°½ø¾àÀëĞŞÕı
+			// å‰è¿›è·ç¦»ä¿®æ­£
 			feedDist = trajectory.get_dist() / (numPeriod*(feedRatio - backRatio) / feedRatio/* + 1*/);
-			// ºóÍË¾àÀë
+			// åé€€è·ç¦»
 			float backDist = feedDist * backRatio / feedRatio;
-			// Êµ¼Ê½ø¸ø¾àÀë£¬»ØÍË¾àÀë
+			// å®é™…è¿›ç»™è·ç¦»ï¼Œå›é€€è·ç¦»
 			float actFeedDist = sqrt(feedDist * feedDist + triWidth * triWidth / 4), actBackDist = sqrt(backDist * backDist + triWidth * triWidth / 4);
-			// Ç°½øÊ±¼ä, ºóÍËÊ±¼ä
+			// å‰è¿›æ—¶é—´, åé€€æ—¶é—´
 			float feedTime = actFeedDist / weldVel, backTime = actBackDist / weldVel;
-			// ×óÓÒ°Ú½Ç
+			// å·¦å³æ‘†è§’
 			float rightAngle = waveCfg.Angle_Ltype_top, leftAngle = waveCfg.Angle_Ltype_btm;
 
-			// ¹ì¼£¶ÎÆğµã´¦µÄÅ·À­½Ç(deg)
+			// è½¨è¿¹æ®µèµ·ç‚¹å¤„çš„æ¬§æ‹‰è§’(deg)
 			Eigen::Vector3f zEuler(prePoint[3] * DT_PI / 180, prePoint[4] * DT_PI / 180, prePoint[5] * DT_PI / 180);
-			// »º³å×îÖÕÎ»ÖÃµÄ¹¤¾ß Z ·½Ïò
+			// ç¼“å†²æœ€ç»ˆä½ç½®çš„å·¥å…· Z æ–¹å‘
 			Eigen::Vector3f zDir(0, 0, 0);
 			zDir[0] = sin(zEuler[2]) * sin(zEuler[0]) + cos(zEuler[2]) * cos(zEuler[0]) * sin(zEuler[1]);
 			zDir[1] = cos(zEuler[0]) * sin(zEuler[2]) * sin(zEuler[1]) - cos(zEuler[2]) * sin(zEuler[0]);
 			zDir[2] = cos(zEuler[0]) * cos(zEuler[1]);
 
-			// ÆğµãÇĞÏß·½Ïò
+			// èµ·ç‚¹åˆ‡çº¿æ–¹å‘
 			Eigen::Vector3f begTan(trajectory.get_dir()[0], trajectory.get_dir()[1], trajectory.get_dir()[2]);
-			// ĞŞÕıµÄz·½Ïò
+			// ä¿®æ­£çš„zæ–¹å‘
 			Eigen::Vector3f begUprightDir = (begTan.cross(zDir).cross(begTan)).normalized();
-			// ×óÓÒ°Ú¶¯·½Ïò: ÔİÊ±ÓÃ0
+			// å·¦å³æ‘†åŠ¨æ–¹å‘: æš‚æ—¶ç”¨0
 			rightAngle = 0;
 			leftAngle = 0;
 			Eigen::Vector3f rightDir = Eigen::AngleAxisf(rightAngle*DT_PI / 180 - DT_PI / 2, begTan) * begUprightDir;
@@ -777,21 +788,21 @@ int ZMotionRobot::execute_single_cartesian() {
 			ZController->set_axis_param(axis[0], "FORCE_SPEED", shiftVel);
 			for (size_t i = 0; i < numPeriod; ++i) {
 
-				// ÓÒ²àÏòÓÒ
-				// Æ«ÒÆ
+				// å³ä¾§å‘å³
+				// åç§»
 				for (size_t j = 0; j < 3; ++j)
 					segment.mainPoint[segment.mainPoint.size() - 3 + j] = rightDir[j] * waveCfg.RightWidth;
-				// ÏÂ·¢Ö¸Áî
+				// ä¸‹å‘æŒ‡ä»¤
 				if (curTraj.isArc())
 					moveCABS(axis, segmentBeg, segment.auxPoint, segment.mainPoint, 0, mask);
 				else
 					moveLABS(axis, segmentBeg, segment.mainPoint, mask);
-				// µ½´ïÓÒ²à
+				// åˆ°è¾¾å³ä¾§
 				//ZController->set_axis_param(stateIdxBase + 151, "TABLE", 1, axis[0]);
 				ZController->set_base_param(axis[0], "MOVE_WA", { static_cast<float>(waveCfg.Dwell_right) });
 				segmentBeg = segment.mainPoint;
 
-				// ÓÒ²àÏòÇ° + ×ËÌ¬
+				// å³ä¾§å‘å‰ + å§¿æ€
 				endPartial += feedDist;
 				segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 1);
 				for (size_t j = 0; j < 3; ++j)
@@ -810,20 +821,20 @@ int ZMotionRobot::execute_single_cartesian() {
 				begPartial = endPartial;
 				segmentBeg = segment.mainPoint;
 
-				// ¼ÇÂ¼µçÁ÷
+				// è®°å½•ç”µæµ
 				if (i > 0 && i < numPeriod - 1) {
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 2, axis[0]);
-					// ´¥·¢¸ú×Ù
+					// è§¦å‘è·Ÿè¸ª
 					ZController->set_axis_param(stateIdxBase + 160, "TABLE", 2, axis[0]);
 				}
 				else
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 1, axis[0]);
 
 
-				// ×ó²âÏòºó
+				// å·¦æµ‹å‘å
 				endPartial -= backDist;
 				segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 1);
-				// Ö»ĞŞ¸ÄÎ»ÖÃ²¿·Ö
+				// åªä¿®æ”¹ä½ç½®éƒ¨åˆ†
 				for (size_t j = 3; j < segment.mainPoint.size(); ++j) {
 					segment.mainPoint[j] = segmentBeg[j];
 				}
@@ -838,13 +849,13 @@ int ZMotionRobot::execute_single_cartesian() {
 					moveCABS(axis, segmentBeg, segment.auxPoint, segment.mainPoint, 0, mask);
 				else
 					moveLABS(axis, segmentBeg, segment.mainPoint, mask);
-				// µ½´ï×ó²à
+				// åˆ°è¾¾å·¦ä¾§
 				//ZController->set_axis_param(stateIdxBase + 151, "TABLE", -1, axis[0]);
 				ZController->set_base_param(axis[0], "MOVE_WA", { static_cast<float>(waveCfg.Dwell_left) });
 				begPartial = endPartial;
 				segmentBeg = segment.mainPoint;
 
-				// ×ó²àÏòÓÒ
+				// å·¦ä¾§å‘å³
 				for (size_t j = 0; j < 3; ++j) {
 					segment.mainPoint[segment.mainPoint.size() - 3 + j] = 0;
 				}
@@ -855,18 +866,18 @@ int ZMotionRobot::execute_single_cartesian() {
 					moveLABS(axis, segmentBeg, segment.mainPoint, mask);
 				segmentBeg = segment.mainPoint;
 
-				// ¼ÇÂ¼µçÁ÷
+				// è®°å½•ç”µæµ
 				if (i > 0 && i < numPeriod - 1)
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 3, axis[0]);
 				else
 					ZController->set_axis_param(stateIdxBase + 151, "TABLE", 1, axis[0]);
-				// ÖÜÆÚ½áÊø
+				// å‘¨æœŸç»“æŸ
 				//ZController->set_axis_param(stateIdxBase + 152, "TABLE", 1, axis[0]);
 			}
 
 		}
 	}
-	// ÎŞ°Úº¸£¬Õı³£ÏÂ·¢
+	// æ— æ‘†ç„Šï¼Œæ­£å¸¸ä¸‹å‘
 	else {
 		if (curTraj.isArc()) {
 			moveCABS(axis, prePoint, midPoint, curPoint, 0, mask);
@@ -876,16 +887,16 @@ int ZMotionRobot::execute_single_cartesian() {
 		}
 	}
 
-	// ¸üĞÂ¹ì¼£±àºÅ
+	// æ›´æ–°è½¨è¿¹ç¼–å·
 	trajectory.trajList.front().lineNum = ++cmdNum;
 
-	// ÏÂ·¢¹ì¼£ĞòºÅ
+	// ä¸‹å‘è½¨è¿¹åºå·
 	send_line_num(axis[0], trajectory.get_curTraj());
-	// Í£Ö¹¼ÇÂ¼Î»ÖÃ
+	// åœæ­¢è®°å½•ä½ç½®
 	save_task_status(false, axis[0]);
 
 
-	// ÏÂ·¢Òì³£
+	// ä¸‹å‘å¼‚å¸¸
 	if (ret == 0) {
 		//traj.set_current_line_num(cmdNum);
 		trajectory.next();
@@ -901,9 +912,9 @@ int ZMotionRobot::send_running_line_num(int axis, const SingleTrajectory &curTra
 	int stateIdxBase = get_state_idx_base();
 	int ret = 0;
 
-	// ÏÂ·¢¹ì¼£±àºÅ
+	// ä¸‹å‘è½¨è¿¹ç¼–å·
 	ret = ZController->set_axis_param(stateIdxBase + 7, "TABLE", curTraj.saveSeq, axis);
-	// ÏÂ·¢¹ì¼£ÀàĞÍ
+	// ä¸‹å‘è½¨è¿¹ç±»å‹
 	ret = ZController->set_axis_param(stateIdxBase + 102, "TABLE", curTraj.isJoint() ? 1 : -1, axis);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(),
@@ -925,15 +936,15 @@ int ZMotionRobot::send_line_num(int axis, const SingleTrajectory &curTraj) {
 	return ret;
 }
 
-// Ê£Óà»º³å¼ì²â
+// å‰©ä½™ç¼“å†²æ£€æµ‹
 int ZMotionRobot::remain_buffer_free() {
-	// »ñÈ¡»º´æ³¤¶È
+	// è·å–ç¼“å­˜é•¿åº¦
 	int remainBuffer = get_remain_buffer();
 
 	return remainBuffer > 1000;
 }
 
-// Ò»ÖÂĞÔ¹ì¼£Ô¤´¦Àí£¬¿ÉÒÔÁ¬ĞøÏÂ·¢µÄ¹ì¼£
+// ä¸€è‡´æ€§è½¨è¿¹é¢„å¤„ç†ï¼Œå¯ä»¥è¿ç»­ä¸‹å‘çš„è½¨è¿¹
 int ZMotionRobot::set_ready_for_consistent_traj(int& state) {
 
 	if (trajectory.trajectory_loaded())
@@ -944,16 +955,16 @@ int ZMotionRobot::set_ready_for_consistent_traj(int& state) {
 	auto preTraj = trajectory.get_preTraj();
 	bool trajReady = false;
 
-	// ÕıÄæ½âÇĞ»»Íê³É
+	// æ­£é€†è§£åˆ‡æ¢å®Œæˆ
 	if (kinematics_mached()) {
 
-		// µ±Ç°¹ì¼£ÓëÇ°Ò»Ìõ¹ì¼£ÀàĞÍ²»Ò»ÖÂ£¬»òÇ°Ò»Ìõ¹ì¼£Îª¿Õ£¬ĞèÒª¼ÇÂ¼Æğµã
+		// å½“å‰è½¨è¿¹ä¸å‰ä¸€æ¡è½¨è¿¹ç±»å‹ä¸ä¸€è‡´ï¼Œæˆ–å‰ä¸€æ¡è½¨è¿¹ä¸ºç©ºï¼Œéœ€è¦è®°å½•èµ·ç‚¹
 		if (preTraj.trajType == TrajType::None || curTraj.isJoint() ^ preTraj.isJoint() ||
 			(!curTraj.isJoint() && !preTraj.isJoint() && curTraj.isBaseMotion() ^ preTraj.isBaseMotion())) {
 
-			// ÏÂ·¢¹ì¼£±àºÅÔË¶¯Íê³É
+			// ä¸‹å‘è½¨è¿¹ç¼–å·è¿åŠ¨å®Œæˆ
 			if (preTraj.lineNum == robotStatus.lineNum && robotStatus.lowerStatus == 0) {
-				// ÕıÄæ½âÇĞ»»Íê³É£¬ÖØĞÂÉè¶¨ÉÏÌõ¹ì¼£
+				// æ­£é€†è§£åˆ‡æ¢å®Œæˆï¼Œé‡æ–°è®¾å®šä¸Šæ¡è½¨è¿¹
 				TrajectoryPoint point;
 				point.trajType = curTraj.trajType;
 				point.mainPoint = curTraj.isJoint() ? robotStatus.jPos : robotStatus.cPosRaw;
@@ -969,7 +980,7 @@ int ZMotionRobot::set_ready_for_consistent_traj(int& state) {
 					<< "RawPos: " << vector_to_string(point.mainPoint)
 				);
 
-				// ¼ÆËãĞ­Í¬¶Î¾àÀë
+				// è®¡ç®—ååŒæ®µè·ç¦»
 				//calc_sync_duration(robotIdx);
 			}
 
@@ -983,23 +994,23 @@ int ZMotionRobot::set_ready_for_consistent_traj(int& state) {
 	return 0;
 }
 
-// Ò»ÖÂĞÔ¹ì¼£¾ÍĞ÷
+// ä¸€è‡´æ€§è½¨è¿¹å°±ç»ª
 int ZMotionRobot::consistent_traj_ready(int& state) {
 
 	auto curTraj = trajectory.get_curTraj();
 	auto preTraj = trajectory.get_preTraj();
 	int ret = 0;
 
-	// ÕıÄæ½â±ä»¯: ´Ë´¦Ó¦Ê¹ÓÃ¸¨ÖúÅĞ¶Ï£¬±ÜÃâ¼ì²â½á¹ûÓëÔ¤´¦Àí²¿·Ö²»Í¬£¬´Ó¶øÒı·¢ÒòÊ±ĞòÎÊÌâµ¼ÖÂÏÂ·¢Òì³£
+	// æ­£é€†è§£å˜åŒ–: æ­¤å¤„åº”ä½¿ç”¨è¾…åŠ©åˆ¤æ–­ï¼Œé¿å…æ£€æµ‹ç»“æœä¸é¢„å¤„ç†éƒ¨åˆ†ä¸åŒï¼Œä»è€Œå¼•å‘å› æ—¶åºé—®é¢˜å¯¼è‡´ä¸‹å‘å¼‚å¸¸
 	if (!kinematics_mached() || !get_bit(state, 9)) {
 
 		int switchRet = 0;
-		// ÔË¶¯Î´Íê³É£¬²»½øĞĞÇĞ»»
+		// è¿åŠ¨æœªå®Œæˆï¼Œä¸è¿›è¡Œåˆ‡æ¢
 		if (preTraj.lineNum != robotStatus.lineNum || robotStatus.lowerStatus != 0) {
-			// ¹²ÓÃÖáÕıÔÚÔË¶¯£¬ÎŞ·¨ÇĞ»»
+			// å…±ç”¨è½´æ­£åœ¨è¿åŠ¨ï¼Œæ— æ³•åˆ‡æ¢
 			//return -10;
 		}
-		// ³¢ÊÔÇĞ»»ÕıÄæ½â
+		// å°è¯•åˆ‡æ¢æ­£é€†è§£
 		else if (curTraj.isJoint()) {
 			switchRet = switch_kinematics(1);
 		}
@@ -1013,7 +1024,7 @@ int ZMotionRobot::consistent_traj_ready(int& state) {
 		ret++;
 	}
 
-	// µÚÒ»ÌõÕıÄæ½âÎ´ÇĞ»»
+	// ç¬¬ä¸€æ¡æ­£é€†è§£æœªåˆ‡æ¢
 	if (preTraj.trajType == TrajType::None) {
 		if (get_bit(state, 4) == 0) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " previous trajectory type is NONE.");
@@ -1033,27 +1044,27 @@ int ZMotionRobot::separate_trajectory() {
 
 	auto ite = trajectory.trajList.begin();
 
-	// ¹Ø½Ú¹ì¼£ÎŞĞè·Ö¶Î
+	// å…³èŠ‚è½¨è¿¹æ— éœ€åˆ†æ®µ
 	if (ite->isJoint()) {
 		return 1;
 	}
 
-	// ¼ÆËã¹ì¼£²ÎÊı
+	// è®¡ç®—è½¨è¿¹å‚æ•°
 	trajectory.calc_traj_info();
 
 	auto waveCfg = deserialize_Weave(ite->get_appendix());
 
-	// ÎŞ°Úº¸ÎŞĞè·Ö¶Î
+	// æ— æ‘†ç„Šæ— éœ€åˆ†æ®µ
 	if (waveCfg.Id <= 0)
 		return 1;
 
 	auto curTraj = trajectory.get_curTraj();
 	auto preTraj = trajectory.get_preTraj();
 
-	// ±¸·İĞèÒªĞŞ¸ÄµÄÔË¶¯²ÎÊı
+	// å¤‡ä»½éœ€è¦ä¿®æ”¹çš„è¿åŠ¨å‚æ•°
 	Move_Action moveCfgBk = deserialize_Move_Action(curTraj.get_appendix());
 
-	// Ğı×ª½Ç¶ÈĞ¡£¬ÓÃÖ±Ïß½üËÆ
+	// æ—‹è½¬è§’åº¦å°ï¼Œç”¨ç›´çº¿è¿‘ä¼¼
 	Eigen::Vector3f dir = Eigen::Vector3f(trajectory.get_dir().data());
 	if (curTraj.isArc() && dir.norm() < 1e-2) {
 		ite->trajType = TrajType::Line;
@@ -1061,10 +1072,10 @@ int ZMotionRobot::separate_trajectory() {
 		trajectory.calc_traj_info();
 	}
 
-	// ¼ÆËã°Úº¸¶ÎÊı
+	// è®¡ç®—æ‘†ç„Šæ®µæ•°
 	int numPeriod = std::round(trajectory.get_dist() / (curTraj.get_speed() / waveCfg.Freq));
 
-	// ¹À¼ÆÕ¼ÓÃ»º³åÊı
+	// ä¼°è®¡å ç”¨ç¼“å†²æ•°
 	int bufferSize = 0;
 	if (curTraj.isArc()) {
 		bufferSize = 4 * numPeriod * (9 + 2);
@@ -1073,11 +1084,11 @@ int ZMotionRobot::separate_trajectory() {
 		bufferSize = 4 * numPeriod * (1 + 2);
 	}
 
-	// ¹ì¼£·Ö¶Î
+	// è½¨è¿¹åˆ†æ®µ
 	float maxBuffSize = 1000.0;
 	if (bufferSize > maxBuffSize) {
 
-		// ¹ì¼£¶ÎÊı£¬ÏòÉÏÈ¡Õû
+		// è½¨è¿¹æ®µæ•°ï¼Œå‘ä¸Šå–æ•´
 		int trajSize = std::ceil(bufferSize / maxBuffSize);
 
 		if (curTraj.isArc()) {
@@ -1098,11 +1109,11 @@ int ZMotionRobot::separate_trajectory() {
 		auto traj = curTraj;
 		traj.mainPoint = segment.mainPoint;
 		traj.auxPoint = segment.auxPoint;
-		// Çå¿Õ¹ì¼£Ç°¶¯×÷
+		// æ¸…ç©ºè½¨è¿¹å‰åŠ¨ä½œ
 		auto moveCfg = moveCfgBk;
 		moveCfg.actionBefore.clear();
 		traj.add_appendix(serialize_Move_Action(moveCfg));
-		// ĞŞ¸Äµ±Ç°¹ì¼£(×îºóÒ»¶Î)
+		// ä¿®æ”¹å½“å‰è½¨è¿¹(æœ€åä¸€æ®µ)
 		*ite = traj;
 
 		begPartial = 0.0, endPartial = 0.0;
@@ -1111,7 +1122,7 @@ int ZMotionRobot::separate_trajectory() {
 			begPartial = endPartial;
 			endPartial += 1.0 / trajSize;
 
-			// ¹ì¼£·Ö¶Î
+			// è½¨è¿¹åˆ†æ®µ
 			segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), begPartial, endPartial, 0);
 
 			traj = curTraj;
@@ -1119,25 +1130,25 @@ int ZMotionRobot::separate_trajectory() {
 			traj.auxPoint = segment.auxPoint;
 
 			auto moveCfg = moveCfgBk;
-			// µÚÒ»Ìõ¹ì¼£
+			// ç¬¬ä¸€æ¡è½¨è¿¹
 			if (i == 0) {
-				// Çå¿Õ¹ì¼£ºó¶¯×÷
+				// æ¸…ç©ºè½¨è¿¹ååŠ¨ä½œ
 				moveCfg.actionAfter.clear();
 				traj.add_appendix(serialize_Move_Action(moveCfg));
 			}
 			else {
-				// Çå¿Õ¹ì¼£¶¯×÷
+				// æ¸…ç©ºè½¨è¿¹åŠ¨ä½œ
 				moveCfg.actionBefore.clear();
 				moveCfg.actionAfter.clear();
 				traj.add_appendix(serialize_Move_Action(moveCfg));
 			}
 
-			// ²åÈëĞÂ¹ì¼£
+			// æ’å…¥æ–°è½¨è¿¹
 			trajectory.trajList.insert(ite, traj);
 
 		}
 
-		// ÖØĞÂ¼ÆËã¹ì¼£²ÎÊı
+		// é‡æ–°è®¡ç®—è½¨è¿¹å‚æ•°
 		trajectory.calc_traj_info();
 
 	}
@@ -1145,17 +1156,17 @@ int ZMotionRobot::separate_trajectory() {
 	return 0;
 }
 
-/* *************************** ÉÏ²ã×Ô¶¨Òå½Ó¿Ú *************************** */
+/* *************************** ä¸Šå±‚è‡ªå®šä¹‰æ¥å£ *************************** */
 int ZMotionRobot::switch_auto(bool enableAuto) {
 
 	int stateIdxBase = get_state_idx_base();
-	// Çå³ıÄ£Ê½²»Æ¥ÅäµÄÒì³£
+	// æ¸…é™¤æ¨¡å¼ä¸åŒ¹é…çš„å¼‚å¸¸
 	robotStatus.upperStatus &= 0xEF;
 
-	// ÇĞ»»ÊÖ¶¯/×Ô¶¯Ä£Ê½
+	// åˆ‡æ¢æ‰‹åŠ¨/è‡ªåŠ¨æ¨¡å¼
 	ZController->set_axis_param(stateIdxBase + 50, "TABLE", enableAuto ? 1 : -1);
 
-	// ÊÖ¶¯Ä£Ê½Ê±ÇĞ»»»ØÕı½âÄ£Ê½
+	// æ‰‹åŠ¨æ¨¡å¼æ—¶åˆ‡æ¢å›æ­£è§£æ¨¡å¼
 	//if (!enableAuto) {
 	//	switch_kinematics(1);
 	//}
@@ -1164,9 +1175,9 @@ int ZMotionRobot::switch_auto(bool enableAuto) {
 	RobotStatus tmpStatus;
 	get_rt_robot_status(tmpStatus);
 
-	// ¼ì²âÊÇ·ñÇĞ»»³É¹¦
+	// æ£€æµ‹æ˜¯å¦åˆ‡æ¢æˆåŠŸ
 
-	// Éè¶¨¹ì¼£Æğµã
+	// è®¾å®šè½¨è¿¹èµ·ç‚¹
 	TrajectoryPoint point;
 	if (tmpStatus.fkMode >= 0) {
 		point.mainPoint = tmpStatus.jPos;
@@ -1212,7 +1223,7 @@ int ZMotionRobot::reset_line_num() {
 	ZController->set_axis_param(stateIdxBase + 3, "TABLE", 0);
 	ZController->set_axis_param(stateIdxBase + 7, "TABLE", -1);
 
-	// ½«ÉÏÒ»Ìõ¹ì¼£ÀàĞÍÖÃ¿Õ£¬·ÀÖ¹ÇĞ»»ÕıÄæ½âÊ±ÅĞ¶Ï¹ì¼£Î´×ßÍê
+	// å°†ä¸Šä¸€æ¡è½¨è¿¹ç±»å‹ç½®ç©ºï¼Œé˜²æ­¢åˆ‡æ¢æ­£é€†è§£æ—¶åˆ¤æ–­è½¨è¿¹æœªèµ°å®Œ
 	auto preTraj = trajectory.get_preTraj();
 	TrajectoryPoint point = preTraj.get_point();
 	point.trajType = TrajType::None;
@@ -1233,13 +1244,13 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 
 	std::vector<std::vector<int>> axisIdx;
 	std::vector<int> axis;
-	// ¹Ø½ÚÖá
+	// å…³èŠ‚è½´
 	axis = get_composed_axis({ get_joint_axis(), robotConfig.appAxisIdx });
 	axisIdx.push_back(axis);
-	// ÊÀ½ç×ø±êÖá
+	// ä¸–ç•Œåæ ‡è½´
 	axis = get_composed_axis({ get_tcp_axis(), robotConfig.appAxisIdx });
 	axisIdx.push_back(axis);
-	// ¹¤¾ß×ø±êÖá
+	// å·¥å…·åæ ‡è½´
 	//axisIdx.push_back(axis);
 
 	int ret = 0;
@@ -1247,34 +1258,34 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 		return -1;
 	}
 
-	// Î´´¦ÓÚÊÖ¶¯Ä£Ê½
+	// æœªå¤„äºæ‰‹åŠ¨æ¨¡å¼
 	if (robotStatus.autoMode > 0) {
 		robotStatus.upperStatus |= 0x10;
 		return 1;
 	}
-	// ÔİÍ£×´Ì¬ÏÂ²»¿ÉÒÆ¶¯¸½¼ÓÖá£¬ÔÊĞíÍ£Ö¹
+	// æš‚åœçŠ¶æ€ä¸‹ä¸å¯ç§»åŠ¨é™„åŠ è½´ï¼Œå…è®¸åœæ­¢
 	if (get_bit(robotStatus.lowerStatus, 1) == 1 && idx > 5 && dir != 0) {
 		robotStatus.upperStatus |= 0x04;
 		return 2;
 	}
 
-	// ÇĞ»»ÕıÄæ½â
+	// åˆ‡æ¢æ­£é€†è§£
 	if (type < 1) {
 		ret = switch_kinematics(1);
 	}
 	else {
 		ret = switch_kinematics(-1);
 	}
-	// ÕıÄæ½âÇĞ»»Ê§°Ü
+	// æ­£é€†è§£åˆ‡æ¢å¤±è´¥
 	if (ret != 0) {
 		return -2;
 	}
 
-	// VMOVE µã¶¯
+	// VMOVE ç‚¹åŠ¨
 	if (type < 2) {
 		ZController->axis_jog(axisIdx[type][idx], dir);
 	}
-	// MOVE µã¶¯
+	// MOVE ç‚¹åŠ¨
 	else {
 	}
 
@@ -1299,29 +1310,30 @@ int ZMotionRobot::save_task_status(bool enable, int inBuffer) {
 
 int ZMotionRobot::task_pause() {
 	int stateIdxBase = get_state_idx_base();
-	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 2 });
+	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 2 });
+	ZController->set_axis_param({ stateIdxBase + 61 }, "TABLE", { 1 });
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task pause.");
 	return 0;
 }
 
 int ZMotionRobot::task_resume() {
-	// ²»ÔÚ×Ô¶¯Ä£Ê½
+	// ä¸åœ¨è‡ªåŠ¨æ¨¡å¼
 	if (robotStatus.autoMode <= 0)
 		return 1;
 
-	// »ñÈ¡±£´æ×´Ì¬
+	// è·å–ä¿å­˜çŠ¶æ€
 	RobotStatus savedState;
 	read_saved_status(savedState);
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " saved mode: " << savedState.fkMode << ", cur mode: " << robotStatus.fkMode);
 
-	// ÇĞ»»µ½ÔİÍ£Ç°µÄ×´Ì¬
+	// åˆ‡æ¢åˆ°æš‚åœå‰çš„çŠ¶æ€
 	for (size_t i = 0; i < 10; ++i) {
 		if (savedState.fkMode != robotStatus.fkMode) {
-			// ÇĞ»»ÕıÄæ½â
+			// åˆ‡æ¢æ­£é€†è§£
 			switch_kinematics(savedState.fkMode);
 
-			// µÈ´ıÇĞ»»
+			// ç­‰å¾…åˆ‡æ¢
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 		else {
@@ -1335,7 +1347,7 @@ int ZMotionRobot::task_resume() {
 		}
 	}
 
-	// ÔİÍ£ºóÊÇ·ñÔË¶¯
+	// æš‚åœåæ˜¯å¦è¿åŠ¨
 	float dist = 0.0;
 	for (size_t i = 0; i < 9; ++i) {
 		dist += (robotStatus.jPos[i] - savedState.jPos[i]) * (robotStatus.jPos[i] - savedState.jPos[i]);
@@ -1344,7 +1356,7 @@ int ZMotionRobot::task_resume() {
 	
 
 	if (dist > 1e-2) {
-		// »Øµ½Æğµã
+		// å›åˆ°èµ·ç‚¹
 		std::vector<int> axis = get_tcp_axis();
 		int ret = moveLABS(axis, robotStatus.cPos, savedState.cPos, {});
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " "
@@ -1352,14 +1364,14 @@ int ZMotionRobot::task_resume() {
 			<< "move to: " << vector_to_string(savedState.cPos)
 		);
 
-		// µÈ´ıÔË¶¯Íê³É
+		// ç­‰å¾…è¿åŠ¨å®Œæˆ
 		while (true) {
-			// Òì³£ÍË³ö
+			// å¼‚å¸¸é€€å‡º
 			if (((robotStatus.lowerStatus >> 2) != 0) || (robotStatus.upperStatus > 0)) {
 				return -3;
 			}
 
-			// IDLE ±êÖ¾Î»
+			// IDLE æ ‡å¿—ä½
 			std::vector<float> value;
 			ZController->get_axis_param({ get_joint_axis()[0], get_tcp_axis()[0] }, "IDLE", value);
 
@@ -1372,22 +1384,38 @@ int ZMotionRobot::task_resume() {
 	
 
 	int stateIdxBase = get_state_idx_base();
-	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 1 });
+	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 1 });
+	ZController->set_axis_param({ stateIdxBase + 62 }, "TABLE", { 1 });
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task resume.");
 	return 0;
 }
 
 int ZMotionRobot::task_stop() {
-	// ¹ì¼£Çå¿Õ
+	int stateIdxBase = get_state_idx_base();
+
+	// è½¨è¿¹æ¸…ç©º
 	trajectory.clear();
 
-	// Í£Ö¹¼ÇÂ¼Î»ÖÃ
+	// æ¸…é™¤ä¸Šä½æœºå¼‚å¸¸ç 
+	reset_upperStatus(-1);
+
+	// è½¨è¿¹åºå·å¤ä½
+	reset_line_num();
+
+	// è§¦å‘ä¸‹ä½æœºæ¸…é™¤ä»»åŠ¡
+	ZController->set_axis_param({ stateIdxBase + 63 }, "TABLE", { 1 });
+
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
+
+	return 0;
+
+	// åœæ­¢è®°å½•ä½ç½®
 	save_task_status(false, -1);
-	// º¸½Ó±êÖ¾Î»¸´Î»
+	// ç„Šæ¥æ ‡å¿—ä½å¤ä½
 	ZController->set_axis_param(get_state_idx_base()+6, "TABLE", 0);
 
-	// Çå¿ÕÖ´ĞĞÖá£¬°Úº¸Öá
+	// æ¸…ç©ºæ‰§è¡Œè½´ï¼Œæ‘†ç„Šè½´
 	std::vector<int> axis;
 	auto camAxis = get_execute_axis();
 	axis.push_back(camAxis[0]);
@@ -1396,19 +1424,17 @@ int ZMotionRobot::task_stop() {
 	camAxis = get_cam_axis();
 	axis.insert(axis.end(), camAxis.begin(), camAxis.end());
 
-	// ÖáÍ£Ö¹£¬Çå¿ÕÒÑÏÂ·¢ÈÎÎñ
+	// è½´åœæ­¢ï¼Œæ¸…ç©ºå·²ä¸‹å‘ä»»åŠ¡
 	ZController->axis_stop(axis);
-	// Çå³ıÉÏÎ»»úÒì³£Âë
-	reset_upperStatus(-1);
 
-	// °Úº¸ÖáÎ»ÖÃ»ØÁã
+	// æ‘†ç„Šè½´ä½ç½®å›é›¶
 	auto zeroPos = std::vector<float>(camAxis.size(), 0);
 	ZController->set_axis_param(camAxis, "DPOS", zeroPos);
 
-	// ¹ì¼£ĞòºÅ¸´Î»
+	// è½¨è¿¹åºå·å¤ä½
 	reset_line_num();
 
-	// ÏÂÎ»»ú¸´Î»
+	// ä¸‹ä½æœºå¤ä½
 	ZController->set_axis_param(get_state_idx_base(), "TABLE", 0);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
@@ -1420,9 +1446,10 @@ int ZMotionRobot::emergency_stop() {
 
 	int stateIdxBase = get_state_idx_base();
 	trajectory.clear();
-	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+	ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
 
-	// ÉÏÎ»»úÏÂ·¢Í£Ö¹
+	// ä¸Šä½æœºä¸‹å‘åœæ­¢
 	//set_upperStatus(0x08);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " emergency stop.");
@@ -1430,14 +1457,14 @@ int ZMotionRobot::emergency_stop() {
 
 }
 
-// Éè±¸²Ù×÷
+// è®¾å¤‡æ“ä½œ
 int ZMotionRobot::device_operation() {
 	return 0;
 }
 
 
 
-/* *************************** ×Ô¶¨Òå³ÉÔ±º¯Êı *************************** */
+/* *************************** è‡ªå®šä¹‰æˆå‘˜å‡½æ•° *************************** */
 ZMotionRobot::ZMotionRobot() {
 }
 
@@ -1464,7 +1491,7 @@ std::vector<int> ZMotionRobot::get_robot_tcp_axis() {
 
 
 
-// ĞŞ¸Ä°Úº¸Í¹ÂÖ±í
+// ä¿®æ”¹æ‘†ç„Šå‡¸è½®è¡¨
 int ZMotionRobot::get_swing_num() {
 	auto curTraj = trajectory.get_curTraj();
 	Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
@@ -1473,63 +1500,63 @@ int ZMotionRobot::get_swing_num() {
 
 int ZMotionRobot::update_swing_table(const Weave& waveCfg) {
 
-	// °Úº¸Î´ÆôÓÃ
+	// æ‘†ç„Šæœªå¯ç”¨
 	if (waveCfg.Id <= 0) {
 		return 1;
 	}
 
-	// ÔË¶¯ÖáºÅ
+	// è¿åŠ¨è½´å·
 	std::vector<int> axis = get_execute_axis();
 
-	// Í¹ÂÖ±íÆğÊ¼Ë÷Òı
+	// å‡¸è½®è¡¨èµ·å§‹ç´¢å¼•
 	size_t sinTableBeg = 7000 + 2000 * robotId + 1000;
-	// Ò»¸ö°Ú¶¯ÖÜÆÚµÄ²åÖµµãÊı
+	// ä¸€ä¸ªæ‘†åŠ¨å‘¨æœŸçš„æ’å€¼ç‚¹æ•°
 	size_t numInterp = 100;
 	int ret = 0;
-	// ¼ì²âÊÇ·ñĞèÒªĞŞ¸ÄÍ¹ÂÖ±í
+	// æ£€æµ‹æ˜¯å¦éœ€è¦ä¿®æ”¹å‡¸è½®è¡¨
 	bool resetTable = true;
 	std::vector<float> waveGenerator(numInterp, 0);
 
-	// *** »ñÈ¡µÄ°Úº¸²ÎÊı *************************************
-	// °Ú¶¯ÆµÂÊ
+	// *** è·å–çš„æ‘†ç„Šå‚æ•° *************************************
+	// æ‘†åŠ¨é¢‘ç‡
 	float freq = waveCfg.Freq;
-	// °Ú¶¯Õñ·ù
+	// æ‘†åŠ¨æŒ¯å¹…
 	float ampl = waveCfg.RightWidth;
-	// Í£Ö¹Ä£Ê½
+	// åœæ­¢æ¨¡å¼
 	int holdType = waveCfg.Dwell_type;
-	// »úÆ÷ÈËÍ£ÁôÊ±¼ä, °Ú¶¯Í£ÁôÊ±¼ä (½öÒ»¸öÉúĞ§)
+	// æœºå™¨äººåœç•™æ—¶é—´, æ‘†åŠ¨åœç•™æ—¶é—´ (ä»…ä¸€ä¸ªç”Ÿæ•ˆ)
 	float robotHoldTime = 0.0, swingHoldTime = 0.0;
 
 	float detAmpl = (waveCfg.LeftWidth - waveCfg.RightWidth) / (waveCfg.LeftWidth + waveCfg.RightWidth);
 	float detQ = std::asin(detAmpl);
-	// Í¹ÂÖ±íÁ¬Ğø£º»úÆ÷ÈËÍ£Ö¹ | Í£ÁôÊ±¼äÎª0
+	// å‡¸è½®è¡¨è¿ç»­ï¼šæœºå™¨äººåœæ­¢ | åœç•™æ—¶é—´ä¸º0
 	if (holdType > 0 || waveCfg.Dwell_left + waveCfg.Dwell_right < 1e-3) {
-		// ×óÓÒ°Ú·ù²»Í¬
+		// å·¦å³æ‘†å¹…ä¸åŒ
 		if (std::fabs(waveCfg.LeftWidth - waveCfg.RightWidth) > 1e-1) {
 			for (size_t i = 0; i < numInterp; ++i) {
 				waveGenerator[i] = std::sin(2 * DT_PI * i / (numInterp - 1) + detQ) - detAmpl;
 				waveGenerator[i] /= (1 - detAmpl);
 			}
 
-			// »º³åÖĞĞ´ÈëÍ¹ÂÖ±í
+			// ç¼“å†²ä¸­å†™å…¥å‡¸è½®è¡¨
 			for (size_t i = 0; i < numInterp; ++i) {
 				ZController->set_axis_param(sinTableBeg + i, "TABLE", waveGenerator[i], axis[0]);
 			}
 		}
 	}
-	// °Ú¶¯Í£Ö¹: ÅĞ¶ÏÌõ¼şÓëswing_onÖĞ¶ÔÆë
+	// æ‘†åŠ¨åœæ­¢: åˆ¤æ–­æ¡ä»¶ä¸swing_onä¸­å¯¹é½
 	else if (holdType == 0 && waveCfg.Dwell_left + waveCfg.Dwell_right > 1e-3) {
 		swingHoldTime = waveCfg.Dwell_left + waveCfg.Dwell_right;
-		// ÖÜÆÚÊ±¼ä(ms)
+		// å‘¨æœŸæ—¶é—´(ms)
 		float totalTime = 1000 / freq + swingHoldTime;
-		// ËÄ·ÖÖ®Ò»°Ú¶¯ÖÜÆÚÕ¼ÓÃµÄ table ¸öÊı
+		// å››åˆ†ä¹‹ä¸€æ‘†åŠ¨å‘¨æœŸå ç”¨çš„ table ä¸ªæ•°
 		size_t numQuarter = numInterp * (1000 / freq) / totalTime / 4;
-		// ÓÒÍ£ÁôÊ±¼äÕ¼ÓÃµÄ table ¸öÊı
+		// å³åœç•™æ—¶é—´å ç”¨çš„ table ä¸ªæ•°
 		size_t numRightHold = (numInterp - 4 * numQuarter) * waveCfg.Dwell_right / swingHoldTime;
 		// 
 		int numOffset = numQuarter * std::asin(detAmpl) * 2 / DT_PI;
 
-		// ¹¹ÔìÍ¹ÂÖ±í
+		// æ„é€ å‡¸è½®è¡¨
 		size_t begIdx = 0, endIdx = numQuarter - numOffset;
 		for (size_t i = begIdx; i < endIdx; ++i) {
 			waveGenerator[i] = std::sin(2 * DT_PI * i / (4 * numQuarter - 1) + detQ) - detAmpl;
@@ -1558,7 +1585,7 @@ int ZMotionRobot::update_swing_table(const Weave& waveCfg) {
 			waveGenerator[i] /= (1 - detAmpl);
 		}
 
-		// »º³åÖĞĞ´ÈëÍ¹ÂÖ±í
+		// ç¼“å†²ä¸­å†™å…¥å‡¸è½®è¡¨
 		for (size_t i = 0; i < numInterp; ++i) {
 			ZController->set_axis_param(sinTableBeg + i, "TABLE", waveGenerator[i], axis[0]);
 		}
@@ -1575,20 +1602,20 @@ int ZMotionRobot::swing_on(float dist, const Weave& waveCfg, int mode, const std
 	std::vector<int> axis = get_composed_axis({ get_execute_axis(), robotConfig.appAxisIdx });
 	std::vector<int> camAxis = get_cam_axis();
 
-	// Í¹ÂÖ±íÆğÊ¼Ë÷Òı
+	// å‡¸è½®è¡¨èµ·å§‹ç´¢å¼•
 	size_t sinTableBeg = 7000 + 2000 * robotId + 1000;
-	// Ò»¸ö°Ú¶¯ÖÜÆÚµÄ²åÖµµãÊı
+	// ä¸€ä¸ªæ‘†åŠ¨å‘¨æœŸçš„æ’å€¼ç‚¹æ•°
 	size_t numInterp = 100;
 
-	// *** »ñÈ¡µÄ°Úº¸²ÎÊı *************************************
-	// °Ú¶¯ÆµÂÊ
+	// *** è·å–çš„æ‘†ç„Šå‚æ•° *************************************
+	// æ‘†åŠ¨é¢‘ç‡
 	float freq = waveCfg.Freq;
-	// °Ú¶¯Õñ·ù
+	// æ‘†åŠ¨æŒ¯å¹…
 	//float ampl = (waveCfg.LeftWidth + waveCfg.RightWidth) / 2;
 	float ampl = waveCfg.RightWidth;
-	// Í£Ö¹Ä£Ê½
+	// åœæ­¢æ¨¡å¼
 	int holdType = waveCfg.Dwell_type;
-	// »úÆ÷ÈËÍ£ÁôÊ±¼ä, °Ú¶¯Í£ÁôÊ±¼ä (½öÒ»¸öÉúĞ§)
+	// æœºå™¨äººåœç•™æ—¶é—´, æ‘†åŠ¨åœç•™æ—¶é—´ (ä»…ä¸€ä¸ªç”Ÿæ•ˆ)
 	float robotHoldTime = 0.0, swingHoldTime = 0.0;
 	if (holdType == 0) {
 		swingHoldTime = waveCfg.Dwell_left + waveCfg.Dwell_right;
@@ -1597,17 +1624,17 @@ int ZMotionRobot::swing_on(float dist, const Weave& waveCfg, int mode, const std
 	bool sinTableFlag = ((holdType > 0 || waveCfg.Dwell_left + waveCfg.Dwell_right < 1e-3)  \
 		&& std::fabs(waveCfg.LeftWidth - waveCfg.RightWidth) > 1e-1)                        \
 		|| (holdType == 0 && waveCfg.Dwell_left + waveCfg.Dwell_right > 1e-3);
-	// Ê¹ÓÃÈ«¾ÖÍ¹ÂÖ±í
+	// ä½¿ç”¨å…¨å±€å‡¸è½®è¡¨
 	if (!sinTableFlag)
 		sinTableBeg = 6000;
 
-	// ÖÜÆÚ³¤¶È
+	// å‘¨æœŸé•¿åº¦
 	//float dist = vel * (1 / freq + swingHoldTime / 1000);
 
 	Eigen::Vector3f zDir(0, 0, 0);
-	// ×Ô¶¯¼ÆËãº¸Ç¹½Ç¶È
+	// è‡ªåŠ¨è®¡ç®—ç„Šæªè§’åº¦
 	if (toolDir.size() < 3) {
-		//// ¶ÁÈ¡»º³å×îÖÕÎ»ÖÃ´¦µÄÅ·À­½Ç(deg)
+		//// è¯»å–ç¼“å†²æœ€ç»ˆä½ç½®å¤„çš„æ¬§æ‹‰è§’(deg)
 		//Eigen::Vector3f zEuler(0, 0, 0);
 		//for (size_t i = 0; i < 3; ++i) {
 		//	//ret = ZAux_Direct_GetEndMoveBuffer(handle_, tcpAngleAxisIdx[i], &zEuler[i]);
@@ -1618,12 +1645,12 @@ int ZMotionRobot::swing_on(float dist, const Weave& waveCfg, int mode, const std
 		//zDir[1] = cos(zEuler[0]) * sin(zEuler[2]) * sin(zEuler[1]) - cos(zEuler[2]) * sin(zEuler[0]);
 		//zDir[2] = cos(zEuler[0]) * cos(zEuler[1]);
 	}
-	// ¸ø¶¨º¸Ç¹½Ç¶È
+	// ç»™å®šç„Šæªè§’åº¦
 	else {
 		zDir = Eigen::Vector3f(toolDir[0], toolDir[1], toolDir[2]);
 	}
 
-	// ÉèÖÃ°Ú½Ç
+	// è®¾ç½®æ‘†è§’
 	//if (toolDir.size() > 0) {
 	//	Eigen::Vector3f tanDir(toolDir[0], toolDir[1], toolDir[2]);
 	//	tanDir.normalize();
@@ -1633,11 +1660,11 @@ int ZMotionRobot::swing_on(float dist, const Weave& waveCfg, int mode, const std
 	float vectorBuffered2 = 0.0;
 	ZController->get_axis_param(axis[0], "VECTOR_BUFFERED2", vectorBuffered2);
 
-	//Éú³ÉÃüÁî
+	//ç”Ÿæˆå‘½ä»¤
 	if (mode == 5) {
 		sprintf(cmdbuff, "BASE(%d,%d,%d)\nCONN_SWING(%d,%d,%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f)",
 			camAxis[0], camAxis[1], camAxis[2],
-			// mode, Ö÷Öá, Ê¸Á¿¾àÀë, ÖÜÆÚ³¤¶È, ×óÓÒ°Ú·ù, ¿ªÊ¼Table, ½áÊøTable
+			// mode, ä¸»è½´, çŸ¢é‡è·ç¦», å‘¨æœŸé•¿åº¦, å·¦å³æ‘†å¹…, å¼€å§‹Table, ç»“æŸTable
 			mode, axis[0], vectorBuffered2, dist, ampl, sinTableBeg, sinTableBeg + numInterp - 1,
 			zDir[0], zDir[1], zDir[2],
 			planeDir[0], planeDir[1], planeDir[2]
@@ -1646,14 +1673,14 @@ int ZMotionRobot::swing_on(float dist, const Weave& waveCfg, int mode, const std
 	else {
 		sprintf(cmdbuff, "BASE(%d,%d,%d)\nCONN_SWING(%d,%d,%f,%f,%f,%d,%d,%f,%f,%f)",
 			camAxis[0], camAxis[1], camAxis[2],
-			// mode, Ö÷Öá, Ê¸Á¿¾àÀë, ÖÜÆÚ³¤¶È, ×óÓÒ°Ú·ù, ¿ªÊ¼Table, ½áÊøTable
+			// mode, ä¸»è½´, çŸ¢é‡è·ç¦», å‘¨æœŸé•¿åº¦, å·¦å³æ‘†å¹…, å¼€å§‹Table, ç»“æŸTable
 			mode, axis[0], vectorBuffered2, dist, ampl, sinTableBeg, sinTableBeg + numInterp - 1,
 			zDir[0], zDir[1], zDir[2]
 		);
 	}
 	//std::cout << cmdbuff  << std::endl;
 
-	//µ÷ÓÃÃüÁîÖ´ĞĞº¯Êı
+	//è°ƒç”¨å‘½ä»¤æ‰§è¡Œå‡½æ•°
 	ZController->sendCmd(cmdbuff, cmdbuffAck);
 
 	//LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Update swing config: " <<
@@ -1675,15 +1702,15 @@ int ZMotionRobot::swing_off(float displacement) {
 	ZController->get_axis_param(axis[0], "VECTOR_BUFFERED2", vectorBuffered2);
 	//vectorBuffered2 += displacement;
 
-	//Éú³ÉÃüÁî
+	//ç”Ÿæˆå‘½ä»¤
 	sprintf(cmdbuff, "BASE(%d,%d,%d)\nCONN_SWING(%d,%d,%f)",
 		camAxis[0], camAxis[1], camAxis[2],
-		// mode, Ö÷Öá, Ê¸Á¿¾àÀë
+		// mode, ä¸»è½´, çŸ¢é‡è·ç¦»
 		-1, axis[0], vectorBuffered2
 	);
 	//std::cout << cmdbuff << std::endl;
 
-	//µ÷ÓÃÃüÁîÖ´ĞĞº¯Êı
+	//è°ƒç”¨å‘½ä»¤æ‰§è¡Œå‡½æ•°
 	ZController->sendCmd(cmdbuff, cmdbuffAck);
 
 	//LOG_INFO("%s    ' Return: %d", cmdbuff, ret);
@@ -1698,15 +1725,15 @@ int ZMotionRobot::switch_kinematics(int mode, int retry) {
 
 	for (size_t i = 0; i < retry + 1; ++i) {
 
-		// µ±Ç°ÕıÄæ½â×´Ì¬
+		// å½“å‰æ­£é€†è§£çŠ¶æ€
 		ret = ZController->get_axis_param(curFkMode, "TABLE", readVal);
 
-		// ÅĞ¶ÏÊÇ·ñÇĞ»»Íê³É
+		// åˆ¤æ–­æ˜¯å¦åˆ‡æ¢å®Œæˆ
 		if (std::fabs(readVal - mode) < 0.1) {
 			return ret;
 		}
 
-		// ÇĞ»»Ò»´ÎÕıÄæ½â
+		// åˆ‡æ¢ä¸€æ¬¡æ­£é€†è§£
 		ret = ZController->set_axis_param(fkCmd, "TABLE", mode);
 
 	}
@@ -1716,17 +1743,17 @@ int ZMotionRobot::switch_kinematics(int mode, int retry) {
 
 bool ZMotionRobot::kinematics_mached() {
 
-	// ÎŞÔË¶¯»º³å
+	// æ— è¿åŠ¨ç¼“å†²
 	if (trajectory.trajectory_loaded()) {
 		return false;
 	}
 
 	auto curTraj = trajectory.get_curTraj();
 
-	// ÕıÄæ½âÒÑÆ¥Åä
-	if ((robotStatus.fkMode > 0 && curTraj.isJoint()) ||                               // Õı½âÄ£Ê½
-		(robotStatus.fkMode == -2 && !curTraj.isJoint() && curTraj.isBaseMotion()) ||  // »úÆ÷ÈË×ø±êÏµ
-		(robotStatus.fkMode == -1 && !curTraj.isJoint() && !curTraj.isBaseMotion())    // ÊÀ½ç×ø±êÏµ
+	// æ­£é€†è§£å·²åŒ¹é…
+	if ((robotStatus.fkMode > 0 && curTraj.isJoint()) ||                               // æ­£è§£æ¨¡å¼
+		(robotStatus.fkMode == -2 && !curTraj.isJoint() && curTraj.isBaseMotion()) ||  // æœºå™¨äººåæ ‡ç³»
+		(robotStatus.fkMode == -1 && !curTraj.isJoint() && !curTraj.isBaseMotion())    // ä¸–ç•Œåæ ‡ç³»
 		) {
 		return true;
 	}
@@ -1747,7 +1774,7 @@ int ZMotionRobot::read_saved_status(RobotStatus& status) {
 
 	ZController->get_axis_param(axis, "VR", data);
 
-	// ±£´æÊı¾İ¹¦ÄÜÎ´Ê¹ÄÜ»òÒì³£
+	// ä¿å­˜æ•°æ®åŠŸèƒ½æœªä½¿èƒ½æˆ–å¼‚å¸¸
 	if (data[0] != 1) {
 		return -1;
 	}
@@ -1764,7 +1791,7 @@ int ZMotionRobot::read_saved_status(RobotStatus& status) {
 
 	status.posOffset = std::vector<float>(data.begin() + 18, data.begin() + 24);
 
-	// ¾Ö²¿×ø±êÏµ×ªÊÀ½ç×ø±êÏµ
+	// å±€éƒ¨åæ ‡ç³»è½¬ä¸–ç•Œåæ ‡ç³»
 	status.cPos = status.cPosRaw;
 	cpos_base_to_world(status.cPos);
 
@@ -1796,22 +1823,22 @@ int ZMotionRobot::cpos_base_to_world(std::vector<float>& cPos) {
 
 TrajectoryPoint ZMotionRobot::partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode) {
 
-	// »ñÈ¡½ÚµãÄ¿±êÎ»ÖÃ
+	// è·å–èŠ‚ç‚¹ç›®æ ‡ä½ç½®
 	auto curPoint = curTraj.mainPoint;
 	auto prePoint = preTraj.mainPoint;
 	auto midPoint = curTraj.auxPoint;
 
 	int num = curPoint.size();
-	// ·Ö¶Î½á¹û
+	// åˆ†æ®µç»“æœ
 	TrajectoryPoint ans(num);
 	ans.trajType = curTraj.trajType;
 	std::vector<DT_scale> relEndMove(num, 0);
 
-	// ¸½¼ÓÖáÏà¶Ô±ä»¯Á¿
+	// é™„åŠ è½´ç›¸å¯¹å˜åŒ–é‡
 	for (size_t i = 0; i < num; ++i)
 		relEndMove[i] = curPoint[i] - prePoint[i];
 
-	// Å·À­½ÇÏà¶Ô±ä»¯Á¿
+	// æ¬§æ‹‰è§’ç›¸å¯¹å˜åŒ–é‡
 	if (curPoint.size() > 5) {
 		auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(prePoint[3], prePoint[4], prePoint[5]);
 		auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(midPoint[3], midPoint[4], midPoint[5]);
@@ -1824,51 +1851,51 @@ TrajectoryPoint ZMotionRobot::partition_trajectory(const TrajectoryPoint& preTra
 
 	bool isArc = (curTraj.trajType == TrajType::Arc);
 
-	// ¼ÆËãÎ»ÖÃ·ÖÁ¿
+	// è®¡ç®—ä½ç½®åˆ†é‡
 	auto trajInfo = calc_traj_info(prePoint, midPoint, curPoint, isArc);
 	DT_scale partial = 0;
-	// Ô²»¡ÔË¶¯
+	// åœ†å¼§è¿åŠ¨
 	if (isArc) {
-		// Eigen ÀàĞÍµÄµãÎ»£¬ÓÃÓÚ¼ÆËã
+		// Eigen ç±»å‹çš„ç‚¹ä½ï¼Œç”¨äºè®¡ç®—
 		Eigen::Vector3f rotNorm(trajInfo[4], trajInfo[5], trajInfo[6]), centerPos(trajInfo[0], trajInfo[1], trajInfo[2]);
 
-		// ¹ì¼£×ÜĞı×ª½Ç¶È
+		// è½¨è¿¹æ€»æ—‹è½¬è§’åº¦
 		DT_scale theta = rotNorm.norm();
 		rotNorm.normalize();
-		// Æğµã´¦µÄ°ë¾¶
+		// èµ·ç‚¹å¤„çš„åŠå¾„
 		Eigen::Vector3f radiusDir(0, 0, 0);
 		for (size_t i = 0; i < 3; ++i) {
 			radiusDir[i] = prePoint[i] - centerPos[i];
 		}
-		// ·Ö¶ÎµãÎ»ÖÃ
+		// åˆ†æ®µç‚¹ä½ç½®
 		Eigen::Vector3f arcPos;
 
-		// ÖĞ¼äµã´¦µÄ±ÈÀı
+		// ä¸­é—´ç‚¹å¤„çš„æ¯”ä¾‹
 		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / (theta * radiusDir.norm());
 		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
-		// Î»ÖÃ·ÖÁ¿µ¥¶À¼ÆËã£¬×ËÌ¬ºÍ¸½¼ÓÖµ°´ÏßĞÔÀÛ¼Ó
+		// ä½ç½®åˆ†é‡å•ç‹¬è®¡ç®—ï¼Œå§¿æ€å’Œé™„åŠ å€¼æŒ‰çº¿æ€§ç´¯åŠ 
 		for (size_t i = 0; i < num; ++i) {
 			ans.auxPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
 		}
 
-		// ÖÕµã´¦µÄ±ÈÀı
+		// ç»ˆç‚¹å¤„çš„æ¯”ä¾‹
 		partial = (mode == 0) ? endRatio : endRatio / (theta * radiusDir.norm());
 		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
-		// Î»ÖÃ·ÖÁ¿µ¥¶À¼ÆËã£¬×ËÌ¬ºÍ¸½¼ÓÖµ°´ÏßĞÔÀÛ¼Ó
+		// ä½ç½®åˆ†é‡å•ç‹¬è®¡ç®—ï¼Œå§¿æ€å’Œé™„åŠ å€¼æŒ‰çº¿æ€§ç´¯åŠ 
 		for (size_t i = 0; i < num; ++i) {
 			ans.mainPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
 		}
 	}
-	// Ö±ÏßÔË¶¯
+	// ç›´çº¿è¿åŠ¨
 	else {
-		// ±ÈÀı
+		// æ¯”ä¾‹
 		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / trajInfo[3];
 		//if (partial > 1)
 		//	partial = 1;
 		for (size_t i = 0; i < num; ++i)
 			ans.auxPoint[i] = prePoint[i] + relEndMove[i] * partial;
 
-		// ±ÈÀı
+		// æ¯”ä¾‹
 		partial = (mode == 0) ? endRatio : endRatio / trajInfo[3];
 		//if (partial > 1)
 		//	partial = 1;

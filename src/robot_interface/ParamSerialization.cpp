@@ -1,10 +1,10 @@
-
+ï»¿
 #include "robot_interface/ParamSerialization.h"
 
 namespace FSAIRobotInterface {
 
 
-// ------- °Úº¸²ÎÊı -------
+// ------- æ‘†ç„Šå‚æ•° -------
 std::pair<int, std::vector<float>> serialize_Weave(const Weave& waveCfg) {
 
 	std::pair<int, std::vector<float>> ans;
@@ -19,7 +19,7 @@ std::pair<int, std::vector<float>> serialize_Weave(const Weave& waveCfg) {
 	param[6] = waveCfg.Dwell_left;
 	param[7] = waveCfg.Dwell_right;
 	param[8] = waveCfg.Dwell_center;
-	// Èı½Ç°Ú
+	// ä¸‰è§’æ‘†
 	param[9]  = waveCfg.Length;
 	param[10] = waveCfg.Bias;
 	param[11] = waveCfg.Angle_Ltype_top;
@@ -48,7 +48,7 @@ Weave deserialize_Weave(const std::map<int, std::vector<float>>& appendix) {
 	cfg.Dwell_left  = param[6];
 	cfg.Dwell_right = param[7];
 	cfg.Dwell_center = param[8];
-	// Èı½Ç°Ú
+	// ä¸‰è§’æ‘†
 	cfg.Length          = param[9];
 	cfg.Bias            = param[10];
 	cfg.Angle_Ltype_top = param[11];
@@ -58,34 +58,34 @@ Weave deserialize_Weave(const std::map<int, std::vector<float>>& appendix) {
 }
 
 
-// ------- º¸½Ó²ÎÊı -------
+// ------- ç„Šæ¥å‚æ•° -------
 std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_WeldingParaItem& weldCfg) {
 
 	std::pair<int, std::vector<float>> ans;
 	std::vector<float> param;
 
-	// º¸½Ó²ÎÊı 0
-	param.push_back(weldCfg.Id);                  // 0 Æğ»¡±êÖ¾
-	param.push_back(weldCfg.WeldingCrt_Spd);      // 1 º¸½ÓµçÁ÷
-	param.push_back(weldCfg.WeldingVtg_Strth);    // 2 º¸½ÓµçÑ¹: ÏÂ·¢µçÑ¹/ĞŞÕı£¬ÍùÍ¬Ò»¸öµØÖ·ÏÂ·¢µÄ£¬²»Çø·ÖÁ½¸ö±äÁ¿
-	param.push_back(weldCfg.WeldingWorkMode);     // 3 º¸½Ó¹¤×÷Ä£Ê½
-	param.push_back(weldCfg.VtgUniCorrection);    // 4 º¸½ÓµçÑ¹ĞŞÕıÖµ -> µç¸Ğ
+	// ç„Šæ¥å‚æ•° 0
+	param.push_back(weldCfg.Id);                  // 0 èµ·å¼§æ ‡å¿—
+	param.push_back(weldCfg.WeldingCrt_Spd);      // 1 ç„Šæ¥ç”µæµ
+	param.push_back(weldCfg.WeldingVtg_Strth);    // 2 ç„Šæ¥ç”µå‹: ä¸‹å‘ç”µå‹/ä¿®æ­£ï¼Œå¾€åŒä¸€ä¸ªåœ°å€ä¸‹å‘çš„ï¼Œä¸åŒºåˆ†ä¸¤ä¸ªå˜é‡
+	param.push_back(weldCfg.WeldingWorkMode);     // 3 ç„Šæ¥å·¥ä½œæ¨¡å¼
+	param.push_back(weldCfg.VtgUniCorrection);    // 4 ç„Šæ¥ç”µå‹ä¿®æ­£å€¼ -> ç”µæ„Ÿ
 
-	// Æğ»¡²ÎÊı 5
-	param.push_back(weldCfg.ArcOnWorkMode);        // 0 Æğ»¡Ä£Ê½
-	param.push_back(weldCfg.ArcOnCrt_Spd);         // 1 Æğ»¡µçÁ÷
-	param.push_back(weldCfg.ArcOnVtg_Strth);       // 2 Æğ»¡µçÑ¹
-	param.push_back(weldCfg.ArcOnTime);            // 3 Æğ»¡Ê±¼ä
-	param.push_back(weldCfg.ArcOnVtg_Correction);  // 4 Æğ»¡µçÑ¹ĞŞÕıÖµ
-	param.push_back(weldCfg.ArcOnBlowTime);        // 5 ÒıÆøÊ±¼ä
+	// èµ·å¼§å‚æ•° 5
+	param.push_back(weldCfg.ArcOnWorkMode);        // 0 èµ·å¼§æ¨¡å¼
+	param.push_back(weldCfg.ArcOnCrt_Spd);         // 1 èµ·å¼§ç”µæµ
+	param.push_back(weldCfg.ArcOnVtg_Strth);       // 2 èµ·å¼§ç”µå‹
+	param.push_back(weldCfg.ArcOnTime);            // 3 èµ·å¼§æ—¶é—´
+	param.push_back(weldCfg.ArcOnVtg_Correction);  // 4 èµ·å¼§ç”µå‹ä¿®æ­£å€¼
+	param.push_back(weldCfg.ArcOnBlowTime);        // 5 å¼•æ°”æ—¶é—´
 
-	// ÊÕ»¡²ÎÊı 11
-	param.push_back(weldCfg.ArcOffWorkMode);	   // 0 ÊÕ»¡Ä£Ê½
-	param.push_back(weldCfg.ArcOffCrt_Spd);		   // 1 ÊÕ»¡µçÁ÷
-	param.push_back(weldCfg.ArcOffVtg_Strth); 	   // 2 ÊÕ»¡µçÑ¹
-	param.push_back(weldCfg.ArcOffTime); 		   // 3 ÊÕ»¡Ê±¼ä
-	param.push_back(weldCfg.ArcOffVtg_Correction); // 4 ÊÕ»¡µçÑ¹ĞŞÕıÖµ
-	param.push_back(weldCfg.ArcOffBlowTime);       // 5 ÊÕÆøÊ±¼ä
+	// æ”¶å¼§å‚æ•° 11
+	param.push_back(weldCfg.ArcOffWorkMode);	   // 0 æ”¶å¼§æ¨¡å¼
+	param.push_back(weldCfg.ArcOffCrt_Spd);		   // 1 æ”¶å¼§ç”µæµ
+	param.push_back(weldCfg.ArcOffVtg_Strth); 	   // 2 æ”¶å¼§ç”µå‹
+	param.push_back(weldCfg.ArcOffTime); 		   // 3 æ”¶å¼§æ—¶é—´
+	param.push_back(weldCfg.ArcOffVtg_Correction); // 4 æ”¶å¼§ç”µå‹ä¿®æ­£å€¼
+	param.push_back(weldCfg.ArcOffBlowTime);       // 5 æ”¶æ°”æ—¶é—´
 
 	ans.first = static_cast<int>(AppendixType::WELD_CFG);
 	ans.second = param;
@@ -102,42 +102,42 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	std::vector<float> param = ite->second;
 	int num = 0;
 
-	// º¸½Ó²ÎÊı 0
-	cfg.Id               = param[num++];  // 0 Æğ»¡±êÖ¾
-	cfg.WeldingCrt_Spd   = param[num++];  // 1 º¸½ÓµçÁ÷
-	cfg.WeldingVtg_Strth = param[num++];  // 2 º¸½ÓµçÑ¹
-	cfg.WeldingWorkMode  = param[num++];  // 3 º¸½Ó¹¤×÷Ä£Ê½
-	cfg.VtgUniCorrection = param[num++];  // 4 º¸½ÓµçÑ¹ĞŞÕıÖµ
+	// ç„Šæ¥å‚æ•° 0
+	cfg.Id               = param[num++];  // 0 èµ·å¼§æ ‡å¿—
+	cfg.WeldingCrt_Spd   = param[num++];  // 1 ç„Šæ¥ç”µæµ
+	cfg.WeldingVtg_Strth = param[num++];  // 2 ç„Šæ¥ç”µå‹
+	cfg.WeldingWorkMode  = param[num++];  // 3 ç„Šæ¥å·¥ä½œæ¨¡å¼
+	cfg.VtgUniCorrection = param[num++];  // 4 ç„Šæ¥ç”µå‹ä¿®æ­£å€¼
 
-	// Æğ»¡²ÎÊı 5
-	cfg.ArcOnWorkMode       = param[num++];  // 0 Æğ»¡Ä£Ê½
-	cfg.ArcOnCrt_Spd        = param[num++];	 // 1 Æğ»¡µçÁ÷
-	cfg.ArcOnVtg_Strth      = param[num++];	 // 2 Æğ»¡µçÑ¹
-	cfg.ArcOnTime           = param[num++];	 // 3 Æğ»¡Ê±¼ä
-	cfg.ArcOnVtg_Correction = param[num++];	 // 4 Æğ»¡µçÑ¹ĞŞÕıÖµ
-	cfg.ArcOnBlowTime       = param[num++];	 // 5 ÒıÆøÊ±¼ä
+	// èµ·å¼§å‚æ•° 5
+	cfg.ArcOnWorkMode       = param[num++];  // 0 èµ·å¼§æ¨¡å¼
+	cfg.ArcOnCrt_Spd        = param[num++];	 // 1 èµ·å¼§ç”µæµ
+	cfg.ArcOnVtg_Strth      = param[num++];	 // 2 èµ·å¼§ç”µå‹
+	cfg.ArcOnTime           = param[num++];	 // 3 èµ·å¼§æ—¶é—´
+	cfg.ArcOnVtg_Correction = param[num++];	 // 4 èµ·å¼§ç”µå‹ä¿®æ­£å€¼
+	cfg.ArcOnBlowTime       = param[num++];	 // 5 å¼•æ°”æ—¶é—´
 
-	// ÊÕ»¡²ÎÊı 11
-	cfg.ArcOffWorkMode       = param[num++];  // 0 ÊÕ»¡Ä£Ê½
-	cfg.ArcOffCrt_Spd        = param[num++];  // 1 ÊÕ»¡µçÁ÷
-	cfg.ArcOffVtg_Strth      = param[num++];  // 2 ÊÕ»¡µçÑ¹
-	cfg.ArcOffTime           = param[num++];  // 3 ÊÕ»¡Ê±¼ä
-	cfg.ArcOffVtg_Correction = param[num++];  // 4 ÊÕ»¡µçÑ¹ĞŞÕıÖµ
-	cfg.ArcOffBlowTime       = param[num++];  // 5 ÊÕÆøÊ±¼ä
+	// æ”¶å¼§å‚æ•° 11
+	cfg.ArcOffWorkMode       = param[num++];  // 0 æ”¶å¼§æ¨¡å¼
+	cfg.ArcOffCrt_Spd        = param[num++];  // 1 æ”¶å¼§ç”µæµ
+	cfg.ArcOffVtg_Strth      = param[num++];  // 2 æ”¶å¼§ç”µå‹
+	cfg.ArcOffTime           = param[num++];  // 3 æ”¶å¼§æ—¶é—´
+	cfg.ArcOffVtg_Correction = param[num++];  // 4 æ”¶å¼§ç”µå‹ä¿®æ­£å€¼
+	cfg.ArcOffBlowTime       = param[num++];  // 5 æ”¶æ°”æ—¶é—´
 
 	return cfg;
 }
 
 
-// ------- ÔÙÆğ»¡²ÎÊı -------
+// ------- å†èµ·å¼§å‚æ•° -------
 std::pair<int, std::vector<float>> serialize_ReArc(const ReArc& cfg) {
 	std::pair<int, std::vector<float>> ans;
 	std::vector<float> param;
 
-	param.push_back(cfg.ReArc_Enable);   // 0 ÔÙÆğ»¡Ê¹ÄÜ
-	param.push_back(cfg.ReArcCount);     // 1 ÔÙÆğ»¡´ÎÊı
-	param.push_back(cfg.ReArcTime);	     // 2 ÔÙÆğ»¡Ê±¼ä
-	param.push_back(cfg.ReArcSnagTime);  // 3 ÔÙÆğ»¡³éË¿Ê±¼ä
+	param.push_back(cfg.ReArc_Enable);   // 0 å†èµ·å¼§ä½¿èƒ½
+	param.push_back(cfg.ReArcCount);     // 1 å†èµ·å¼§æ¬¡æ•°
+	param.push_back(cfg.ReArcTime);	     // 2 å†èµ·å¼§æ—¶é—´
+	param.push_back(cfg.ReArcSnagTime);  // 3 å†èµ·å¼§æŠ½ä¸æ—¶é—´
 
 	ans.first = static_cast<int>(AppendixType::REARC_CFG);
 	ans.second = param;
@@ -152,38 +152,38 @@ ReArc serialize_ReArc(const std::map<int, std::vector<float>>& appendix) {
 	std::vector<float> param = ite->second;
 	int num = 0;
 
-	cfg.ReArc_Enable = param[num++];   // 0 ÔÙÆğ»¡Ê¹ÄÜ
-	cfg.ReArcCount = param[num++];     // 1 ÔÙÆğ»¡´ÎÊı
-	cfg.ReArcTime = param[num++];	   // 2 ÔÙÆğ»¡Ê±¼ä
-	cfg.ReArcSnagTime =param[num++];   // 3 ÔÙÆğ»¡³éË¿Ê±¼ä
+	cfg.ReArc_Enable = param[num++];   // 0 å†èµ·å¼§ä½¿èƒ½
+	cfg.ReArcCount = param[num++];     // 1 å†èµ·å¼§æ¬¡æ•°
+	cfg.ReArcTime = param[num++];	   // 2 å†èµ·å¼§æ—¶é—´
+	cfg.ReArcSnagTime =param[num++];   // 3 å†èµ·å¼§æŠ½ä¸æ—¶é—´
 
 	return cfg;
 }
 
-// ------- ¸ú×Ù²ÎÊı -------
+// ------- è·Ÿè¸ªå‚æ•° -------
 std::pair<int, std::vector<float>> serialize_Track(const Track& trackCfg) {
 
 	std::pair<int, std::vector<float>> ans;
 	std::vector<float> param(20);
 
 	param[7] = trackCfg.Id;
-	// ×óÓÒ¸ú×Ù²ÎÊı
+	// å·¦å³è·Ÿè¸ªå‚æ•°
 	param[0] = trackCfg.Lr_enable;
 	param[1] = trackCfg.Lr_offset;
 	param[2] = trackCfg.Lr_gain;
-	// »ı·Ö³£Êı
+	// ç§¯åˆ†å¸¸æ•°
 	param[3] = trackCfg.Lr_maxSingleCompensation;
 	param[4] = trackCfg.Lr_minCompensation;
 	param[5] = trackCfg.Lr_maxCompensation;
 	param[6] = trackCfg.Lr_MaxCorrectAngle;
-	// ÉÏÏÂ¸ú×Ù²ÎÊı
+	// ä¸Šä¸‹è·Ÿè¸ªå‚æ•°
 	param[10] = trackCfg.Ud_enable;
 	param[11] = trackCfg.Ud_offset;
 	param[12] = trackCfg.Ud_gain;
 	param[14] = trackCfg.Ud_minCompensation;
 	param[15] = trackCfg.Ud_maxCompensation;
 	param[16] = trackCfg.Ud_MaxCorrectAngle;
-	// ÆäËû²ÎÊı
+	// å…¶ä»–å‚æ•°
 	//param[18] = trackCfg.SegCorrectCycles;
 	//param[19] = trackCfg.Ud_refSampleCount;
 
@@ -200,25 +200,25 @@ Track deserialize_Track(const std::map<int, std::vector<float>>& appendix) {
 		return cfg;
 	std::vector<float> param = ite->second;
 
-	// ¸ú×Ù²ÎÊı
+	// è·Ÿè¸ªå‚æ•°
 	cfg.Id = param[7];
-	// ×óÓÒ¸ú×Ù²ÎÊı
+	// å·¦å³è·Ÿè¸ªå‚æ•°
 	cfg.Lr_enable = param[0];
 	cfg.Lr_offset = param[1];
 	cfg.Lr_gain = param[2];
-	// »ı·Ö³£Êı
+	// ç§¯åˆ†å¸¸æ•°
 	cfg.Lr_maxSingleCompensation = param[3];
 	cfg.Lr_minCompensation = param[4];
 	cfg.Lr_maxCompensation = param[5];
 	cfg.Lr_MaxCorrectAngle = param[6];
-	// ÉÏÏÂ¸ú×Ù²ÎÊı
+	// ä¸Šä¸‹è·Ÿè¸ªå‚æ•°
 	cfg.Ud_enable = param[10];
 	cfg.Ud_offset = param[11];
 	cfg.Ud_gain = param[12];
 	cfg.Ud_minCompensation = param[14];
 	cfg.Ud_maxCompensation = param[15];
 	cfg.Ud_MaxCorrectAngle = param[16];
-	// ÆäËû²ÎÊı
+	// å…¶ä»–å‚æ•°
 	//cfg.SegCorrectCycles = param[18];
 	//cfg.Ud_refSampleCount = param[19];
 
@@ -226,13 +226,13 @@ Track deserialize_Track(const std::map<int, std::vector<float>>& appendix) {
 }
 
 
-// ------- »º³å¶¯×÷²ÎÊı -------
+// ------- ç¼“å†²åŠ¨ä½œå‚æ•° -------
 std::pair<int, std::vector<float>> serialize_Move_Action(const Move_Action& moveCfg) {
 
 	std::pair<int, std::vector<float>> ans;
 	std::vector<float> param;
 
-	// ÔË¶¯Ç°¶¯×÷
+	// è¿åŠ¨å‰åŠ¨ä½œ
 	param.push_back(moveCfg.actionBefore.size());
 	for (auto action : moveCfg.actionBefore) {
 		param.push_back(action.first);
@@ -240,7 +240,7 @@ std::pair<int, std::vector<float>> serialize_Move_Action(const Move_Action& move
 		param.insert(param.end(), action.second.begin(), action.second.end());
 	}
 
-	// ÔË¶¯ºó¶¯×÷
+	// è¿åŠ¨ååŠ¨ä½œ
 	//param.push_back(moveCfg.actionAfter.size());
 	//param.insert(param.end(), moveCfg.actionAfter.begin(), moveCfg.actionAfter.end());
 	param.push_back(moveCfg.actionAfter.size());
@@ -267,12 +267,12 @@ Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& app
 	int actionSize = param[0], beg = 1, end = 1;
 	for (size_t i = 0; i < actionSize; ++i) {
 		std::pair<int, std::vector<float>> action;
-		// ¶¯×÷ÀàĞÍ
+		// åŠ¨ä½œç±»å‹
 		action.first = param[beg++];
 
-		// ²ÎÊıÊıÁ¿
+		// å‚æ•°æ•°é‡
 		int num = param[beg++];
-		// ²ÎÊı½áÊøÎ»ÖÃ
+		// å‚æ•°ç»“æŸä½ç½®
 		end = beg + num;
 		action.second = std::vector<float>(param.begin() + beg, param.begin() + end);
 
@@ -283,12 +283,12 @@ Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& app
 	actionSize = param[beg++];
 	for (size_t i = 0; i < actionSize; ++i) {
 		std::pair<int, std::vector<float>> action;
-		// ¶¯×÷ÀàĞÍ
+		// åŠ¨ä½œç±»å‹
 		action.first = param[beg++];
 
-		// ²ÎÊıÊıÁ¿
+		// å‚æ•°æ•°é‡
 		int num = param[beg++];
-		// ²ÎÊı½áÊøÎ»ÖÃ
+		// å‚æ•°ç»“æŸä½ç½®
 		end = beg + num;
 		action.second = std::vector<float>(param.begin() + beg, param.begin() + end);
 
@@ -300,10 +300,10 @@ Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& app
 }
 
 
-// ------- Í¬²½²ÎÊı -------
+// ------- åŒæ­¥å‚æ•° -------
 std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg) {
 
-	// ÅÅĞò
+	// æ’åº
 	syncCfg.sort();
 
 	// <mapSize, <type, size, <robot, num>>>
@@ -406,43 +406,43 @@ void Sync_Config::sort() {
 
 bool Sync_Config::different_from(Sync_Config& next) {
 
-	// Í¬²½ÀàĞÍ±ä»¯
+	// åŒæ­¥ç±»å‹å˜åŒ–
 	//if (map.size() != next.map.size())
 	//	return true;
 
 	for (size_t i = 0; i < 5; ++i) {
-		// ¼¤»îÎŞĞèµÈ´ı
+		// æ¿€æ´»æ— éœ€ç­‰å¾…
 		if (i == 5)
 			continue;
 
-		// Í¬²½ÀàĞÍ±ä»¯
+		// åŒæ­¥ç±»å‹å˜åŒ–
 		if (map.count(i) != next.map.count(i))
 			return true;
 
 		if (map.count(i) == 0)
 			continue;
 
-		// Í¬²½×é±ä»¯
+		// åŒæ­¥ç»„å˜åŒ–
 		if (i == 3) {
-			// µÈ´ı»úÆ÷ID±ä»¯
+			// ç­‰å¾…æœºå™¨IDå˜åŒ–
 			if (map[i].front().first != next.map[i].front().first)
 				return true;
 
-			// µ±Ç°Ğ­Í¬ºÅÎª0£¬ÏÂÌõĞ­Í¬ºÅÎª-1
+			// å½“å‰ååŒå·ä¸º0ï¼Œä¸‹æ¡ååŒå·ä¸º-1
 			if (map[i].front().second == 0 || next.map[i].front().second == 0 || next.map[i].front().second == -1) {
 			}
 			else {
-				// Í¬²½ºÅ±ä»¯
+				// åŒæ­¥å·å˜åŒ–
 				if (map[i].front().second != next.map[i].front().second)
 					return true;
 			}
 		}
 		else {
 			for (size_t j = 0; j < map[i].size(); ++j) {
-				// µÈ´ı»úÆ÷ID±ä»¯
+				// ç­‰å¾…æœºå™¨IDå˜åŒ–
 				if (map[i][j].first != next.map[i][j].first)
 					return true;
-				// Í¬²½ºÅ±ä»¯
+				// åŒæ­¥å·å˜åŒ–
 				if (map[i][j].second != next.map[i][j].second)
 					return true;
 			}
@@ -454,7 +454,7 @@ bool Sync_Config::different_from(Sync_Config& next) {
 }
 
 
-// ------- ÔË¶¯²ÎÊı -------
+// ------- è¿åŠ¨å‚æ•° -------
 
 std::pair<int, std::vector<float>> serialize_Move_Config(const Move_Config& moveCfg) {
 

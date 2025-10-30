@@ -1,4 +1,4 @@
-
+ï»¿
 #include "robot_interface/FSAIRobot.h"
 
 #include "RobotLogger.h"
@@ -44,11 +44,11 @@ namespace FSAIRobotInterface {
 
 
 
-	// »úÆ÷ÈË¹ÜÀíÀà
+	// æœºå™¨äººç®¡ç†ç±»
 	FSAIRobot::FSAIRobot() {
 	}
 	FSAIRobot::~FSAIRobot() {
-		// Îö¹¹Ê±ÏÈÍ£Ö¹ÖáÔË¶¯
+		// ææ„æ—¶å…ˆåœæ­¢è½´è¿åŠ¨
 		//task_stop();
 		//emergency_stop();
 
@@ -66,7 +66,7 @@ namespace FSAIRobotInterface {
 	}
 
 	
-	/* *************************** ÉÏ²ã½Ó¿ÚÊµÏÖ *************************** */
+	/* *************************** ä¸Šå±‚æ¥å£å®ç° *************************** */
 	int FSAIRobot::cpos_base_to_world(std::vector<float>& cPos) {
 
 		float tmp = cPos[3];
@@ -77,27 +77,27 @@ namespace FSAIRobotInterface {
 	}
 
 
-	/* *************************** µ×²ã½Ó¿ÚÊµÏÖ *************************** */
+	/* *************************** åº•å±‚æ¥å£å®ç° *************************** */
 	int FSAIRobot::update_rt_robot_status() {
 
 		int stateIdxBase = get_cmd_idx_base();
 		RobotStatus tmp;
-		// !¼õÉÙ¶ÁÈ¡´ÎÊı£¬ÓÅ»¯¶ÁÈ¡ËÙ¶È
+		// !å‡å°‘è¯»å–æ¬¡æ•°ï¼Œä¼˜åŒ–è¯»å–é€Ÿåº¦
 		std::vector<float> value;
 		std::vector<int> idx(9, 0);
 		for (size_t i = 0; i < idx.size(); ++i) {
 			idx[i] += i;
 		}
-		// ¹Ø½ÚÎ»ÖÃ
+		// å…³èŠ‚ä½ç½®
 		ZController->get_axis_param(idx, "DPOS", tmp.jPos);
 
-		// ¿Õ¼äµãÎ»
+		// ç©ºé—´ç‚¹ä½
 		idx = std::vector<int>(9, 32);
 		for (size_t i = 0; i < idx.size(); ++i) {
 			idx[i] += i;
 		}
 		ZController->get_axis_param(idx, "DPOS", tmp.cPosRaw);
-		// µØ¹ìÎ»ÖÃ
+		// åœ°è½¨ä½ç½®
 		for (size_t i = 0; i < 3; ++i) {
 			tmp.cPosRaw[6 + i] = tmp.jPos[6 + i];
 		}
@@ -105,7 +105,7 @@ namespace FSAIRobotInterface {
 		tmp.cPos = tmp.cPosRaw;
 		cpos_base_to_world(tmp.cPos);
 
-		// ±¾Ìå×ø±êÏµÎ»ÖÃ
+		// æœ¬ä½“åæ ‡ç³»ä½ç½®
 		ZController->get_axis_param({ 50,51,52,53,54,55,6,7,8 }, "DPOS", tmp.cPosR);
 		cpos_base_to_world(tmp.cPosR);
 
@@ -115,35 +115,35 @@ namespace FSAIRobotInterface {
 		}
 		ZController->get_axis_param(idx, "TABLE", value);
 
-		// »úÆ÷ÈË×´Ì¬
+		// æœºå™¨äººçŠ¶æ€
 		tmp.lowerStatus = static_cast<int>(value[0]);
 
-		// ÊÖ¶¯/×Ô¶¯Ä£Ê½
+		// æ‰‹åŠ¨/è‡ªåŠ¨æ¨¡å¼
 		tmp.autoMode = static_cast<int>(value[1]);
 
-		// ¹ì¼£±àºÅ
+		// è½¨è¿¹ç¼–å·
 		tmp.lineNum = static_cast<int>(value[3]);
 
-		// µ±Ç°Ê±¼ä´Á
+		// å½“å‰æ—¶é—´æˆ³
 		tmp.slaveTime = static_cast<long>(value[28]);
 
-		// µçÁ÷
+		// ç”µæµ
 		tmp.current = value[33];
-		// µçÑ¹
+		// ç”µå‹
 		tmp.voltage = value[34];
 
-		// º¸½Ó×ÜÊ±³¤
+		// ç„Šæ¥æ€»æ—¶é•¿
 		tmp.weldTime = static_cast<long>(value[30]);
-		// Æğ»¡Ê±¼ä
+		// èµ·å¼§æ—¶é—´
 		tmp.weldBegTime = static_cast<long>(value[31]);
-		// Ï¢»¡Ê±¼ä
+		// æ¯å¼§æ—¶é—´
 		tmp.weldEndTime = static_cast<long>(value[32]);
 
 		// 
 		//ZController->get_axis_param({ stateIdxBase + 24117 }, "TABLE", value);
 		//tmp.lineNum = static_cast<int>(value[0]);
 
-		// ¼ÓËø
+		// åŠ é”
 		std::lock_guard<std::mutex> lock(mtx);
 		robotStatus = tmp;
 
@@ -153,36 +153,46 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::get_all_robot_status(RobotStatus& status) {
 
 		{
-			// ¼ÓËø
+			// åŠ é”
 			std::lock_guard<std::mutex> lock(mtx);
 
-			// ¸üĞÂ»úÆ÷ÈË×´Ì¬
+			// æ›´æ–°æœºå™¨äººçŠ¶æ€
 			status = robotStatus;
 		}
 
-		// ÖáºÅ
+		// è½´å·
 		std::vector<int> axis;
-		// ¶ÁÈ¡·ÇÊµÊ±²ÎÊı
+		// è¯»å–éå®æ—¶å‚æ•°
 		std::vector<float> value;
-		//// »úÆ÷ÈË×ø±êÏµ
+		//// æœºå™¨äººåæ ‡ç³»
 		//axis = get_robot_tcp_axis();
 		//ZController->get_axis_param(axis, "DPOS", status.cPosR);
-		// ±àÂëÆ÷Öµ
+		// ç¼–ç å™¨å€¼
 		axis = get_composed_axis({ get_axis_idx(), robotConfig.appAxisIdxRead });
 		ZController->get_axis_param(axis, "ENCODER", value);
 		status.encoder = std::vector<int>(value.size(), 0);
 		for (size_t i = 0; i < axis.size(); ++i) {
 			status.encoder[i] = static_cast<int>(value[i]);
 		}
-		// Öá×´Ì¬
+		// è½´çŠ¶æ€
 		ZController->get_axis_param(axis, "AXISSTATUS", value);
 		status.axisStatus = std::vector<int>(value.size(), 0);
 		for (size_t i = 0; i < axis.size(); ++i) {
 			status.axisStatus[i] = static_cast<int>(value[i]);
 		}
 
-		// Òì³£Âë¸¨Âë
-		ZController->get_axis_param({ get_cmd_idx_base() + 24110 }, "TABLE", status.subErrorCode);
+		// å¼‚å¸¸ç è¾…ç 
+		axis = std::vector<int>(20, get_state_idx_base());
+		for (size_t i = 0; i < axis.size(); ++i) {
+			axis[i] += i;
+		}
+		ZController->get_axis_param(axis, "TABLE", value);
+		status.subErrorCode = std::vector<int>(value.size(), 0);
+		for (size_t i = 0; i < axis.size(); ++i) {
+			status.subErrorCode[i] = static_cast<int>(value[i]);
+		}
+		//ZController->get_axis_param(axis, "AXISSTATUS", value);
+		//ZController->get_axis_param({ get_cmd_idx_base() + 24110 }, "TABLE", status.subErrorCode);
 
 		return 0;
 	}
@@ -213,7 +223,7 @@ namespace FSAIRobotInterface {
 			idx[i] += i;
 		}
 
-		// ±£´æµ½ table, ´¥·¢ËÙ¶ÈË¢ĞÂ
+		// ä¿å­˜åˆ° table, è§¦å‘é€Ÿåº¦åˆ·æ–°
 		ZController->set_axis_param(idx, "TABLE", { 1, static_cast<float>(200.0 * ratio / 100.0), 100, ratio, 100.0 });
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " set speed ratio: " << ratio / 100.0);
@@ -225,40 +235,40 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::switch_auto(bool enableAuto) {
 
 		int stateIdxBase = get_state_idx_base();
-		// Çå³ıÄ£Ê½²»Æ¥ÅäµÄÒì³£
+		// æ¸…é™¤æ¨¡å¼ä¸åŒ¹é…çš„å¼‚å¸¸
 		robotStatus.upperStatus &= 0xEF;
 
-		// »úÆ÷ÈËÔË¶¯ÖĞ
+		// æœºå™¨äººè¿åŠ¨ä¸­
 		//if ((robotStatus.lowerStatus & 0x01) == 1) {
 		//	return 1;
 		//}
 
-		// ÒÑ¾­´¦ÓÚÖ¸¶¨Ä£Ê½
+		// å·²ç»å¤„äºæŒ‡å®šæ¨¡å¼
 		//if ((robotStatus.autoMode > 0 && enableAuto) || (robotStatus.autoMode < 0 && !enableAuto)) {
 		//	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " already in " << (enableAuto ? "auto" : "manual") << " mode");
 		//	return 2;
 		//}
 
-		// ÇĞ»»ÊÖ¶¯/×Ô¶¯Ä£Ê½
+		// åˆ‡æ¢æ‰‹åŠ¨/è‡ªåŠ¨æ¨¡å¼
 		int TableStartNum = get_cmd_idx_base();
 		ZController->set_axis_param(stateIdxBase + 1, "TABLE", enableAuto ? 1 : -1);
 		if (enableAuto) {
 			ZController->set_axis_param(TableStartNum + 24000, "TABLE", 1);
-			// ¿ªÊ¼ĞÅºÅ
+			// å¼€å§‹ä¿¡å·
 			//ZController->set_axis_param(TableStartNum + 23996, "TABLE", 1);
 		}
 		else {
 			ZController->set_axis_param(TableStartNum + 24001, "TABLE", 1);
-			// ¿ªÊ¼ĞÅºÅ
+			// å¼€å§‹ä¿¡å·
 			//ZController->set_axis_param(TableStartNum + 23996, "TABLE", 0);
 		}
 
 		RobotStatus tmpStatus;
 		get_rt_robot_status(tmpStatus);
 
-		// ¼ì²âÊÇ·ñÇĞ»»³É¹¦
+		// æ£€æµ‹æ˜¯å¦åˆ‡æ¢æˆåŠŸ
 
-		// Éè¶¨¹ì¼£Æğµã
+		// è®¾å®šè½¨è¿¹èµ·ç‚¹
 		TrajectoryPoint point;
 		point.mainPoint = tmpStatus.jPos;
 		point.trajType = TrajType::None;
@@ -300,13 +310,13 @@ namespace FSAIRobotInterface {
 		int stateIdxBase = get_cmd_idx_base();
 		cmdNum = 0;
 		//ZController->set_axis_param(stateIdxBase + 24123, "TABLE", 0);
-		// ÏÂÎ»»ú¸´Î»
+		// ä¸‹ä½æœºå¤ä½
 		ZController->set_axis_param(stateIdxBase + 23999, "TABLE", 1);
-		// Çå¿Õ»Ö¸´
+		// æ¸…ç©ºæ¢å¤
 		ZController->set_axis_param(stateIdxBase + 23995, "TABLE", 1);
 
 
-		// ½«ÉÏÒ»Ìõ¹ì¼£ÀàĞÍÖÃ¿Õ£¬·ÀÖ¹ÇĞ»»ÕıÄæ½âÊ±ÅĞ¶Ï¹ì¼£Î´×ßÍê
+		// å°†ä¸Šä¸€æ¡è½¨è¿¹ç±»å‹ç½®ç©ºï¼Œé˜²æ­¢åˆ‡æ¢æ­£é€†è§£æ—¶åˆ¤æ–­è½¨è¿¹æœªèµ°å®Œ
 		auto preTraj = trajectory.get_preTraj();
 		TrajectoryPoint point = preTraj.get_point();
 		point.trajType = TrajType::None;
@@ -322,19 +332,19 @@ namespace FSAIRobotInterface {
 
 	int FSAIRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 
-		// Î´ÉèÖÃ×Ô¶¯Ä£Ê½
+		// æœªè®¾ç½®è‡ªåŠ¨æ¨¡å¼
 		if (robotStatus.autoMode <= 0) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " switch to auto mode before push trajectory.");
 			set_upperStatus(0x10);
 			return -1;
 		}
 
-		// ¹ì¼£Îª¿Õ
+		// è½¨è¿¹ä¸ºç©º
 		if (trajList.size() == 0) {
 			return -2;
 		}
 
-		// ¹ì¼£Ô¤´¦Àí: Å·À­½ÇĞŞÕı
+		// è½¨è¿¹é¢„å¤„ç†: æ¬§æ‹‰è§’ä¿®æ­£
 		for (auto& traj : trajList.trajList) {
 			if (traj.isJoint()) {}
 			else {
@@ -349,10 +359,10 @@ namespace FSAIRobotInterface {
 		}
 
 		std::unique_lock<std::mutex> lock(mtx);
-		// µÈ´ıÌõ¼şÖÃ·´
+		// ç­‰å¾…æ¡ä»¶ç½®å
 		motionDone = false;
 
-		// ¹ì¼£ÈëÕ»
+		// è½¨è¿¹å…¥æ ˆ
 		trajectory.push_new_trajectory(trajList);
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " receive new trajectory, trajectory buffer size is " << trajectory.size());
 
@@ -368,19 +378,19 @@ namespace FSAIRobotInterface {
 
 		int idxBase = get_cmd_idx_base();
 
-		// ¹Ø½Ú
+		// å…³èŠ‚
 		if (type == 0) {
 			ZController->set_axis_param(idxBase + 24003, "TABLE", 1);
 		}
-		// ÊÀ½ç×ø±êÏµ
+		// ä¸–ç•Œåæ ‡ç³»
 		else if (type == 1) {
 			ZController->set_axis_param(idxBase + 24002, "TABLE", 1);
 		}
-		// ¹¤¾ß×ø±êÏµ
+		// å·¥å…·åæ ‡ç³»
 		else if (type == 2) {
 			ZController->set_axis_param(idxBase + 24005, "TABLE", 1);
 		}
-		// »ù×ø±êÏµ
+		// åŸºåæ ‡ç³»
 		else if (type == 3) {
 			ZController->set_axis_param(idxBase + 24004, "TABLE", 1);
 		}
@@ -395,12 +405,12 @@ namespace FSAIRobotInterface {
 			return -1;
 		}
 
-		// Î´´¦ÓÚÊÖ¶¯Ä£Ê½
+		// æœªå¤„äºæ‰‹åŠ¨æ¨¡å¼
 		if (robotStatus.autoMode > 0) {
 			robotStatus.upperStatus |= 0x10;
 			return 1;
 		}
-		//// ÔİÍ£×´Ì¬ÏÂ²»¿ÉÒÆ¶¯¸½¼ÓÖá
+		//// æš‚åœçŠ¶æ€ä¸‹ä¸å¯ç§»åŠ¨é™„åŠ è½´
 		//if ((robotStatus.lowerStatus & 0x02) == 1 && idx > 5) {
 		//	robotStatus.upperStatus |= 0x04;
 		//	return 2;
@@ -408,31 +418,31 @@ namespace FSAIRobotInterface {
 
 		int idxBase = get_cmd_idx_base();
 
-		// ¹Ø½Ú
+		// å…³èŠ‚
 		if (type == 0) {
 			ZController->set_axis_param(idxBase + 24003, "TABLE", 1);
 		}
-		// ÊÀ½ç×ø±êÏµ
+		// ä¸–ç•Œåæ ‡ç³»
 		else if (type == 1) {
 			ZController->set_axis_param(idxBase + 24002, "TABLE", 1);
 		}
-		// ¹¤¾ß×ø±êÏµ
+		// å·¥å…·åæ ‡ç³»
 		else if (type == 2) {
 			ZController->set_axis_param(idxBase + 24005, "TABLE", 1);
 		}
-		// »ù×ø±êÏµ
+		// åŸºåæ ‡ç³»
 		else if (type == 3) {
 			ZController->set_axis_param(idxBase + 24004, "TABLE", 1);
 		}
 
-		// µã¶¯
+		// ç‚¹åŠ¨
 		if (dir > 0) {
 			ZController->set_axis_param(idxBase + 24010 + idx, "TABLE", 1);
 		}
 		else if (dir < 0) {
 			ZController->set_axis_param(idxBase + 24030 + idx, "TABLE", 1);
 		}
-		// Í£Ö¹
+		// åœæ­¢
 		else {
 			ZController->set_axis_param(idxBase + 24010 + idx, "TABLE", -1);
 			ZController->set_axis_param(idxBase + 24030 + idx, "TABLE", -1);
@@ -449,15 +459,15 @@ namespace FSAIRobotInterface {
 		int idx = get_point_idx_base();
 		std::vector<int> idxList;
 		std::vector<float> value;
-		// ÔË¶¯ÀàĞÍ
+		// è¿åŠ¨ç±»å‹
 		ZController->set_axis_param(idx + 5, "TABLE", 1);
 
-		// ĞÎÌ¬Î»
+		// å½¢æ€ä½
 		ZController->set_axis_param(idx + 1, "TABLE", -1);
 		//ZController->set_axis_param(idx + 2, "TABLE", 0);
 		//ZController->set_axis_param(idx + 3, "TABLE", 0);
 
-		// ÖÕµã
+		// ç»ˆç‚¹
 		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
 		for (size_t i = 0; i < idxList.size(); ++i) {
 			idxList[i] += i;
@@ -465,7 +475,7 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(idxList, "TABLE", end);
 		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 0);
 
-		// µãÎ»²åÈëÍê³É
+		// ç‚¹ä½æ’å…¥å®Œæˆ
 		//ZController->set_axis_param(idx - 10, "TABLE", 1);
 
 		return 0;
@@ -480,15 +490,15 @@ namespace FSAIRobotInterface {
 		int idx = get_point_idx_base();
 		std::vector<int> idxList;
 		std::vector<float> value;
-		// ÔË¶¯ÀàĞÍ
+		// è¿åŠ¨ç±»å‹
 		ZController->set_axis_param(idx + 5, "TABLE", 0);
 
-		// ĞÎÌ¬Î»
+		// å½¢æ€ä½
 		ZController->set_axis_param(idx + 1, "TABLE", -1);
 		//ZController->set_axis_param(idx + 2, "TABLE", 0);
 		//ZController->set_axis_param(idx + 3, "TABLE", 0);
 
-		// ÖÕµã
+		// ç»ˆç‚¹
 		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
 		for (size_t i = 0; i < idxList.size(); ++i) {
 			idxList[i] += i;
@@ -496,7 +506,7 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(idxList, "TABLE", end);
 		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 1);
 
-		// µãÎ»²åÈëÍê³É
+		// ç‚¹ä½æ’å…¥å®Œæˆ
 		//ZController->set_axis_param(idx - 10, "TABLE", 1);
 		return 0;
 	}
@@ -509,15 +519,15 @@ namespace FSAIRobotInterface {
 		int idx = get_point_idx_base();
 		std::vector<int> idxList;
 		std::vector<float> value;
-		// ÔË¶¯ÀàĞÍ
+		// è¿åŠ¨ç±»å‹
 		ZController->set_axis_param(idx + 5, "TABLE", 2);
 
-		// ĞÎÌ¬Î»
+		// å½¢æ€ä½
 		ZController->set_axis_param(idx + 1, "TABLE", -1);
 		//ZController->set_axis_param(idx + 2, "TABLE", 0);
 		//ZController->set_axis_param(idx + 3, "TABLE", 0);
 
-		// ÖĞ¼äµã
+		// ä¸­é—´ç‚¹
 		idxList = std::vector<int>(12, idx + 22 + 12);
 		for (size_t i = 0; i < idxList.size(); ++i) {
 			idxList[i] += i;
@@ -525,7 +535,7 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(idxList, "TABLE", mid);
 		ZController->set_axis_param(idx + 22 + 36 + 1, "TABLE", 1);
 
-		// ÖÕµã
+		// ç»ˆç‚¹
 		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
 		for (size_t i = 0; i < idxList.size(); ++i) {
 			idxList[i] += i;
@@ -533,12 +543,12 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(idxList, "TABLE", end);
 		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 1);
 
-		// µãÎ»²åÈëÍê³É
+		// ç‚¹ä½æ’å…¥å®Œæˆ
 		//ZController->set_axis_param(idx - 10, "TABLE", 1);
 		return 0;
 	}
 
-	/* *************************** ÔË¶¯ÉèÖÃ *************************** */
+	/* *************************** è¿åŠ¨è®¾ç½® *************************** */
 	int FSAIRobot::send_line_num(int axis, const SingleTrajectory &curTraj) {
 
 		int ret = 0;
@@ -562,14 +572,14 @@ namespace FSAIRobotInterface {
 		int idx = 160000;
 		std::vector<int> idxList;
 
-		// Æğµã
+		// èµ·ç‚¹
 		idxList = std::vector<int>(12, idx + 22);
 		for (size_t i = 0; i < idxList.size(); ++i) {
 			idxList[i] += i;
 		}
 		ZController->set_axis_param(idxList, "TABLE", pnt);
 
-		// ÆğµãÀàĞÍ
+		// èµ·ç‚¹ç±»å‹
 		if (preTraj.isJoint()) {
 			ZController->set_axis_param(idx + 22 + 36 + 0, "TABLE", 0);
 		}
@@ -581,52 +591,52 @@ namespace FSAIRobotInterface {
 	}
 
 
-	/* *************************** Á¬ĞøÔË¶¯ *************************** */
+	/* *************************** è¿ç»­è¿åŠ¨ *************************** */
 	int FSAIRobot::execute_single_joint() {
 		int ret = 0;
-		// Ç°Ò»Ìõ¹ì¼£
+		// å‰ä¸€æ¡è½¨è¿¹
 		auto preTraj = trajectory.get_preTraj();
-		// »ñÈ¡µ±Ç°¹ì¼£
+		// è·å–å½“å‰è½¨è¿¹
 		auto curTraj = trajectory.get_curTraj();
 
 		std::vector<int> axis = get_execute_axis();
 
-		// ÔË¶¯ÀàĞÍ¼ì²é
+		// è¿åŠ¨ç±»å‹æ£€æŸ¥
 
-		// »ñÈ¡½ÚµãÄ¿±êÎ»ÖÃ
+		// è·å–èŠ‚ç‚¹ç›®æ ‡ä½ç½®
 		auto pnt = curTraj.mainPoint;
 
-		// ÉèÖÃËÙ¶È
+		// è®¾ç½®é€Ÿåº¦
 		ZController->set_axis_param(160000 + 6, "TABLE", curTraj.get_speed());
-		// ¼ÓËÙ¶È
+		// åŠ é€Ÿåº¦
 		ZController->set_axis_param(160000 + 8, "TABLE", 50);
-		// ÉèÖÃÆ½»¬¶È
+		// è®¾ç½®å¹³æ»‘åº¦
 		ZController->set_axis_param(160000 + 4, "TABLE", curTraj.get_smooth());
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveJABS: " << vector_to_string(pnt));
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth());
 
-		// ¿ªÊ¼¼ÇÂ¼Î»ÖÃ
+		// å¼€å§‹è®°å½•ä½ç½®
 		save_task_status(true, 1);
 
-		// ÉèÖÃÉÏÌõ¹ì¼£ÀàĞÍ
+		// è®¾ç½®ä¸Šæ¡è½¨è¿¹ç±»å‹
 		auto beg = preTraj.get_mainPoint();
 		set_previous_trajectory(preTraj);
-		// ¸üĞÂ¹ì¼£±àºÅ
+		// æ›´æ–°è½¨è¿¹ç¼–å·
 		trajectory.trajList.front().lineNum = ++cmdNum;
-		// ÏÂ·¢¹ì¼£ĞòºÅ
+		// ä¸‹å‘è½¨è¿¹åºå·
 		send_line_num(axis[0], trajectory.get_curTraj());
 
-		// ÏÂ·¢¹ì¼£
+		// ä¸‹å‘è½¨è¿¹
 		ret = moveJABS(axis, beg, pnt);
 		if (ret != 0)
 			return ret;
 
-		// Í£Ö¹¼ÇÂ¼Î»ÖÃ
+		// åœæ­¢è®°å½•ä½ç½®
 		save_task_status(false, 1);
 
-		// ¹ì¼£³öÕ»
+		// è½¨è¿¹å‡ºæ ˆ
 		if (ret == 0) {
 			//trajectory.set_current_line_num(cmdNum);
 			trajectory.next();
@@ -641,14 +651,14 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::execute_single_cartesian() {
 
 		int stateIdxBase = get_state_idx_base();
-		// »ñÈ¡µ±Ç°¹ì¼£
+		// è·å–å½“å‰è½¨è¿¹
 		auto curTraj = trajectory.get_curTraj();
 		auto preTraj = trajectory.get_preTraj();
 
 		int ret = 0;
 		std::vector<int> axis = get_execute_axis();
 
-		// »ñÈ¡½ÚµãÄ¿±êÎ»ÖÃ
+		// è·å–èŠ‚ç‚¹ç›®æ ‡ä½ç½®
 		auto curPoint = curTraj.mainPoint;
 		auto prePoint = preTraj.mainPoint;
 		auto midPoint = curTraj.auxPoint;
@@ -665,36 +675,36 @@ namespace FSAIRobotInterface {
 			<< ". traj dist: " << trajectory.get_dist()
 		);
 
-		// ¹ì¼£µãÎ¬¶ÈÓëÇı¶¯ÖáÎ¬¶ÈµÄ½ÏĞ¡Öµ
+		// è½¨è¿¹ç‚¹ç»´åº¦ä¸é©±åŠ¨è½´ç»´åº¦çš„è¾ƒå°å€¼
 		size_t num = (std::min)(curPoint.size(), axis.size());
 
-		// ĞŞ¸Ä°Úº¸²ÎÊı
+		// ä¿®æ”¹æ‘†ç„Šå‚æ•°
 		update_swing_config();
-		// ĞŞ¸Äº¸½Ó²ÎÊı
+		// ä¿®æ”¹ç„Šæ¥å‚æ•°
 		update_welder_config();
-		// ĞŞ¸Ä¸ú×Ù²ÎÊı
+		// ä¿®æ”¹è·Ÿè¸ªå‚æ•°
 		update_track_config();
 
-		// ÉèÖÃËÙ¶È
+		// è®¾ç½®é€Ÿåº¦
 		ZController->set_axis_param(160000 + 6, "TABLE", curTraj.get_speed());
 		ZController->set_axis_param(160000 + 7, "TABLE", 200);
-		// ¼ÓËÙ¶È
+		// åŠ é€Ÿåº¦
 		ZController->set_axis_param(160000 + 8, "TABLE", 500);
 		ZController->set_axis_param(160000 + 9, "TABLE", 500);
-		// ÉèÖÃÆ½»¬¶È
+		// è®¾ç½®å¹³æ»‘åº¦
 		ZController->set_axis_param(160000 + 4, "TABLE", curTraj.get_smooth());
 
-		// ¿ªÊ¼¼ÇÂ¼Î»ÖÃ
+		// å¼€å§‹è®°å½•ä½ç½®
 		save_task_status(true, 1);
 
-		// ÉèÖÃÉÏÌõ¹ì¼£ÀàĞÍ
+		// è®¾ç½®ä¸Šæ¡è½¨è¿¹ç±»å‹
 		set_previous_trajectory(preTraj);
-		// ¸üĞÂ¹ì¼£±àºÅ
+		// æ›´æ–°è½¨è¿¹ç¼–å·
 		trajectory.trajList.front().lineNum = ++cmdNum;
-		// ÏÂ·¢¹ì¼£ĞòºÅ
+		// ä¸‹å‘è½¨è¿¹åºå·
 		send_line_num(axis[0], trajectory.get_curTraj());
 
-		// ÏÂ·¢¹ì¼£
+		// ä¸‹å‘è½¨è¿¹
 		if (curTraj.isArc()) {
 			moveCABS(axis, prePoint, midPoint, curPoint, 0);
 		}
@@ -702,10 +712,10 @@ namespace FSAIRobotInterface {
 			moveLABS(axis, prePoint, curPoint);
 		}
 
-		// Í£Ö¹¼ÇÂ¼Î»ÖÃ
+		// åœæ­¢è®°å½•ä½ç½®
 		save_task_status(false, 1);
 
-		// ÏÂ·¢Òì³£
+		// ä¸‹å‘å¼‚å¸¸
 		if (ret == 0) {
 			trajectory.next();
 		}
@@ -720,7 +730,7 @@ namespace FSAIRobotInterface {
 		if (trajectory.trajectory_loaded())
 			return 0;
 
-		// ¿ªÊ¼Ö´ĞĞĞÂ¹ì¼£
+		// å¼€å§‹æ‰§è¡Œæ–°è½¨è¿¹
 		if (trajectory.get_preTraj().trajType == TrajType::None) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " new traj begin point: " << vector_to_string(robotStatus.jPos));
 			SingleTrajectory preTraj;
@@ -735,12 +745,12 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::consistent_traj_ready(int& state) {
 
 		int ret = 0;
-		// »ñÈ¡µ±Ç°¹ì¼£
+		// è·å–å½“å‰è½¨è¿¹
 		auto curTraj = trajectory.get_curTraj();
-		// »ñÈ¡ÉÏÒ»Ìõ¹ì¼£
+		// è·å–ä¸Šä¸€æ¡è½¨è¿¹
 		auto preTraj = trajectory.get_preTraj();
 
-		// µÚÒ»Ìõ¹ì¼£Î´¾ÍĞ÷
+		// ç¬¬ä¸€æ¡è½¨è¿¹æœªå°±ç»ª
 		if (preTraj.trajType == TrajType::None) {
 			if (get_bit(state, 4) == 0) {
 				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " previous trajectory type is NONE.");
@@ -768,7 +778,7 @@ namespace FSAIRobotInterface {
 		return 0;
 	}
 
-	/* *************************** ¹Ì¶¨ÔË¶¯ *************************** */
+	/* *************************** å›ºå®šè¿åŠ¨ *************************** */
 	int FSAIRobot::save_task_status(bool enable, int inBuffer) {
 		int stateIdxBase = get_state_idx_base();
 		int ret = 0;
@@ -816,7 +826,7 @@ namespace FSAIRobotInterface {
 		return 0;
 	}
 
-	/* *************************** ×Ô¶¨Òå¹¦ÄÜ *************************** */
+	/* *************************** è‡ªå®šä¹‰åŠŸèƒ½ *************************** */
 	int FSAIRobot::read_saved_status(RobotStatus& status) {
 
 		int cfgIdxBase = get_config_idx_base();
@@ -828,7 +838,7 @@ namespace FSAIRobotInterface {
 
 		ZController->get_axis_param(axis, "VR", data);
 
-		// ±£´æÊı¾İ¹¦ÄÜÎ´Ê¹ÄÜ»òÒì³£
+		// ä¿å­˜æ•°æ®åŠŸèƒ½æœªä½¿èƒ½æˆ–å¼‚å¸¸
 		if (data[0] != 1) {
 			return -1;
 		}
@@ -845,7 +855,7 @@ namespace FSAIRobotInterface {
 
 		status.posOffset = std::vector<float>(data.begin() + 18, data.begin() + 24);
 
-		// ¾Ö²¿×ø±êÏµ×ªÊÀ½ç×ø±êÏµ
+		// å±€éƒ¨åæ ‡ç³»è½¬ä¸–ç•Œåæ ‡ç³»
 		status.cPos = status.cPosRaw;
 		cpos_base_to_world(status.cPos);
 		//auto rotMat = robotConfig.get_slave_calibratino_mat();
@@ -875,7 +885,7 @@ namespace FSAIRobotInterface {
 
 	int FSAIRobot::task_resume() {
 
-		// ²»ÔÚ×Ô¶¯Ä£Ê½
+		// ä¸åœ¨è‡ªåŠ¨æ¨¡å¼
 		if (robotStatus.autoMode <= 0)
 			return 1;
 
@@ -890,21 +900,21 @@ namespace FSAIRobotInterface {
 
 	int FSAIRobot::task_stop() {
 
-		// ¹ì¼£Çå¿Õ
+		// è½¨è¿¹æ¸…ç©º
 		trajectory.clear();
 
-		// Í£Ö¹¼ÇÂ¼Î»ÖÃ
+		// åœæ­¢è®°å½•ä½ç½®
 		save_task_status(false, -1);
 
-		// Çå³ıÉÏÎ»»úÒì³£Âë
+		// æ¸…é™¤ä¸Šä½æœºå¼‚å¸¸ç 
 		reset_upperStatus(-1);
 
 		int stateIdxBase = get_cmd_idx_base();
-		// ÔİÍ£
+		// æš‚åœ
 		ZController->set_axis_param({ stateIdxBase + 23997 }, "TABLE", { 1 });
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-		// ¹ì¼£ĞòºÅ¸´Î»
+		// è½¨è¿¹åºå·å¤ä½
 		reset_line_num();
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
@@ -920,7 +930,7 @@ namespace FSAIRobotInterface {
 		trajectory.clear();
 		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 
-		// ÉÏÎ»»úÏÂ·¢Í£Ö¹
+		// ä¸Šä½æœºä¸‹å‘åœæ­¢
 		set_upperStatus(0x08);
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " emergency stop.");
@@ -946,27 +956,27 @@ namespace FSAIRobotInterface {
 
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Move_Action " << type << (param.size() > 0 ? ": " : "") << vector_to_string(param));
 
-			// ½öÑÓÊ±
+			// ä»…å»¶æ—¶
 			if (type == 1 && param[0] < 0) {
 				ZController->set_axis_param(get_point_idx_base() + 21, "TABLE", param[2]);
 				delayNum++;
 				continue;
 			}
-			// Ñ°Î»¶¯×÷£¬ĞĞºÅ²»·µ»Ø
+			// å¯»ä½åŠ¨ä½œï¼Œè¡Œå·ä¸è¿”å›
 			if (type == 5) {
 				int idx = get_point_idx_base();
 				ZController->set_axis_param(idx + 267, "TABLE", 1);
 				delayNum++;
 			}
 
-			// Íê³É±êÖ¾Î»¸´Î»
+			// å®Œæˆæ ‡å¿—ä½å¤ä½
 			if (flag == 0)
 				begRegister.add_buffer(stateIdxBase + 350, 0);
 			else
 				endRegister.add_buffer(stateIdxBase + 350, 0);
 
 
-			// ÏÂ·¢ÔË¶¯²ÎÊı
+			// ä¸‹å‘è¿åŠ¨å‚æ•°
 			if (param.size() > 0) {
 				std::vector<int> idx(param.size(), stateIdxBase + 301);
 				for (size_t i = 0; i < param.size(); ++i) {
@@ -980,18 +990,18 @@ namespace FSAIRobotInterface {
 					endRegister.add_buffer(idx, param);
 			}
 
-			// ÏÂ·¢ÔË¶¯
+			// ä¸‹å‘è¿åŠ¨
 			if (flag == 0)
 				begRegister.add_buffer(stateIdxBase + 300, type);
 			else
 				endRegister.add_buffer(stateIdxBase + 300, type);
 
-			// µÈ´ıÔË¶¯½áÊø
+			// ç­‰å¾…è¿åŠ¨ç»“æŸ
 			//ZController->move_wait(axis[0], "TABLE", stateIdxBase + 350, 0, 1);
 
 		}
 
-		// µÈ´ıÔË¶¯½áÊø
+		// ç­‰å¾…è¿åŠ¨ç»“æŸ
 		if (actionList.size() > delayNum) {
 			ZController->set_axis_param(flag == 0 ? get_point_idx_base() + 19 : get_point_idx_base() + 18, "TABLE", 1);
 		}
@@ -1004,14 +1014,14 @@ namespace FSAIRobotInterface {
 
 		int idx = get_point_idx_base();
 
-		// ÔË¶¯Ç°»º³å
+		// è¿åŠ¨å‰ç¼“å†²
 		write_buffer_register(0);
 		begRegister.clear();
-		// ÔË¶¯ºó»º³å
+		// è¿åŠ¨åç¼“å†²
 		write_buffer_register(1);
 		endRegister.clear();
 
-		// µãÎ»²åÈëÍê³É
+		// ç‚¹ä½æ’å…¥å®Œæˆ
 		ZController->set_axis_param(idx - 10, "TABLE", 1);
 
 		return 0;
@@ -1060,17 +1070,17 @@ namespace FSAIRobotInterface {
 		size_t configTableStart = stateIdxBase + 180;
 		int ret = 0;
 
-		// ¸ú×ÙÎ´Ê¹ÄÜ
+		// è·Ÿè¸ªæœªä½¿èƒ½
 		if (trackCfg.Id > 0) {
-			// µç»¡¸ú×Ù±êÖ¾Î»£¬Çø·Öµç»¡¸ú×ÙºÍÏß¼¤¹â¸ú×Ù
+			// ç”µå¼§è·Ÿè¸ªæ ‡å¿—ä½ï¼ŒåŒºåˆ†ç”µå¼§è·Ÿè¸ªå’Œçº¿æ¿€å…‰è·Ÿè¸ª
 			//ZController->set_axis_param(stateIdxBase + 150, "TABLE", trackCfg.Id, axis[0]);
 			begRegister.add_buffer(stateIdxBase + 150, trackCfg.Id);
-			// ¸ú×Ù¿ªÆôºÍ¹Ø±Õ
+			// è·Ÿè¸ªå¼€å¯å’Œå…³é—­
 			begRegister.add_buffer(get_cmd_idx_base() + 24100, 1);
 			endRegister.add_buffer(get_cmd_idx_base() + 24101, 1);
 			
 
-			// ÏÂ·¢¸ú×Ù²ÎÊı
+			// ä¸‹å‘è·Ÿè¸ªå‚æ•°
 			for (size_t i = 0; i < config.size(); ++i) {
 				//ZController->set_axis_param(configTableStart + i, "TABLE", config[i], axis[0]);
 				begRegister.add_buffer(configTableStart + i, config[i]);
@@ -1094,19 +1104,19 @@ namespace FSAIRobotInterface {
 		auto curTraj = trajectory.get_curTraj();
 		Arc_WeldingParaItem weldCfg = deserialize_Arc_WeldingParaItem(curTraj.get_appendix());
 
-		// ²»Æğ»¡£¬ÎŞĞèĞŞ¸Äº¸½Ó²ÎÊı
+		// ä¸èµ·å¼§ï¼Œæ— éœ€ä¿®æ”¹ç„Šæ¥å‚æ•°
 		if (weldCfg.Id <= 0)
 			return 1;
 
 		float current, voltage;
-		// µçÁ÷
+		// ç”µæµ
 		current = weldCfg.WeldingCrt_Spd;
-		// µçÑ¹·Ö±ğÄ£Ê½
+		// ç”µå‹åˆ†åˆ«æ¨¡å¼
 		//if (weldCfg.WeldingWorkMode == 4) {
 		if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1) {
 			voltage = weldCfg.WeldingVtg_Strth;
 		}
-		// Ò»ÔªÄ£Ê½
+		// ä¸€å…ƒæ¨¡å¼
 		else {
 			voltage = weldCfg.VtgUniCorrection + 30;
 		}
@@ -1128,10 +1138,10 @@ namespace FSAIRobotInterface {
 		data.push_back(current);
 		data.push_back(voltage);
 
-		// Ğ´Èë±ä¹¤ÒÕ²ÎÊı
+		// å†™å…¥å˜å·¥è‰ºå‚æ•°
 		//ZController->set_axis_param(tableList, "TABLE", data, get_execute_axis()[0]);
 		begRegister.add_buffer(tableList, data);
-		// ±ä¹¤ÒÕÊ¹ÄÜ
+		// å˜å·¥è‰ºä½¿èƒ½
 		//ZController->set_axis_param(stateBase + 170, "TABLE", 1, get_execute_axis()[0]);
 		begRegister.add_buffer(stateBase + 170, 1);
 

@@ -499,11 +499,12 @@ int Controller::addax(const std::vector<int>& axis, const std::vector<int>& addA
 int Controller::get_register(int start, int numes, std::vector<float>& pfValue, int type) {
 	pfValue = std::vector<float>(numes, 0);
 
+	int ret;
 	if (type == 0) {
-		ZAux_Direct_GetTable(handle, start, numes, pfValue.data());
+		ret = ZAux_Direct_GetTable(handle, start, numes, pfValue.data());
 	}
 	else if (type == 1) {
-		ZAux_Direct_GetVrf(handle, start, numes, pfValue.data());
+		ret = ZAux_Direct_GetVrf(handle, start, numes, pfValue.data());
 	}
 	else {
 		return -1;

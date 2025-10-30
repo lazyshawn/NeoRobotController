@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <memory>
 #include <mutex>
@@ -16,87 +16,87 @@
 namespace FSAIRobotInterface {
 
 /**
- * »úÆ÷ÈËÅäÖÃ²ÎÊı
+ * æœºå™¨äººé…ç½®å‚æ•°
  */
 struct RobotConfig {
-	// »úÆ÷ÈËÅäÖÃ²ÎÊı
-	// Á¬¸Ë²ÎÊı: LargeZ,L1,L2,L3,L4,D5,DiffY
+	// æœºå™¨äººé…ç½®å‚æ•°
+	// è¿æ†å‚æ•°: LargeZ,L1,L2,L3,L4,D5,DiffY
 	std::vector<float> linkLength = {};
-	// ±àÂëÆ÷Î»Êı
+	// ç¼–ç å™¨ä½æ•°
 	std::vector<float> encoderBit = {};
-	// Öáµç»ú¼õËÙ±È/´«¶¯±È(¸üĞÂµØ¹ì)
+	// è½´ç”µæœºå‡é€Ÿæ¯”/ä¼ åŠ¨æ¯”(æ›´æ–°åœ°è½¨)
 	//std::vector<float> transRatio = {};
-	// ¼õËÙ±È·Ö×Ó
+	// å‡é€Ÿæ¯”åˆ†å­
 	std::vector<float> transRatioNumerator = {};
-	// ¼õËÙ±È·ÖÄ¸
+	// å‡é€Ÿæ¯”åˆ†æ¯
 	std::vector<float> transRatioDenominator = {};
-	// ñîºÏ±È
+	// è€¦åˆæ¯”
 	std::vector<float> couplingConfig = {};
-	// TCP ²ÎÊı: SmalLX,SmalLY,SmalLZ,InitRx,InitRy,InitRz(¸üĞÂtcp)
+	// TCP å‚æ•°: SmalLX,SmalLY,SmalLZ,InitRx,InitRy,InitRz(æ›´æ–°tcp)
 	std::vector<float> eefPose = {}, tcpPose = {};
-	// ¹Ø½ÚÉÏÏŞÎ»(¸ü¸Ä)
+	// å…³èŠ‚ä¸Šé™ä½(æ›´æ”¹)
 	std::vector<float> jointSupremum = {};
-	// ¹Ø½ÚÏÂÏŞÎ»(¸ü¸Ä)
+	// å…³èŠ‚ä¸‹é™ä½(æ›´æ”¹)
 	std::vector<float> jointInfimum = {};
-	// ¹Ø½Ú×Ô¶¯Ä£Ê½×î´óËÙ¶È
+	// å…³èŠ‚è‡ªåŠ¨æ¨¡å¼æœ€å¤§é€Ÿåº¦
 	std::vector<float> maxJointSpeedAuto = {};
-	// ¹Ø½ÚÊÖ¶¯Ä£Ê½×î´óËÙ¶È
+	// å…³èŠ‚æ‰‹åŠ¨æ¨¡å¼æœ€å¤§é€Ÿåº¦
 	std::vector<float> maxJointSpeedManual = {};
-	// Ä©¶ËÊÖ¶¯Ä£Ê½×î´óËÙ¶È
+	// æœ«ç«¯æ‰‹åŠ¨æ¨¡å¼æœ€å¤§é€Ÿåº¦
 	std::vector<float> maxCartSpeedManual = {};
-	// IO ÅäÖÃ(¸ü¸Ä)
+	// IO é…ç½®(æ›´æ”¹)
 	std::vector<int> ioAction = {};
-	// ¸½¼ÓÖá±ê¶¨½á¹û(¸ü¸Ä)
+	// é™„åŠ è½´æ ‡å®šç»“æœ(æ›´æ”¹)
 	std::vector<float> auxCalbration = {};
-	// Ö÷´Ó»ú±ê¶¨½á¹û(¸ü¸Ä)
+	// ä¸»ä»æœºæ ‡å®šç»“æœ(æ›´æ”¹)
 	std::vector<float> slaveCalibration = {};
-	// Áãµã±àÂëÆ÷Öµ(¸ü¸Ä)
+	// é›¶ç‚¹ç¼–ç å™¨å€¼(æ›´æ”¹)
 	std::vector<float> zeroEncoder = {};
-	// ´ÓÊôÉè±¸ID(¸ü¸Ä)
+	// ä»å±è®¾å¤‡ID(æ›´æ”¹)
 	std::vector<int> slaveDeviceID = {};
-	//! ´ÓÊôÉè±¸ÀàĞÍ
+	//! ä»å±è®¾å¤‡ç±»å‹
 	std::vector<int> slaveDeviceType = {};
 
-	// ¸½¼ÓÖáÖáºÅ
+	// é™„åŠ è½´è½´å·
 	std::vector<int> appAxisIdx;
 	std::vector<int> appAxisIdxRead;
 
 	RobotConfig() {};
 	~RobotConfig() {};
 
-	/* *************************** ÅäÖÃ½Ó¿Ú *************************** */
+	/* *************************** é…ç½®æ¥å£ *************************** */
 	/**
-	* @brief IO ÅäÖÃ
-	* @param    index    IOÊäÈë¿Ú
-	* @param    lowerStatus   ÓĞĞ§×´Ì¬
-	*               -1   ÆÁ±Î
-	*                0   µÍµçÆ½ÓĞĞ§
-	*                0   ¸ßµçÆ½ÓĞĞ§
-	* @param    action   ´¥·¢¶¯×÷
-	*                1   »úÆ÷ÈËÔİÍ£
-	*                2   »úÆ÷ÈË¼±Í£
-	*                3   ÔË¶¯ÖĞÔİÍ££¬·ñÔò¼±Í£
+	* @brief IO é…ç½®
+	* @param    index    IOè¾“å…¥å£
+	* @param    lowerStatus   æœ‰æ•ˆçŠ¶æ€
+	*               -1   å±è”½
+	*                0   ä½ç”µå¹³æœ‰æ•ˆ
+	*                0   é«˜ç”µå¹³æœ‰æ•ˆ
+	* @param    action   è§¦å‘åŠ¨ä½œ
+	*                1   æœºå™¨äººæš‚åœ
+	*                2   æœºå™¨äººæ€¥åœ
+	*                3   è¿åŠ¨ä¸­æš‚åœï¼Œå¦åˆ™æ€¥åœ
 	* @param
 	*/
 	int config_input_action(const std::vector<int>& index, const std::vector<int>& lowerStatus, const std::vector<int>& action);
 	/**
-	* @brief ÁãµãÉèÖÃ
+	* @brief é›¶ç‚¹è®¾ç½®
 	* @param zeroEncoder
 	*/
 	int config_zero_point();
 	/**
-	* @brief Ô­µãÉèÖÃ
+	* @brief åŸç‚¹è®¾ç½®
 	* @param homeEncoder
 	*/
 	int config_home_point();
 	/**
-	* @brief TCP ×ËÌ¬ÉèÖÃ
-	* @param tcpIdx     TCP ĞòºÅ
-	* @param tcpPose    TCP Î»×Ë
+	* @brief TCP å§¿æ€è®¾ç½®
+	* @param tcpIdx     TCP åºå·
+	* @param tcpPose    TCP ä½å§¿
 	*/
 	int config_tcp_pose();
 
-	// Á¬¸Ë²ÎÊı
+	// è¿æ†å‚æ•°
 	int convert_dhParam_to_linkLength();
 
 	Eigen::Matrix3f get_slave_calibratino_mat();
@@ -104,10 +104,10 @@ struct RobotConfig {
 
 
 /**
- * »úÆ÷ÈËÊµÊ±×´Ì¬²ÎÊı
+ * æœºå™¨äººå®æ—¶çŠ¶æ€å‚æ•°
  * 
- * ĞèÒª¸ßÆµ¸üĞÂµÄÊµÊ±²ÎÊı
- * Ã¿´ÎÂÖÑ¯¶¼¸üĞÂÒ»´Î£¬ÒÔ±£Ö¤»úÆ÷ÈË¹ÜÀíÏß³ÌµÄÕı³£ÔËĞĞ
+ * éœ€è¦é«˜é¢‘æ›´æ–°çš„å®æ—¶å‚æ•°
+ * æ¯æ¬¡è½®è¯¢éƒ½æ›´æ–°ä¸€æ¬¡ï¼Œä»¥ä¿è¯æœºå™¨äººç®¡ç†çº¿ç¨‹çš„æ­£å¸¸è¿è¡Œ
  */
 struct RobotStatusBuffer {
 	std::vector<float> slaveBuffer;
@@ -115,43 +115,43 @@ struct RobotStatusBuffer {
 
 
 /**
- * »úÆ÷ÈË×´Ì¬²ÎÊı
+ * æœºå™¨äººçŠ¶æ€å‚æ•°
  *
- * µ±Ç°ËùÓĞ²ÎÊı¶¼ÔÚ¸ÃÀàÖĞ£¬ºóĞøÊµÊ±²ÎÊı½«ÒÆ¶¯µ½ `RobotRTStatus` ÀàÖĞ
+ * å½“å‰æ‰€æœ‰å‚æ•°éƒ½åœ¨è¯¥ç±»ä¸­ï¼Œåç»­å®æ—¶å‚æ•°å°†ç§»åŠ¨åˆ° `RobotRTStatus` ç±»ä¸­
  */
 struct RobotStatus {
-	// ÊµÊ±Ë¢ĞÂ
-	int lowerStatus;                      // ÏÂÎ»»ú×´Ì¬(Bit)£º(0)
-	int upperStatus = 0;                  // ÉÏÎ»»ú×´Ì¬: Ö¸ÁîÏÂ·¢Òì³££¬ÊÖ¶¯/×Ô¶¯Ä£Ê½²»Æ¥Åä
+	// å®æ—¶åˆ·æ–°
+	int lowerStatus;                      // ä¸‹ä½æœºçŠ¶æ€(Bit)ï¼š(0)
+	int upperStatus = 0;                  // ä¸Šä½æœºçŠ¶æ€: æŒ‡ä»¤ä¸‹å‘å¼‚å¸¸ï¼Œæ‰‹åŠ¨/è‡ªåŠ¨æ¨¡å¼ä¸åŒ¹é…
 
-	int autoMode;                         // ×Ô¶¯Ä£Ê½£º  -1-ÊÖ¶¯Ä£Ê½£¬1-×Ô¶¯Ä£Ê½
-	int fkMode;                           // ÕıÄæ½âÄ£Ê½: 0-Î´½¨Á¢£¬1-Õı½â, -1-Äæ½â
-	int lineNum = 0;                      // µ±Ç°ÔË¶¯ĞĞºÅ
-	int cmdNum = 0;                       // µ±Ç°¹ì¼£µÄÏÂ·¢±àºÅ
-	float masterAxisDist;                 // Ö÷ÖáÔË¶¯¾àÀë
-	int remainBuffer;					  // Ê£Óà»º³åÊı
+	int autoMode;                         // è‡ªåŠ¨æ¨¡å¼ï¼š  -1-æ‰‹åŠ¨æ¨¡å¼ï¼Œ1-è‡ªåŠ¨æ¨¡å¼
+	int fkMode;                           // æ­£é€†è§£æ¨¡å¼: 0-æœªå»ºç«‹ï¼Œ1-æ­£è§£, -1-é€†è§£
+	int lineNum = 0;                      // å½“å‰è¿åŠ¨è¡Œå·
+	int cmdNum = 0;                       // å½“å‰è½¨è¿¹çš„ä¸‹å‘ç¼–å·
+	float masterAxisDist;                 // ä¸»è½´è¿åŠ¨è·ç¦»
+	int remainBuffer;					  // å‰©ä½™ç¼“å†²æ•°
 
-	float current;                        // ÊµÊ±µçÁ÷
-	float voltage;                        // ÊµÊ±µçÑ¹
+	float current;                        // å®æ—¶ç”µæµ
+	float voltage;                        // å®æ—¶ç”µå‹
 
-	long slaveTime;                       // ÏÂÎ»»úÊ±¼ä´Á
-	long weldTime;                        // º¸½ÓÊ±¼ä
-	long weldBegTime;                     // ÉÏ´ÎÆğ»¡Ê±¼ä´Á
-	long weldEndTime;                     // ÉÏ´ÎÏ¢»¡Ê±¼ä´Á
+	long slaveTime;                       // ä¸‹ä½æœºæ—¶é—´æˆ³
+	long weldTime;                        // ç„Šæ¥æ—¶é—´
+	long weldBegTime;                     // ä¸Šæ¬¡èµ·å¼§æ—¶é—´æˆ³
+	long weldEndTime;                     // ä¸Šæ¬¡æ¯å¼§æ—¶é—´æˆ³
 
-	std::vector<float> jPos = {};         // ¹Ø½ÚÎ»ÖÃ
-	std::vector<float> cPos = {};         // ÉÏÎ»»úµÄµÑ¿¨¶û¿Õ¼äÎ»ÖÃ
-	std::vector<float> cPosRaw = {};      // ¿ØÖÆ¿¨ÖĞµÄµÑ¿¨¶û¿Õ¼äÎ»ÖÃ
-	std::vector<float> cPosBuffer = {};   // »º³åÖĞÄ¿±êÎ»ÖÃ
-	//int taskId;                           // µ±Ç°ÈÎÎñºÅ
-	//int taskType;                         // µ±Ç°ÈÎÎñÀàĞÍ£º¿ÕÒÆ£¬ÅÄÕÕ£¬ºáº¸£¬Á¢º¸£¬Æ½º¸
+	std::vector<float> jPos = {};         // å…³èŠ‚ä½ç½®
+	std::vector<float> cPos = {};         // ä¸Šä½æœºçš„ç¬›å¡å°”ç©ºé—´ä½ç½®
+	std::vector<float> cPosRaw = {};      // æ§åˆ¶å¡ä¸­çš„ç¬›å¡å°”ç©ºé—´ä½ç½®
+	std::vector<float> cPosBuffer = {};   // ç¼“å†²ä¸­ç›®æ ‡ä½ç½®
+	//int taskId;                           // å½“å‰ä»»åŠ¡å·
+	//int taskType;                         // å½“å‰ä»»åŠ¡ç±»å‹ï¼šç©ºç§»ï¼Œæ‹ç…§ï¼Œæ¨ªç„Šï¼Œç«‹ç„Šï¼Œå¹³ç„Š
 
-	// °´ĞèË¢ĞÂ (·ÇÊµÊ±)
-	std::vector<int> axisStatus = {};     // Öá×´Ì¬
-	std::vector<int> encoder = {};        // ±àÂëÆ÷Öµ
-	std::vector<float> posOffset = {};    // Ëæ¶¯Æ«ÒÆ
-	std::vector<float> cPosR = {};        // »úÆ÷ÈË×ø±êÏµÎ»ÖÃ
-	std::vector<float> subErrorCode = {}; // Òì³£Âë¸¨Âë
+	// æŒ‰éœ€åˆ·æ–° (éå®æ—¶)
+	std::vector<int> axisStatus = {};     // è½´çŠ¶æ€
+	std::vector<int> encoder = {};        // ç¼–ç å™¨å€¼
+	std::vector<float> posOffset = {};    // éšåŠ¨åç§»
+	std::vector<float> cPosR = {};        // æœºå™¨äººåæ ‡ç³»ä½ç½®
+	std::vector<int> subErrorCode = {}; // å¼‚å¸¸ç è¾…ç 
 
 	RobotStatus() {};
 	~RobotStatus() {};
@@ -159,9 +159,9 @@ struct RobotStatus {
 
 
 /**
- * »úÆ÷ÈË½Ó¿Ú»ùÀà
+ * æœºå™¨äººæ¥å£åŸºç±»
  * 
- * Óëµ×²ã¿ØÖÆ¿¨°ó¶¨µÄ½»»¥½Ó¿Ú£¬ÊµÏÖ»úÆ÷ÈËÔË¿ØËã·¨ÓëÁ÷³ÌµÄ½âñî
+ * ä¸åº•å±‚æ§åˆ¶å¡ç»‘å®šçš„äº¤äº’æ¥å£ï¼Œå®ç°æœºå™¨äººè¿æ§ç®—æ³•ä¸æµç¨‹çš„è§£è€¦
  * Example:
  *   class Derived : public RobotBase {
  *     \\ foo ...
@@ -172,115 +172,115 @@ struct RobotStatus {
  */
 class RobotBase {
 protected:
-	//! ¿ØÖÆ¿¨·ÖÅäµÄ ID
+	//! æ§åˆ¶å¡åˆ†é…çš„ ID
 	int robotId = -1;
-	//! Ö¸ÁîĞĞºÅ: ÏÂ·¢µÄÔË¶¯¸öÊı
+	//! æŒ‡ä»¤è¡Œå·: ä¸‹å‘çš„è¿åŠ¨ä¸ªæ•°
 	int cmdNum = -1;
-	//! Ö¸¶¨±àºÅ
+	//! æŒ‡å®šç¼–å·
 	int aliasId = -1;
-	//! ×´Ì¬Ë¢ĞÂÏß³Ì
+	//! çŠ¶æ€åˆ·æ–°çº¿ç¨‹
 	bool enableRefresh = false;
 
-	//! ¿ØÖÆ¿¨
+	//! æ§åˆ¶å¡
 	std::shared_ptr<Controller> ZController;
-	//! ÆÁ±ÎÖáºÅ
+	//! å±è”½è½´å·
 	std::unordered_set<int> axisMask;
 
-	// »¥³âËøÓëÌõ¼ş±äÁ¿ 
+	// äº’æ–¥é”ä¸æ¡ä»¶å˜é‡ 
 	std::mutex mtx;
 	std::condition_variable cvMotion;
 	bool motionDone = false;
 
-	//! ÅäÖÃ²ÎÊı
+	//! é…ç½®å‚æ•°
 	RobotConfig robotConfig;
-	//! »úÆ÷ÈË×´Ì¬
+	//! æœºå™¨äººçŠ¶æ€
 	RobotStatus robotStatus;
-	//! ×´Ì¬»º´æ
+	//! çŠ¶æ€ç¼“å­˜
 	//RobotStatusBuffer statusBuffer;
-	//£¡ ¸ú×ÙÊı¾İ
+	//ï¼ è·Ÿè¸ªæ•°æ®
 	BufferSynchronizer bufferSync;
 
 public:
 	virtual ~RobotBase();
 
-	// »úÆ÷ÈË»º´æ¹ì¼£
+	// æœºå™¨äººç¼“å­˜è½¨è¿¹
 	DiscreteTrajectory trajectory;
 
-	/* *************************** Í¨ÓÃ½Ó¿Ú *************************** */
-	//! ¹Ø½ÚÆğÊ¼±àºÅ
+	/* *************************** é€šç”¨æ¥å£ *************************** */
+	//! å…³èŠ‚èµ·å§‹ç¼–å·
 	inline int get_joint_idx_base() {
 		return 32 * robotId;
 	}
-	//! ÅäÖÃ²ÎÊıÆğÊ¼±àºÅ
+	//! é…ç½®å‚æ•°èµ·å§‹ç¼–å·
 	inline int get_config_idx_base() {
 		return 1000 * (robotId + 1);
 	}
-	//! ×´Ì¬²ÎÊıÆğÊ¼±àºÅ
+	//! çŠ¶æ€å‚æ•°èµ·å§‹ç¼–å·
 	inline int get_state_idx_base() {
 		return 5000 + 2000 * (robotId + 1);
 	}
-	//! Êı¾İ²ÎÊıÆğÊ¼±àºÅ
+	//! æ•°æ®å‚æ•°èµ·å§‹ç¼–å·
 	inline int get_data_idx_base() {
 		return 20000 + 20000 * (robotId + 1);
 	}
-	//! »ñÈ¡»úÆ÷ÈË ID
+	//! è·å–æœºå™¨äºº ID
 	inline int get_robotId() {
 		return robotId;
 	}
-	//! ÉèÖÃ»úÆ÷ÈË±ğ³Æ ID
+	//! è®¾ç½®æœºå™¨äººåˆ«ç§° ID
 	inline void set_aliasId(int id) {
 		aliasId = id;
 	}
-	//! »ñÈ¡»úÆ÷ÈË±ğ³Æ ID
+	//! è·å–æœºå™¨äººåˆ«ç§° ID
 	inline int get_aliasId() {
 		return aliasId;
 	}
-	//! »ñÈ¡ÏÂ·¢¹ì¼£±àºÅ
+	//! è·å–ä¸‹å‘è½¨è¿¹ç¼–å·
 	inline int get_lineNum() {
 		return cmdNum;
 	}
 	std::vector<int> get_joint_axis();
 	std::vector<int> get_axis_idx();
 
-	//! »½ĞÑµÈ´ıÖĞµÄÏß³Ì
+	//! å”¤é†’ç­‰å¾…ä¸­çš„çº¿ç¨‹
 	int notify_waiting_robot();
-	//! µÈ´ı»úÆ÷ÈËÔË¶¯Í£Ö¹
+	//! ç­‰å¾…æœºå™¨äººè¿åŠ¨åœæ­¢
 	int wait_auto_task_stop();
 
 
-	// ÉèÖÃ¿ØÖÆÆ÷¾ä±ú
+	// è®¾ç½®æ§åˆ¶å™¨å¥æŸ„
 	int set_ZController(std::shared_ptr<Controller> ZController_, int id = -1);
-	// ×éºÏÖáºÅ
+	// ç»„åˆè½´å·
 	std::vector<int> get_composed_axis(const std::vector<std::vector<int>>& axisList);
-	//! »ñÈ¡±£´æµÄ»úÆ÷ÈË×´Ì¬
+	//! è·å–ä¿å­˜çš„æœºå™¨äººçŠ¶æ€
 	int get_rt_robot_status(RobotStatus& status);
-	//! »ñÈ¡±£´æµÄ»úÆ÷ÈËÅäÖÃ²ÎÊı
+	//! è·å–ä¿å­˜çš„æœºå™¨äººé…ç½®å‚æ•°
 	int get_register_config(RobotConfig& config);
 	/**
-	* @brief ¶ÁÈ¡VR¼Ä´æÆ÷ÖĞµÄÅäÖÃ²ÎÊı
+	* @brief è¯»å–VRå¯„å­˜å™¨ä¸­çš„é…ç½®å‚æ•°
 	*/
 	int read_register_config();
 	/**
-	* @brief ¸üĞÂVR¼Ä´æÆ÷ÖĞµÄÅäÖÃ²ÎÊı
+	* @brief æ›´æ–°VRå¯„å­˜å™¨ä¸­çš„é…ç½®å‚æ•°
 	*/
 	int write_register_config(const RobotConfig& config);
 	/**
-	* @brief ÆÁ±Î¹²ÓÃ¸½¼ÓÖá
-	* @param axis       ÆÁ±ÎÖáºÅ
+	* @brief å±è”½å…±ç”¨é™„åŠ è½´
+	* @param axis       å±è”½è½´å·
 	*/
 	int set_axisIdxMask(const std::vector<int>& axis);
-	//! ²éÕÒ¹ì¼£Ö¸ÁîÊÇ·ñ°üº¬Ö¸¶¨ÖáºÅ
+	//! æŸ¥æ‰¾è½¨è¿¹æŒ‡ä»¤æ˜¯å¦åŒ…å«æŒ‡å®šè½´å·
 	int find_command_axis(const SingleTrajectory& traj, int axis);
 	
-	//! ÉèÖÃÉÏÎ»»ú×´Ì¬Âë
+	//! è®¾ç½®ä¸Šä½æœºçŠ¶æ€ç 
 	int set_upperStatus(int code);
-	//£¡ »Ö¸´ÉÏÎ»»ú×´Ì¬Âë
+	//ï¼ æ¢å¤ä¸Šä½æœºçŠ¶æ€ç 
 	int reset_upperStatus(int idx = -1);
 
-	//! ²¶»ñÈÕÖ¾
+	//! æ•è·æ—¥å¿—
 	int capture_controller_log();
 
-	//! ÏÂ·¢Ö¸Áî
+	//! ä¸‹å‘æŒ‡ä»¤
 	int send_command(const std::string& cmd, std::string& ack, int type);
 
 	int reboot(const char *basPath,  int mode);
@@ -288,22 +288,22 @@ public:
 	int export_config(const std::string& fname);
 
 	/**
-	* @brief  ´¥·¢µ×²ã·â×°ºÃµÄÔË¶¯Ö¸Áî
-	* @param    type      ÔË¶¯ÀàĞÍ
-	* @param    action    ÔË¶¯²ÎÊı
+	* @brief  è§¦å‘åº•å±‚å°è£…å¥½çš„è¿åŠ¨æŒ‡ä»¤
+	* @param    type      è¿åŠ¨ç±»å‹
+	* @param    action    è¿åŠ¨å‚æ•°
 	*/
 	int trigger_action(int type, const std::vector<float>& param);
 
 	/**
-	* @brief  µ¼³öµç»¡¸ú×ÙÊı¾İ
+	* @brief  å¯¼å‡ºç”µå¼§è·Ÿè¸ªæ•°æ®
 	*/
 	int export_tracking_data();
 
-	// IO ÓĞĞ§×´Ì¬
+	// IO æœ‰æ•ˆçŠ¶æ€
 	int get_input_effective_state(const std::vector<int>& ioNum, std::vector<int>& state);
 	int set_input_effective_state(const std::vector<int>& ioNum, const std::vector<int>& state);
 
-	// IO ´¥·¢¶¯×÷
+	// IO è§¦å‘åŠ¨ä½œ
 	int get_input_action(const std::vector<int>& ioNum, std::vector<int>& action);
 	int set_input_action(const std::vector<int>& ioNum, const std::vector<int>& action);
 
@@ -319,48 +319,48 @@ public:
 	int read_action_result(std::vector<float>& result);
 	int get_multilayer_pos(std::vector<float>& pos);
 
-	// »ñÈ¡×Ô¶¨ÒåµÄÏÂÎ»»ú»º´æÊı¾İ: Èçµç»¡¸ú×Ù¡¢¼¤¹â¸ú×ÙÊı¾İ
+	// è·å–è‡ªå®šä¹‰çš„ä¸‹ä½æœºç¼“å­˜æ•°æ®: å¦‚ç”µå¼§è·Ÿè¸ªã€æ¿€å…‰è·Ÿè¸ªæ•°æ®
 	int get_slave_buffer();
 
 	/**
-	* @brief  µ¥ÖáÊ¹ÄÜ
-	* @param  enable    Ê¹ÄÜ±êÖ¾
-	* @param  axis      >=0   Ê¹ÄÜÖáºÅ
-	*                   < 0   ËùÓĞÖáºÅ
+	* @brief  å•è½´ä½¿èƒ½
+	* @param  enable    ä½¿èƒ½æ ‡å¿—
+	* @param  axis      >=0   ä½¿èƒ½è½´å·
+	*                   < 0   æ‰€æœ‰è½´å·
 	*/
 	int single_axis_enable(bool enable, int axis = -1);
 
 	/**
-	* @brief  ÉÏÎ»»úÓëÏÂÎ»»ú»º³åÊı¾İÍ¬²½
+	* @brief  ä¸Šä½æœºä¸ä¸‹ä½æœºç¼“å†²æ•°æ®åŒæ­¥
 	*/
 	int synchronize_slave_buffer(long long masterStamp);
 
 	/**
-	* @brief  ²éÑ¯ÏÂÎ»»ú»º³åÊı¾İ
+	* @brief  æŸ¥è¯¢ä¸‹ä½æœºç¼“å†²æ•°æ®
 	*/
 	int query_slave_buffer(long long stamp, std::vector<float>& data);
 
-	/* *************************** µ×²ã¿ÉĞŞ¸Ä½Ó¿Ú *************************** */
+	/* *************************** åº•å±‚å¯ä¿®æ”¹æ¥å£ *************************** */
 	/**
-	* @brief  »º³åÖĞÖ´ĞĞµ×²ã·â×°ºÃµÄÔË¶¯Ö¸Áî
-	* @param    type      ÔË¶¯ÀàĞÍ
-	* @param    action    ÔË¶¯²ÎÊı
+	* @brief  ç¼“å†²ä¸­æ‰§è¡Œåº•å±‚å°è£…å¥½çš„è¿åŠ¨æŒ‡ä»¤
+	* @param    type      è¿åŠ¨ç±»å‹
+	* @param    action    è¿åŠ¨å‚æ•°
 	*/
 	virtual int execute_move_action(const std::vector<std::pair<int, std::vector<float>>>& actionList, int flag = 0);
 
-	// ¹ì¼£ÏÂ·¢ºó´¦Àí
+	// è½¨è¿¹ä¸‹å‘åå¤„ç†
 	virtual int process_after_send_traj();
 
-	// ÉèÖÃµ±Ç°¹ì¼£ÀàĞÍ
+	// è®¾ç½®å½“å‰è½¨è¿¹ç±»å‹
 	virtual int send_traj_type(int type);
 
 
-	/* *************************** µ×²ã×Ô¶¨Òå½Ó¿Ú *************************** */
+	/* *************************** åº•å±‚è‡ªå®šä¹‰æ¥å£ *************************** */
 
-	//! »ñÈ¡ÏÂ·¢Ö¸ÁîÖáºÅ£¬Ö÷ÒªÓÃÓÚÈ·¶¨ÔË¶¯Ö÷Öá
+	//! è·å–ä¸‹å‘æŒ‡ä»¤è½´å·ï¼Œä¸»è¦ç”¨äºç¡®å®šè¿åŠ¨ä¸»è½´
 	virtual std::vector<int> get_execute_axis() = 0;
 
-	// »úÆ÷ÈË×´Ì¬
+	// æœºå™¨äººçŠ¶æ€
 	virtual int update_rt_robot_status() = 0;
 	virtual int get_all_robot_status(RobotStatus& status) = 0;
 
@@ -375,7 +375,7 @@ public:
 
 	virtual int set_manual_speed(float ratio) = 0;
 
-	// ×Ô¶¯ÈÎÎñ
+	// è‡ªåŠ¨ä»»åŠ¡
 	virtual int update_swing_config() = 0;
 	virtual int update_track_config() = 0;
 	virtual int update_welder_config() = 0;
@@ -386,39 +386,39 @@ public:
 	virtual int execute_single_cartesian() = 0;
 
 
-	// ÏÂ·¢¹ì¼£±àºÅ£¬ÔË¶¯ÍêĞŞ¸Ä
+	// ä¸‹å‘è½¨è¿¹ç¼–å·ï¼Œè¿åŠ¨å®Œä¿®æ”¹
 	virtual int send_line_num(int axis, const SingleTrajectory &curTraj) = 0;
 
-	// Ê£Óà»º³å¼ì²â
+	// å‰©ä½™ç¼“å†²æ£€æµ‹
 	virtual int remain_buffer_free() = 0;
 
 	/**
-	* @brief  Ò»ÖÂĞÔ¹ì¼£Ô¤´¦Àí
-	* @param  state  »úÆ÷ÈË×é×´Ì¬
+	* @brief  ä¸€è‡´æ€§è½¨è¿¹é¢„å¤„ç†
+	* @param  state  æœºå™¨äººç»„çŠ¶æ€
 	* 
-	* ²»Í¬Ëã·¨£¬¿ÉÄÜ¹ì¼£¶Î¿ªÊ¼Ç°ĞèÒªÔ¤´æÊı¾İ£¬»òÆäËûÔ¤´¦Àí
-	* ¸Ã¹¦ÄÜÓÃÓÚ¼ì²âÊÇ·ñ¿ÉÒÔ½øĞĞÔ¤´¦Àí£¬²¢ĞŞ¸ÄÏÂ·¢±êÊ¶£¬ÈÃ¹ì¼£¿ÉÒÔÍ¨¹ıºóĞøµÄÒ»ÖÂĞÔ¼ì²â
+	* ä¸åŒç®—æ³•ï¼Œå¯èƒ½è½¨è¿¹æ®µå¼€å§‹å‰éœ€è¦é¢„å­˜æ•°æ®ï¼Œæˆ–å…¶ä»–é¢„å¤„ç†
+	* è¯¥åŠŸèƒ½ç”¨äºæ£€æµ‹æ˜¯å¦å¯ä»¥è¿›è¡Œé¢„å¤„ç†ï¼Œå¹¶ä¿®æ”¹ä¸‹å‘æ ‡è¯†ï¼Œè®©è½¨è¿¹å¯ä»¥é€šè¿‡åç»­çš„ä¸€è‡´æ€§æ£€æµ‹
 	*/
 	virtual int set_ready_for_consistent_traj(int& state) = 0;
 
 	/**
-	* @brief  Ò»ÖÂĞÔ¹ì¼£¾ÍĞ÷¼ì²â
-	* @param  state  »úÆ÷ÈË×é×´Ì¬
+	* @brief  ä¸€è‡´æ€§è½¨è¿¹å°±ç»ªæ£€æµ‹
+	* @param  state  æœºå™¨äººç»„çŠ¶æ€
 	* 
-	* ¼ì²âÊÇ·ñµ±Ç°¹ì¼£¿ÉÒÔ¿ªÊ¼ÏÂ·¢£¬Èô²»ÄÜÔòÅĞ¶Ï²¢Ö´ĞĞÇĞ»»¶¯×÷£¬µÈ´ıÏÂ´ÎÅĞ¶Ï
-	* ¸Ã¹¦ÄÜ¿ÉÒÔ×èÖ¹Î´½øĞĞÔ¤´¦ÀíµÄ¹ì¼£±»ÏÂ·¢
+	* æ£€æµ‹æ˜¯å¦å½“å‰è½¨è¿¹å¯ä»¥å¼€å§‹ä¸‹å‘ï¼Œè‹¥ä¸èƒ½åˆ™åˆ¤æ–­å¹¶æ‰§è¡Œåˆ‡æ¢åŠ¨ä½œï¼Œç­‰å¾…ä¸‹æ¬¡åˆ¤æ–­
+	* è¯¥åŠŸèƒ½å¯ä»¥é˜»æ­¢æœªè¿›è¡Œé¢„å¤„ç†çš„è½¨è¿¹è¢«ä¸‹å‘
 	*/
 	virtual int consistent_traj_ready(int& state) = 0;
 
 	virtual int separate_trajectory() = 0;
 
-	/* *************************** ÉÏ²ã×Ô¶¨Òå½Ó¿Ú *************************** */
+	/* *************************** ä¸Šå±‚è‡ªå®šä¹‰æ¥å£ *************************** */
 	/**
-	* @brief ¶ÁÈ¡VR¼Ä´æÆ÷ÖĞµÄÅäÖÃ²ÎÊı
+	* @brief è¯»å–VRå¯„å­˜å™¨ä¸­çš„é…ç½®å‚æ•°
 	*/
 	//virtual int read_register_config() = 0;
 	/**
-	* @brief ¸üĞÂVR¼Ä´æÆ÷ÖĞµÄÅäÖÃ²ÎÊı
+	* @brief æ›´æ–°VRå¯„å­˜å™¨ä¸­çš„é…ç½®å‚æ•°
 	*/
 	//virtual int write_register_config(const RobotConfig& config) = 0;
 	virtual int read_saved_status(RobotStatus& status) = 0;
@@ -431,32 +431,32 @@ public:
 
 	virtual int reset_line_num() = 0;
 	/**
-	* @brief  ÉèÖÃµã¶¯ÀàĞÍ
+	* @brief  è®¾ç½®ç‚¹åŠ¨ç±»å‹
 	* @param  type
-	*      -# 0: ¹Ø½Ú
-	*      -# 1: ÊÀ½ç×ø±êÏµ
-	*      -# 2: ¹¤¾ß×ø±êÏµ
+	*      -# 0: å…³èŠ‚
+	*      -# 1: ä¸–ç•Œåæ ‡ç³»
+	*      -# 2: å·¥å…·åæ ‡ç³»
 	*/
 	virtual int set_jog_type(int type) = 0;
 	/**
-	* @brief  Jog µã¶¯
-	* @param  type    ÔË¶¯ÀàĞÍ
-		   -# 0: ¹Ø½ÚÔË¶¯
-		   -# 1: ÊÀ½ç×ø±êÏµÔË¶¯
-		   -# 2: ¹¤¾ß×ø±êÏµÔË¶¯ (todo)
-	* @param  idx     ÔË¶¯ÖáºÅ
+	* @brief  Jog ç‚¹åŠ¨
+	* @param  type    è¿åŠ¨ç±»å‹
+		   -# 0: å…³èŠ‚è¿åŠ¨
+		   -# 1: ä¸–ç•Œåæ ‡ç³»è¿åŠ¨
+		   -# 2: å·¥å…·åæ ‡ç³»è¿åŠ¨ (todo)
+	* @param  idx     è¿åŠ¨è½´å·
            		    0,   1,   2,   3,   4,   5,   6,   7,   8
-           ¹Ø½Ú    J1,  J2,  J3,  J4,  J5,  J6,  G1,  G2,  G3
-           ÊÀ½ç    x,   y,   z,   Rx,  Ry,  Rz,  G1,  G2,  G3
-           »úÆ÷ÈË  x,   y,   z,   Rx,  Ry,  Rz,  G1,  G2,  G3
-           ¹¤¾ß    x,   y,   z,   Rx,  Ry,  Rz,  G1,  G2,  G3
-	* @param  dir    Çø·ÖÔË¶¯·½Ïò
-		   -# 0 : Í£Ö¹ÔË¶¯
-		   -# 1 : ÕıÏòÔË¶¯
-		   -# -1: ¸ºÏòÔË¶¯
-	* @param  move   Çø·ÖÊÇ·ñÔË¶¯, ²¿·ÖËã·¨¿ÉÄÜĞèÒª·Ö±ğÖ¸¶¨·½ÏòºÍÊÇ·ñÔË¶¯
-	       -# 0: Í£Ö¹ÔË¶¯
-		   -# 1: ¿ªÊ¼ÔË¶¯
+           å…³èŠ‚    J1,  J2,  J3,  J4,  J5,  J6,  G1,  G2,  G3
+           ä¸–ç•Œ    x,   y,   z,   Rx,  Ry,  Rz,  G1,  G2,  G3
+           æœºå™¨äºº  x,   y,   z,   Rx,  Ry,  Rz,  G1,  G2,  G3
+           å·¥å…·    x,   y,   z,   Rx,  Ry,  Rz,  G1,  G2,  G3
+	* @param  dir    åŒºåˆ†è¿åŠ¨æ–¹å‘
+		   -# 0 : åœæ­¢è¿åŠ¨
+		   -# 1 : æ­£å‘è¿åŠ¨
+		   -# -1: è´Ÿå‘è¿åŠ¨
+	* @param  move   åŒºåˆ†æ˜¯å¦è¿åŠ¨, éƒ¨åˆ†ç®—æ³•å¯èƒ½éœ€è¦åˆ†åˆ«æŒ‡å®šæ–¹å‘å’Œæ˜¯å¦è¿åŠ¨
+	       -# 0: åœæ­¢è¿åŠ¨
+		   -# 1: å¼€å§‹è¿åŠ¨
 	*/
 	virtual int jog_moving(int type, int idx, int dir, int move) = 0;
 
@@ -467,166 +467,166 @@ public:
 	virtual int task_stop() = 0;
 	virtual int emergency_stop() = 0;
 
-	// Éè±¸²Ù×÷
+	// è®¾å¤‡æ“ä½œ
 	virtual int device_operation() = 0;
 
 };
 
 
 /**
- * »úÆ÷ÈË¹ÜÀíÀà
+ * æœºå™¨äººç®¡ç†ç±»
  *
- * ´¦Àí¶à»úÆ÷ÈËµÄ×´Ì¬¸üĞÂ£¬Ö¸ÁîÏÂ·¢£¬ÈÎÎñĞ­Í¬µÈ
+ * å¤„ç†å¤šæœºå™¨äººçš„çŠ¶æ€æ›´æ–°ï¼ŒæŒ‡ä»¤ä¸‹å‘ï¼Œä»»åŠ¡ååŒç­‰
  */
 class RobotGroupManager {
-	//! Ğ­Í¬¾ÍĞ÷×´Ì¬: 0 Î´¾ÍĞ÷, 1 ÒÑ¾ÍĞ÷
+	//! ååŒå°±ç»ªçŠ¶æ€: 0 æœªå°±ç»ª, 1 å·²å°±ç»ª
 	std::vector<int> syncReadyState;
-	//! Ğ­Í¬¾ÍĞ÷×´Ì¬: <<type, num>, ...>
+	//! ååŒå°±ç»ªçŠ¶æ€: <<type, num>, ...>
 	std::vector<Sync_Config> syncState;
-	//! »úÆ÷ÈËµÈ´ı×´Ì¬: <bit> <<robot, num>, ...>
+	//! æœºå™¨äººç­‰å¾…çŠ¶æ€: <bit> <<robot, num>, ...>
 	std::vector<std::unordered_set<int>> waitState;
 
-	//! Ïß³ÌÖÕÖ¹Ìõ¼ş
+	//! çº¿ç¨‹ç»ˆæ­¢æ¡ä»¶
 	bool workerHealthy = true;
-	//! Ö¸Áî´¦ÀíÏß³Ì, ×´Ì¬¸üĞÂÏß³Ì
+	//! æŒ‡ä»¤å¤„ç†çº¿ç¨‹, çŠ¶æ€æ›´æ–°çº¿ç¨‹
 	std::thread cmdThreadWorker, updateThreadWorker;
-	//! Ö¸ÁîÏß³Ì×´Ì¬
+	//! æŒ‡ä»¤çº¿ç¨‹çŠ¶æ€
 	std::atomic<bool> cmdThreadDone;
-	//! ±£´æ»úÆ÷ÈË×´Ì¬
+	//! ä¿å­˜æœºå™¨äººçŠ¶æ€
 	std::vector<RobotStatus> statusList;
-	//! RobotGroupManager ×´Ì¬
+	//! RobotGroupManager çŠ¶æ€
 	std::vector<int> coopState;
-	//! ÒÑ·¢ËÍµÄ¹ì¼££¬ÔË¶¯Íê³ÉºóµÄ´¦Àí
+	//! å·²å‘é€çš„è½¨è¿¹ï¼Œè¿åŠ¨å®Œæˆåçš„å¤„ç†
 	std::vector<std::list<SingleTrajectory>> trajHistory;
-	//! »úÆ÷ÈË·Ö×é
+	//! æœºå™¨äººåˆ†ç»„
 	std::vector<std::vector<int>> disableGroup;
-	//! ¹²ÓÃÖá
+	//! å…±ç”¨è½´
 	std::pair<int, int> sharedAxisState;
 
 
 	/**
-	* @brief  Ö¸Áî´¦ÀíÏß³Ì
+	* @brief  æŒ‡ä»¤å¤„ç†çº¿ç¨‹
 	*/
 	void processCommandThread();
 	/** 
-	* @brief  ×´Ì¬¸üĞÂÏß³Ì
+	* @brief  çŠ¶æ€æ›´æ–°çº¿ç¨‹
 	*/
 	void updateStatusThread();
 
 	void set_group_sync_config(int robotIdx);
 
 	/**
-	* @brief  »úÆ÷ÈËÍ¬²½¾ÍĞ÷
+	* @brief  æœºå™¨äººåŒæ­¥å°±ç»ª
 	*/
 	void update_sync_state(int robotIdx);
 
 	/**
-	* @brief  »úÆ÷ÈËµ½Î»´¦Àí
+	* @brief  æœºå™¨äººåˆ°ä½å¤„ç†
 	*/
 	void robot_in_place_command(int robotIdx);
 
 	/**
-	* @brief  ¹ØÁª»úÆ÷ÈËÔİÍ£
+	* @brief  å…³è”æœºå™¨äººæš‚åœ
 	*/
 	int pause_coop_robot(int idx);
 
 	/**
-	* @brief  ²éÑ¯»úÆ÷ÈË×éÊÇ·ñ´¦ÓÚ¿ÕÏĞ×´Ì¬
+	* @brief  æŸ¥è¯¢æœºå™¨äººç»„æ˜¯å¦å¤„äºç©ºé—²çŠ¶æ€
 	*/
 	bool robot_group_idle(const std::vector<int>& ids = {});
 	/**
-	* @brief  ²éÑ¯»úÆ÷ÈËÊÇ·ñĞ­Í¬¾ÍĞ÷
+	* @brief  æŸ¥è¯¢æœºå™¨äººæ˜¯å¦ååŒå°±ç»ª
 	*/
 	bool robot_sync_ready(int robotIdx);
 
-	// ¼ÆËãĞ­Í¬¶Î×ÜÔË¶¯Ê±¼ä
+	// è®¡ç®—ååŒæ®µæ€»è¿åŠ¨æ—¶é—´
 	int calc_sync_duration(int robotIdx);
 
-	// ĞŞÕıĞ­Í¬¶Î¹ì¼£ËÙ¶È
+	// ä¿®æ­£ååŒæ®µè½¨è¿¹é€Ÿåº¦
 	void correct_sync_speed();
 
-	// IO µÈ´ı±êÖ¾¸´Î»
+	// IO ç­‰å¾…æ ‡å¿—å¤ä½
 	void reset_wait_state(int robotIdx);
 
 public:
-	//! »úÆ÷ÈË¶ÓÁĞ
+	//! æœºå™¨äººé˜Ÿåˆ—
 	std::vector<std::shared_ptr<RobotBase>> robotList;
 
 	RobotGroupManager();
 	~RobotGroupManager();
 
 	/**
-	* @brief  ÏòÖ¸¶¨¿ØÖÆ¿¨ÉêÇëĞÂ»úÆ÷ÈË
-	* @param  robot    »úÆ÷ÈËÀàÖ¸Õë
-	* @return »úÆ÷ÈË ID
-				   < 0    »úÆ÷ÈË´´½¨Ê§°Ü
-				   >=0    »úÆ÷ÈË ID
+	* @brief  å‘æŒ‡å®šæ§åˆ¶å¡ç”³è¯·æ–°æœºå™¨äºº
+	* @param  robot    æœºå™¨äººç±»æŒ‡é’ˆ
+	* @return æœºå™¨äºº ID
+				   < 0    æœºå™¨äººåˆ›å»ºå¤±è´¥
+				   >=0    æœºå™¨äºº ID
 	*/
 	int new_robot(std::shared_ptr<RobotBase> robot);
 
 	/**
-	* @brief  ÉèÖÃ¹²ÓÃÖá
-	* @param  controllerID    ¿ØÖÆ¿¨ ID
+	* @brief  è®¾ç½®å…±ç”¨è½´
+	* @param  controllerID    æ§åˆ¶å¡ ID
 	*/
 	int set_shared_axis(int axisId, const std::vector<int>& robotId);
 
 	/**
-	* @brief  ¿ªÆôÏß³Ì£¬¿ªÊ¼¹ÜÀí»úÆ÷ÈË×é×´Ì¬
+	* @brief  å¼€å¯çº¿ç¨‹ï¼Œå¼€å§‹ç®¡ç†æœºå™¨äººç»„çŠ¶æ€
 	*/
 	int start_thread();
 
 	/**
-	* @brief  ½áÊøÏß³Ì
+	* @brief  ç»“æŸçº¿ç¨‹
 	*/
 	int stop();
 
 	/**
-	* @brief  ²éÑ¯»úÆ÷ÈËÊÇ·ñ´¦ÓÚ´íÎó×´Ì¬
+	* @brief  æŸ¥è¯¢æœºå™¨äººæ˜¯å¦å¤„äºé”™è¯¯çŠ¶æ€
 	*/
 	bool robot_error(int idx);
 	/**
-	* @brief  ²éÑ¯»úÆ÷ÈËÊÇ·ñ´¦ÓÚ¾¯¸æ×´Ì¬
+	* @brief  æŸ¥è¯¢æœºå™¨äººæ˜¯å¦å¤„äºè­¦å‘ŠçŠ¶æ€
 	*/
 	bool robot_warning(int idx);
 	/**
-	* @brief  ²éÑ¯»úÆ÷ÈËÊÇ·ñ´¦ÓÚ¿ÕÏĞ×´Ì¬
+	* @brief  æŸ¥è¯¢æœºå™¨äººæ˜¯å¦å¤„äºç©ºé—²çŠ¶æ€
 	*/
 	bool robot_idle(int idx);
 
 	/**
-	* @brief  »úÆ÷ÈË×é¼ÌĞø
+	* @brief  æœºå™¨äººç»„ç»§ç»­
 	*/
 	int robot_group_resume(int idx);
 	int robot_group_resume(const std::vector<int>& idxList);
 	/**
-	* @brief  »úÆ÷ÈË×éÔİÍ£
+	* @brief  æœºå™¨äººç»„æš‚åœ
 	*/
 	int robot_group_pause(int idx);
 	int robot_group_pause(const std::vector<int>& idxList);
 	/**
-	* @brief  »úÆ÷ÈË×éÔİÍ£ºó¸üĞÂÎ»ÖÃ
+	* @brief  æœºå™¨äººç»„æš‚åœåæ›´æ–°ä½ç½®
 	*/
 	int robot_group_update_saved_pos(const std::vector<int>& idxList);
 	/**
-	* @brief  »úÆ÷ÈË×éÇå¿ÕÈÎÎñ
+	* @brief  æœºå™¨äººç»„æ¸…ç©ºä»»åŠ¡
 	*/
 	int robot_group_clear_task(int idx);
 	/**
-	* @brief  »úÆ÷ÈË×é¼±Í£
+	* @brief  æœºå™¨äººç»„æ€¥åœ
 	*/
 	int robot_group_stop(int idx);
 };
 
 /**
- * @brief  ÉèÖÃbitÎ»
- * @param[out]  state    µ±Ç°×´Ì¬
- * @param       idx      ´ıĞŞ¸Ä bit Î»
- * @param       enable   Ğ´Èë×´Ì¬
+ * @brief  è®¾ç½®bitä½
+ * @param[out]  state    å½“å‰çŠ¶æ€
+ * @param       idx      å¾…ä¿®æ”¹ bit ä½
+ * @param       enable   å†™å…¥çŠ¶æ€
  */
 int set_bit(int& state, int idx, bool enable);
 
 /**
- * @brief  »ñÈ¡bitÎ»
+ * @brief  è·å–bitä½
  */
 int get_bit(int state, int idx);
 

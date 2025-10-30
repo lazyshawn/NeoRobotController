@@ -1,4 +1,4 @@
-
+ï»¿
 #include "robot_interface/CoopRobot.h"
 
 #include "RobotLogger.h"
@@ -8,20 +8,20 @@
 
 namespace FSAIRobotInterface {
 
-// »úÆ÷ÈËÈÕÖ¾
+// æœºå™¨äººæ—¥å¿—
 log4cplus::Logger RobotLog::logger;
 RobotLog::RobotLog() {
 	log4cplus::helpers::SharedObjectPtr<log4cplus::Appender> _append;
-	_append = log4cplus::helpers::SharedObjectPtr<log4cplus::Appender>(new log4cplus::RollingFileAppender("./log/ZMotionRobot.log", 8 * 1024 * 1024, 8));//°´ÕÕ¹Ì¶¨´óĞ¡½øĞĞlog·Ö¸î
-	_append->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(LOG4CPLUS_TEXT("%D{%m/%d/%Y %H:%M:%S:%q} [%t] %-5p - %m %n"))));//("%D{%m/%d/%y %H:%M:%S},´óĞ´µÄD´ú±í±±¾©Ê±¼ä·ñÔò²»×¼																															/* step 4: Instantiate a logger object */
+	_append = log4cplus::helpers::SharedObjectPtr<log4cplus::Appender>(new log4cplus::RollingFileAppender("./log/ZMotionRobot.log", 8 * 1024 * 1024, 8));//æŒ‰ç…§å›ºå®šå¤§å°è¿›è¡Œlogåˆ†å‰²
+	_append->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(LOG4CPLUS_TEXT("%D{%m/%d/%Y %H:%M:%S:%q} [%t] %-5p - %m %n"))));//("%D{%m/%d/%y %H:%M:%S},å¤§å†™çš„Dä»£è¡¨åŒ—äº¬æ—¶é—´å¦åˆ™ä¸å‡†																															/* step 4: Instantiate a logger object */
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("ZROBOT_LOG"));
 	logger.setLogLevel(log4cplus::INFO_LOG_LEVEL);
 	logger.addAppender(_append);
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.3.3.8\n"
-		<< "Release Date:    251020");
+		<< "Version:         0.3.4.2\n"
+		<< "Release Date:    251028");
 }
 
 
@@ -46,7 +46,7 @@ int RobotBase::wait_auto_task_stop() {
 
 	cvMotion.wait(lock, [&]() { return motionDone; });
 
-	// µÈ´ıÌõ¼şÖÃ·´
+	// ç­‰å¾…æ¡ä»¶ç½®å
 	motionDone = false;
 
 	if (robotStatus.lowerStatus == 0 && trajectory.trajectory_loaded() && robotStatus.lineNum == get_lineNum()) {
@@ -62,15 +62,15 @@ int RobotBase::wait_auto_task_stop() {
 
 int RobotBase::notify_waiting_robot() {
 
-	// ·ÀÖ¹Ğé¼Ù»½ĞÑ
+	// é˜²æ­¢è™šå‡å”¤é†’
 	std::lock_guard<std::mutex> lock(mtx);
 	motionDone = true;
 
-	// Çå¿Õ¹ì¼£
+	// æ¸…ç©ºè½¨è¿¹
 	//clear_trajectory();
 	trajectory.clear();
 
-	// »½ĞÑÏß³Ì
+	// å”¤é†’çº¿ç¨‹
 	cvMotion.notify_one();
 
 	return 0;
@@ -79,12 +79,12 @@ int RobotBase::notify_waiting_robot() {
 int RobotBase::set_ZController(std::shared_ptr<Controller> ZController_, int id) {
 	ZController = ZController_;
 
-	// »úÆ÷ÈËIDÎ´Ö¸¶¨
+	// æœºå™¨äººIDæœªæŒ‡å®š
 	if (id < 0) {
-		// »ñÈ¡¿ÉÓÃµÄ robotId ºÅ
+		// è·å–å¯ç”¨çš„ robotId å·
 		robotId = ZController->allocate_robot_id();
 
-		// Ê¹ÓÃ·ÖÅäµÄ robotId
+		// ä½¿ç”¨åˆ†é…çš„ robotId
 		if (ZController->add_robot(robotId) != 0) {
 			return -1;
 		}
@@ -93,13 +93,13 @@ int RobotBase::set_ZController(std::shared_ptr<Controller> ZController_, int id)
 		robotId = id;
 	}
 
-	// ´Ó¿ØÖÆ¿¨¶ÁÈ¡ÏÖÓĞµÄ»úÆ÷ÈËÅäÖÃ
+	// ä»æ§åˆ¶å¡è¯»å–ç°æœ‰çš„æœºå™¨äººé…ç½®
 	read_register_config();
 
-	// ÖØÖÃ¹ì¼£ĞòºÅ
+	// é‡ç½®è½¨è¿¹åºå·
 	//reset_line_num();
 
-	// ¶ÁÈ¡»úĞµ±Ûµ±Ç°×´Ì¬
+	// è¯»å–æœºæ¢°è‡‚å½“å‰çŠ¶æ€
 	update_rt_robot_status();
 
 	return 0;
@@ -137,7 +137,7 @@ std::vector<int> RobotBase::get_composed_axis(const std::vector<std::vector<int>
 int RobotBase::get_rt_robot_status(RobotStatus& status) {
 
 	{
-		// ¼ÓËø
+		// åŠ é”
 		std::lock_guard<std::mutex> lock(mtx);
 
 		status = robotStatus;
@@ -148,7 +148,7 @@ int RobotBase::get_rt_robot_status(RobotStatus& status) {
 }
 
 int RobotBase::set_upperStatus(int code) {
-	// ¼ÓËø
+	// åŠ é”
 	std::lock_guard<std::mutex> lock(mtx);
 
 	robotStatus.upperStatus |= code;
@@ -158,7 +158,7 @@ int RobotBase::set_upperStatus(int code) {
 
 int RobotBase::reset_upperStatus(int idx) {
 	
-	// ÉÏÎ»»ú×´Ì¬Î»È«²¿¸´Î»
+	// ä¸Šä½æœºçŠ¶æ€ä½å…¨éƒ¨å¤ä½
 	if (idx < 0) {
 		{
 			std::lock_guard<std::mutex> lock(mtx);
@@ -167,7 +167,7 @@ int RobotBase::reset_upperStatus(int idx) {
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " reset upper status.");
 	}
-	// Ö¸¶¨BitÎ»¸´Î»
+	// æŒ‡å®šBitä½å¤ä½
 	else {
 
 	}
@@ -188,11 +188,11 @@ int RobotBase::read_register_config() {
 	//int cfgIdxBase = get_config_idx_base();
 	std::vector<int> configIdx;
 
-	// ¶ÁÈ¡ÅäÖÃ
+	// è¯»å–é…ç½®
 	std::vector<float> readValue;
 	ZController->get_register(get_config_idx_base(), 300, readValue, 1);
 
-	// Á¬¸Ë³¤¶È: ´ÓĞòºÅ2¿ªÊ¼£¬¶ÁÈ¡12¸öÅäÖÃ²ÎÊı
+	// è¿æ†é•¿åº¦: ä»åºå·2å¼€å§‹ï¼Œè¯»å–12ä¸ªé…ç½®å‚æ•°
 	cfgIdx = 2;
 	cfgNum = 12;
 	robotConfig.linkLength.resize(cfgNum);
@@ -200,22 +200,22 @@ int RobotBase::read_register_config() {
 		robotConfig.linkLength[i] = readValue[cfgIdx + i];
 	}
 
-	// ¸½¼ÓÖá±àºÅ
+	// é™„åŠ è½´ç¼–å·
 	cfgNum = 3;
-	// ÏÂ·¢
+	// ä¸‹å‘
 	cfgIdx = 205;
 	robotConfig.appAxisIdx.resize(cfgNum);
 	for (size_t i = 0; i < cfgNum; ++i) {
 		robotConfig.appAxisIdx[i] = readValue[cfgIdx + i];
 	}
-	// ¶ÁÈ¡
+	// è¯»å–
 	cfgIdx = 208;
 	robotConfig.appAxisIdxRead.resize(cfgNum);
 	for (size_t i = 0; i < cfgNum; ++i) {
 		robotConfig.appAxisIdxRead[i] = readValue[cfgIdx + i];
 	}
 
-	// ±àÂëÆ÷Î»Êı
+	// ç¼–ç å™¨ä½æ•°
 	cfgIdx = 20;
 	cfgNum = 9;
 	robotConfig.encoderBit.resize(cfgNum);
@@ -223,22 +223,22 @@ int RobotBase::read_register_config() {
 		robotConfig.encoderBit[i] = readValue[cfgIdx + i];
 	}
 
-	// ´«¶¯±È
+	// ä¼ åŠ¨æ¯”
 	cfgNum = 9;
-	// ·Ö×Ó
+	// åˆ†å­
 	cfgIdx = 140;
 	robotConfig.transRatioNumerator.resize(cfgNum);
 	for (size_t i = 0; i < cfgNum; ++i) {
 		robotConfig.transRatioNumerator[i] = readValue[cfgIdx + i];
 	}
-	//·ÖÄ¸
+	//åˆ†æ¯
 	cfgIdx = 150;
 	robotConfig.transRatioDenominator.resize(cfgNum);
 	for (size_t i = 0; i < cfgNum; ++i) {
 		robotConfig.transRatioDenominator[i] = readValue[cfgIdx + i];
 	}
 
-	// ñîºÏ±È
+	// è€¦åˆæ¯”
 	cfgNum = 4;
 	cfgIdx = 160;
 	robotConfig.couplingConfig.resize(cfgNum);
@@ -254,7 +254,7 @@ int RobotBase::read_register_config() {
 		robotConfig.tcpPose[i] = readValue[cfgIdx + i];
 	}
 
-	// ¹Ø½ÚÉÏÏŞÎ»
+	// å…³èŠ‚ä¸Šé™ä½
 	cfgIdx = 50;
 	cfgNum = 9;
 	robotConfig.jointSupremum.resize(cfgNum);
@@ -262,7 +262,7 @@ int RobotBase::read_register_config() {
 		robotConfig.jointSupremum[i] = readValue[cfgIdx + i];
 	}
 
-	// ¹Ø½ÚÏÂÏŞÎ»
+	// å…³èŠ‚ä¸‹é™ä½
 	cfgIdx = 40;
 	cfgNum = 9;
 	robotConfig.jointInfimum.resize(cfgNum);
@@ -270,7 +270,7 @@ int RobotBase::read_register_config() {
 		robotConfig.jointInfimum[i] = readValue[cfgIdx + i];
 	}
 
-	// ×î´ó¹Ø½ÚËÙ¶È(×Ô¶¯)
+	// æœ€å¤§å…³èŠ‚é€Ÿåº¦(è‡ªåŠ¨)
 	cfgIdx = 60;
 	cfgNum = 9;
 	robotConfig.maxJointSpeedAuto.resize(cfgNum);
@@ -278,7 +278,7 @@ int RobotBase::read_register_config() {
 		robotConfig.maxJointSpeedAuto[i] = readValue[cfgIdx + i];
 	}
 
-	// ×î´ó¹Ø½ÚËÙ¶È(ÊÖ¶¯)
+	// æœ€å¤§å…³èŠ‚é€Ÿåº¦(æ‰‹åŠ¨)
 	cfgIdx = 70;
 	cfgNum = 9;
 	robotConfig.maxJointSpeedManual.resize(cfgNum);
@@ -286,7 +286,7 @@ int RobotBase::read_register_config() {
 		robotConfig.maxJointSpeedManual[i] = readValue[cfgIdx + i];
 	}
 
-	// ×î´óÄ©¶ËËÙ¶È(ÊÖ¶¯)
+	// æœ€å¤§æœ«ç«¯é€Ÿåº¦(æ‰‹åŠ¨)
 	cfgIdx = 85;
 	cfgNum = 2;
 	robotConfig.maxCartSpeedManual.resize(cfgNum);
@@ -294,7 +294,7 @@ int RobotBase::read_register_config() {
 		robotConfig.maxCartSpeedManual[i] = readValue[cfgIdx + i];
 	}
 
-	// ¸½¼ÓÖá±ê¶¨½á¹û
+	// é™„åŠ è½´æ ‡å®šç»“æœ
 	cfgIdx = 91;
 	cfgNum = 9;
 	robotConfig.auxCalbration.resize(cfgNum);
@@ -302,7 +302,7 @@ int RobotBase::read_register_config() {
 		robotConfig.auxCalbration[i] = readValue[cfgIdx + i];
 	}
 
-	// Áãµã±àÂëÆ÷Öµ
+	// é›¶ç‚¹ç¼–ç å™¨å€¼
 	cfgIdx = 100;
 	cfgNum = 9;
 	robotConfig.zeroEncoder.resize(cfgNum);
@@ -310,7 +310,7 @@ int RobotBase::read_register_config() {
 		robotConfig.zeroEncoder[i] = readValue[cfgIdx + i];
 	}
 
-	// Ö÷´Ó»ú±ê¶¨½á¹û
+	// ä¸»ä»æœºæ ‡å®šç»“æœ
 	cfgIdx = 130;
 	cfgNum = 9;
 	robotConfig.slaveCalibration.resize(cfgNum);
@@ -318,9 +318,9 @@ int RobotBase::read_register_config() {
 		robotConfig.slaveCalibration[i] = readValue[cfgIdx + i];
 	}
 
-	// IO ÅäÖÃ
+	// IO é…ç½®
 
-	// ´ÓÊôÉè±¸
+	// ä»å±è®¾å¤‡
 	cfgIdx = 250;
 	cfgNum = 10;
 	robotConfig.slaveDeviceID.resize(cfgNum);
@@ -345,50 +345,50 @@ int RobotBase::write_register_config(const RobotConfig& config) {
 	int idxBase = get_config_idx_base();
 	std::vector<int> configIdx;
 
-	// ÊäÈëÅäÖÃµÄºÏ·¨ĞÔ¼ì²é
+	// è¾“å…¥é…ç½®çš„åˆæ³•æ€§æ£€æŸ¥
 
-	// ¿½±´µ½µ±Ç°³ÌĞò
+	// æ‹·è´åˆ°å½“å‰ç¨‹åº
 	robotConfig = config;
 
-	// ÅäÖÃ»º´æÊı×é
+	// é…ç½®ç¼“å­˜æ•°ç»„
 	std::vector<float> readValue;
 
-	// Á¬¸Ë³¤¶È
+	// è¿æ†é•¿åº¦
 	cfgIdx = 2;
 	readValue = robotConfig.linkLength;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ¸½¼ÓÖá±àºÅ
-	// ÏÂ·¢
+	// é™„åŠ è½´ç¼–å·
+	// ä¸‹å‘
 	cfgIdx = 205;
 	for (size_t i = 0; i < robotConfig.appAxisIdx.size(); ++i) {
 		readValue[i] = static_cast<float>(robotConfig.appAxisIdx[i]);
 	}
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ¶ÁÈ¡
+	// è¯»å–
 	cfgIdx = 208;
 	for (size_t i = 0; i < robotConfig.appAxisIdxRead.size(); ++i) {
 		readValue[i] = static_cast<float>(robotConfig.appAxisIdxRead[i]);
 	}
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ±àÂëÆ÷Î»Êı
+	// ç¼–ç å™¨ä½æ•°
 	cfgIdx = 20;
 	readValue = robotConfig.encoderBit;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ´«¶¯±È
-	// ·Ö×Ó
+	// ä¼ åŠ¨æ¯”
+	// åˆ†å­
 	cfgIdx = 140;
 	readValue = robotConfig.transRatioNumerator;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
-	//·ÖÄ¸
+	//åˆ†æ¯
 	cfgIdx = 150;
 	readValue = robotConfig.transRatioDenominator;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ñîºÏ±È
+	// è€¦åˆæ¯”
 	cfgIdx = 160;
 	readValue = robotConfig.couplingConfig;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
@@ -399,49 +399,49 @@ int RobotBase::write_register_config(const RobotConfig& config) {
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
 
-	// ¹Ø½ÚÉÏÏŞÎ»
+	// å…³èŠ‚ä¸Šé™ä½
 	cfgIdx = 50;
 	readValue = robotConfig.jointSupremum;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ¹Ø½ÚÏÂÏŞÎ»
+	// å…³èŠ‚ä¸‹é™ä½
 	cfgIdx = 40;
 	readValue = robotConfig.jointInfimum;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ×î´ó¹Ø½ÚËÙ¶È(×Ô¶¯)
+	// æœ€å¤§å…³èŠ‚é€Ÿåº¦(è‡ªåŠ¨)
 	cfgIdx = 60;
 	readValue = robotConfig.maxJointSpeedAuto;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ×î´ó¹Ø½ÚËÙ¶È(ÊÖ¶¯)
+	// æœ€å¤§å…³èŠ‚é€Ÿåº¦(æ‰‹åŠ¨)
 	cfgIdx = 70;
 	readValue = robotConfig.maxJointSpeedManual;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ×î´óÄ©¶ËËÙ¶È(ÊÖ¶¯)
+	// æœ€å¤§æœ«ç«¯é€Ÿåº¦(æ‰‹åŠ¨)
 	cfgIdx = 85;
 	readValue = robotConfig.maxCartSpeedManual;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// ¸½¼ÓÖá±ê¶¨½á¹û
+	// é™„åŠ è½´æ ‡å®šç»“æœ
 	cfgIdx = 91;
 	readValue = robotConfig.auxCalbration;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// Áãµã±àÂëÆ÷Öµ
+	// é›¶ç‚¹ç¼–ç å™¨å€¼
 	cfgIdx = 100;
 	readValue = robotConfig.zeroEncoder;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// Ö÷´Ó»ú±ê¶¨½á¹û
+	// ä¸»ä»æœºæ ‡å®šç»“æœ
 	cfgIdx = 130;
 	readValue = robotConfig.slaveCalibration;
 	ret = ZController->set_register(idxBase + cfgIdx, readValue, 1);
 
-	// IO ÅäÖÃ
+	// IO é…ç½®
 
-	// ´ÓÊôÉè±¸
+	// ä»å±è®¾å¤‡
 	cfgIdx = 250;
 	for (size_t i = 0; i < robotConfig.slaveDeviceID.size(); ++i) {
 		readValue[i] = static_cast<float>(robotConfig.slaveDeviceID[i]);
@@ -514,10 +514,10 @@ int RobotBase::execute_move_action(const std::vector<std::pair<int, std::vector<
 		auto type = action.first;
 		auto param = action.second;
 
-		// Íê³É±êÖ¾Î»¸´Î»
+		// å®Œæˆæ ‡å¿—ä½å¤ä½
 		ZController->set_axis_param(stateIdxBase + 350, "TABLE", 0, axis[0]);
 
-		// ÏÂ·¢ÔË¶¯²ÎÊı
+		// ä¸‹å‘è¿åŠ¨å‚æ•°
 		if (param.size() > 0) {
 			std::vector<int> idx(param.size(), stateIdxBase + 301);
 			for (size_t i = 0; i < idx.size(); ++i) {
@@ -526,10 +526,10 @@ int RobotBase::execute_move_action(const std::vector<std::pair<int, std::vector<
 			ZController->set_axis_param(idx, "TABLE", param, axis[0]);
 		}
 
-		// ÏÂ·¢ÔË¶¯
+		// ä¸‹å‘è¿åŠ¨
 		ZController->set_axis_param(stateIdxBase + 300, "TABLE", type, axis[0]);
 
-		// µÈ´ıÔË¶¯½áÊø
+		// ç­‰å¾…è¿åŠ¨ç»“æŸ
 		ZController->move_wait(axis[0], "TABLE", stateIdxBase + 350, 0, 1);
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Move_Action " << type << (param.size() > 0 ? ": " : "") << vector_to_string(param));
@@ -551,7 +551,7 @@ int RobotBase::trigger_action(int type, const std::vector<float>& param) {
 	int stateIdxBase = get_state_idx_base();
 	//std::vector<int> axis = get_execute_axis();
 
-	// ÏÂ·¢ÔË¶¯²ÎÊı
+	// ä¸‹å‘è¿åŠ¨å‚æ•°
 	if (param.size() > 0) {
 		std::vector<int> idx(param.size(), stateIdxBase + 301);
 		for (size_t i = 0; i < idx.size(); ++i) {
@@ -560,10 +560,10 @@ int RobotBase::trigger_action(int type, const std::vector<float>& param) {
 		ZController->set_axis_param(idx, "TABLE", param);
 	}
 
-	// Íê³É±êÖ¾Î»¸´Î»
+	// å®Œæˆæ ‡å¿—ä½å¤ä½
 	//ZController->set_axis_param(stateIdxBase + 350, "TABLE", 0, axis[0]);
 
-	// ÏÂ·¢ÔË¶¯
+	// ä¸‹å‘è¿åŠ¨
 	ZController->set_axis_param(stateIdxBase + 300, "TABLE", type);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " trigger Move_Action "
@@ -574,34 +574,34 @@ int RobotBase::trigger_action(int type, const std::vector<float>& param) {
 
 
 int RobotBase::export_tracking_data() {
-	// ¼ì²âÎÄ¼ş¼ĞÊÇ·ñ´æÔÚ
+	// æ£€æµ‹æ–‡ä»¶å¤¹æ˜¯å¦å­˜åœ¨
 	std::string foldName = "log/tracking_data";
 	DWORD attribs = ::GetFileAttributesA(foldName.c_str());
 	if (attribs == INVALID_FILE_ATTRIBUTES) {
 		::CreateDirectoryA(foldName.c_str(), NULL);
 	}
-	// ´´½¨×ÓÎÄ¼ş¼Ğ
+	// åˆ›å»ºå­æ–‡ä»¶å¤¹
 	foldName = "log/tracking_data/" + std::to_string(aliasId);
 	attribs = ::GetFileAttributesA(foldName.c_str());
 	if (attribs == INVALID_FILE_ATTRIBUTES) {
 		::CreateDirectoryA(foldName.c_str(), NULL);
 	}
 
-	// ±£´æÔ­Ê¼µçÁ÷Êı¾İ
+	// ä¿å­˜åŸå§‹ç”µæµæ•°æ®
 	auto idx = get_data_idx_base();
 	auto fileName = foldName;
 	fileName = foldName + "/raw_current.txt";
 	ZController->save_table(idx + 10000, 5000, fileName);
 
-	// ±£³ÖÂË²¨µçÁ÷Êı¾İ
+	// ä¿æŒæ»¤æ³¢ç”µæµæ•°æ®
 	fileName = foldName + "/fine_current.txt";
 	ZController->save_table(idx + 15000, 5000, fileName);
 
-	// ±£´æ×óÓÒ¶ËµãË÷Òı
+	// ä¿å­˜å·¦å³ç«¯ç‚¹ç´¢å¼•
 	fileName = foldName + "/index.txt";
 	ZController->save_table(idx + 20000, 5000, fileName);
 
-	// ±£´æÅäÖÃ
+	// ä¿å­˜é…ç½®
 	idx = get_state_idx_base();
 	fileName = foldName + "/config.txt";
 	ZController->save_table(idx + 180, 50, fileName);
@@ -686,11 +686,11 @@ int RobotBase::get_input_invert(int ioNum) {
 int RobotBase::set_input_invert(int ioNum, int state) {
 
 	if (state > 0) {
-		// ·´×ª¹Ø
+		// åè½¬å…³
 		ZController->set_invert_in(ioNum, 1);
 	}
 	else if (state <= 0) {
-		// ·´×ª¿ª
+		// åè½¬å¼€
 		ZController->set_invert_in(ioNum, 0);
 	}
 	return 0;
@@ -715,15 +715,15 @@ int RobotBase::send_welding_wire(int dir) {
 
 	int stateIdxBase = get_state_idx_base();
 	int ret = 0;
-	// ËÍË¿
+	// é€ä¸
 	if (dir > 0) {
 		ZController->set_axis_param(stateIdxBase + 55, "TABLE", 1);
 	}
-	// ³éË¿
+	// æŠ½ä¸
 	else if (dir < 0) {
 		ZController->set_axis_param(stateIdxBase + 55, "TABLE", -1);
 	}
-	// Í£Ö¹ËÍË¿/³éË¿
+	// åœæ­¢é€ä¸/æŠ½ä¸
 	else {
 		ZController->set_axis_param(stateIdxBase + 55, "TABLE", -2);
 	}
@@ -779,7 +779,7 @@ int RobotBase::read_action_result(std::vector<float>& result) {
 
 	ZController->get_axis_param(idx, "TABLE", result);
 
-	// ´òÓ¡Êä³ö½á¹û
+	// æ‰“å°è¾“å‡ºç»“æœ
 
 	return ret;
 }
@@ -788,7 +788,7 @@ int RobotBase::get_multilayer_pos(std::vector<float>& pos) {
 	int dataIdxBase = get_data_idx_base();
 	std::vector<float> data;
 
-	// ¹ì¼£¶ÎÊı
+	// è½¨è¿¹æ®µæ•°
 	ZController->get_axis_param({ dataIdxBase + 25000 }, "TABLE", data);
 	int num = static_cast<int>(data[0]);
 
@@ -801,9 +801,9 @@ int RobotBase::get_multilayer_pos(std::vector<float>& pos) {
 		idxList[i] += i;
 	ZController->get_axis_param(idxList, "TABLE", data);
 	pos.clear();
-	// ¹ì¼£¶ÎÊı
+	// è½¨è¿¹æ®µæ•°
 	pos.push_back(data[0]);
-	// Æğµã
+	// èµ·ç‚¹
 	std::vector<float> tmp = std::vector<float>(data.begin() + 1, data.begin() + 10);
 	cpos_base_to_world(tmp);
 	pos.insert(pos.end(), tmp.begin(), tmp.end());
@@ -814,23 +814,23 @@ int RobotBase::get_multilayer_pos(std::vector<float>& pos) {
 			idxList[j] += j;
 		ZController->get_axis_param(idxList, "TABLE", data);
 
-		// ¹ì¼£ÀàĞÍ
+		// è½¨è¿¹ç±»å‹
 		pos.insert(pos.end(), data[0]);
-		// ¹ì¼£±àºÅ
+		// è½¨è¿¹ç¼–å·
 		pos.insert(pos.end(), data[1]);
 
-		// ÖĞ¼äµã
+		// ä¸­é—´ç‚¹
 		std::vector<float> tmp = std::vector<float>(data.begin() + 2, data.begin() + 11);
 		cpos_base_to_world(tmp);
 		pos.insert(pos.end(), tmp.begin(), tmp.end());
 
-		// ½áÊøµã
+		// ç»“æŸç‚¹
 		tmp = std::vector<float>(data.begin() + 11, data.begin() + 20);
 		cpos_base_to_world(tmp);
 		pos.insert(pos.end(), tmp.begin(), tmp.end());
 	}
 
-	// Çå¿ÕÊı¾İ
+	// æ¸…ç©ºæ•°æ®
 	data = std::vector<float>(idxList.size(), 0.0);
 	ZController->set_axis_param({ dataIdxBase + 25000 }, "TABLE", { 0.0 });
 
@@ -846,19 +846,19 @@ int RobotBase::get_slave_buffer() {
 	int bufAddr1 = begIdx + 21500;
 	int dataNum = 5, dataLen = 10;
 
-	// ¶ÁÈ¡±êÖ¾Î»
+	// è¯»å–æ ‡å¿—ä½
 	ZController->get_axis_param({ bufAddr0, bufAddr0 }, "TABLE", data);
 
-	// »º´æÇøµØÖ·
+	// ç¼“å­˜åŒºåœ°å€
 	int buffAddr = bufAddr0 + 1, buffLen = dataLen * dataNum;
 	if (int(data[0]) < int(data[1])) {
 		buffAddr = bufAddr1 + 1;
 	}
 
-	// ¶ÁÈ¡ÓĞĞ§»º´æÇø
+	// è¯»å–æœ‰æ•ˆç¼“å­˜åŒº
 	ZController->get_register(buffAddr, buffLen, data, 0);
 
-	// ±£´æÏÂÎ»»ú»º´æÊı¾İ
+	// ä¿å­˜ä¸‹ä½æœºç¼“å­˜æ•°æ®
 	for (size_t i = 0; i < dataNum; ++i) {
 		long long stamp = static_cast<long long>(data[i * dataLen]);
 		std::vector<float> tmp = std::vector<float>(data.begin() + i * dataLen + 1, data.begin() + (i + 1)*dataLen);
@@ -872,7 +872,7 @@ int RobotBase::get_slave_buffer() {
 
 int RobotBase::single_axis_enable(bool enable, int axis) {
 
-	// µ¥ÖáÊ¹ÄÜ
+	// å•è½´ä½¿èƒ½
 	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
 	sprintf(cmdbuff, "RUNTASK 9, SINGLE_AXIS_ENABLE");
@@ -887,11 +887,11 @@ int RobotBase::single_axis_enable(bool enable, int axis) {
 
 int RobotBase::synchronize_slave_buffer(long long masterStamp) {
 
-	// »ñÈ¡µ±Ç°ÏÂÎ»»úÊ±¼ä´Á
+	// è·å–å½“å‰ä¸‹ä½æœºæ—¶é—´æˆ³
 	float slaveStamp;
 	ZController->get_axis_param(get_state_idx_base() + 28, "TABLE", slaveStamp);
 
-	// Ê±¼ä´ÁÍ¬²½
+	// æ—¶é—´æˆ³åŒæ­¥
 	//bufferSync.stamp_synchronize(masterStamp, static_cast<long long>(-slaveStamp));
 
 	return -slaveStamp;
@@ -916,7 +916,7 @@ RobotGroupManager::~RobotGroupManager() {
 int RobotGroupManager::new_robot(std::shared_ptr<RobotBase> robot) {
 
 	robotList.push_back(robot);
-	// ÉèÖÃ±ğÃûID
+	// è®¾ç½®åˆ«åID
 	robot->set_aliasId(robotList.size() - 1);
 
 	syncState.push_back({});
@@ -933,11 +933,11 @@ int RobotGroupManager::new_robot(std::shared_ptr<RobotBase> robot) {
 
 int RobotGroupManager::set_shared_axis(int axisId, const std::vector<int>& robotId) {
 
-	//// ²éÕÒ¹²ÓÃÖáÇé¿ö
+	//// æŸ¥æ‰¾å…±ç”¨è½´æƒ…å†µ
 	//std::map<int, std::vector<int>>::iterator ite = sharedAxis.find(axisId);
-	//// ĞŞ¸Ä¹²ÓÃÖáµÄ»úÆ÷ÈËID
+	//// ä¿®æ”¹å…±ç”¨è½´çš„æœºå™¨äººID
 	//sharedAxis[axisId] = robotId;
-	//// ¹«ÓÃÖá×´Ì¬
+	//// å…¬ç”¨è½´çŠ¶æ€
 	//sharedAxisState[axisId] = -1;
 	//return ite != sharedAxis.end();
 
@@ -951,12 +951,12 @@ int RobotGroupManager::set_shared_axis(int axisId, const std::vector<int>& robot
 
 int RobotGroupManager::start_thread() {
 
-	// ×´Ì¬Ë¢ĞÂÏß³ÌÊ¹ÄÜ
+	// çŠ¶æ€åˆ·æ–°çº¿ç¨‹ä½¿èƒ½
 	for (auto& robot : robotList) {
 		//robot->enable_refresh_thread(true);
 	}
 
-	// °ó¶¨³ÉÔ±º¯ÊıºÍ this Ö¸Õë
+	// ç»‘å®šæˆå‘˜å‡½æ•°å’Œ this æŒ‡é’ˆ
 	//cmdThreadWorker = std::thread(&RobotGroupManager::processCommandThread, this);
 	updateThreadWorker = std::thread(&RobotGroupManager::updateStatusThread, this);
 
@@ -969,16 +969,16 @@ int RobotGroupManager::start_thread() {
 int RobotGroupManager::stop() {
 
 	workerHealthy = false;
-	// ½áÊø¹¤×÷Ïß³Ì
+	// ç»“æŸå·¥ä½œçº¿ç¨‹
 	if (updateThreadWorker.joinable())
 		updateThreadWorker.join();
 	if (cmdThreadWorker.joinable())
 		cmdThreadWorker.join();
 
-	// ×´Ì¬Ë¢ĞÂÏß³ÌÊ¹ÄÜ
+	// çŠ¶æ€åˆ·æ–°çº¿ç¨‹ä½¿èƒ½
 	for (auto& robot : robotList) {
 		//robot->enable_refresh_thread(false);
-		// »½ĞÑµÈ´ıÖĞµÄÏß³Ì
+		// å”¤é†’ç­‰å¾…ä¸­çš„çº¿ç¨‹
 		robot->notify_waiting_robot();
 	}
 
@@ -989,39 +989,39 @@ int RobotGroupManager::stop() {
 
 void RobotGroupManager::processCommandThread() {
 	cmdThreadDone.store(false);
-	// Ö¸Áî·µ»ØÖµ
+	// æŒ‡ä»¤è¿”å›å€¼
 	int ret = 0;
-	// »ñÈ¡µ±Ç°Ê±¼ä´Á
+	// è·å–å½“å‰æ—¶é—´æˆ³
 	auto start = std::chrono::steady_clock::now();
-	// ÏÂ´Î»½ĞÑÊ±¼ä
+	// ä¸‹æ¬¡å”¤é†’æ—¶é—´
 	auto wakeUpTime = start;
-	// Ïß³ÌÖÜÆÚ(ms)
+	// çº¿ç¨‹å‘¨æœŸ(ms)
 	long long duration = 50;
 
 
-	// Ö¸ÁîÖ´ĞĞÏß³Ì
+	// æŒ‡ä»¤æ‰§è¡Œçº¿ç¨‹
 	while (workerHealthy) {
 		
 		for (size_t i = 0; i < robotList.size(); ++i) {
-			// ¿ªÊ¼Ö´ĞĞ¹ì¼£: Éè¶¨ÉÏÌõ¹ì¼££¬¼ÆËãĞ­Í¬¹ì¼£Ê±¼ä
+			// å¼€å§‹æ‰§è¡Œè½¨è¿¹: è®¾å®šä¸Šæ¡è½¨è¿¹ï¼Œè®¡ç®—ååŒè½¨è¿¹æ—¶é—´
 			robotList[i]->set_ready_for_consistent_traj(coopState[i]);
 
-			// ¸üĞÂÃ¿Ì¨»úÆ÷ÈËµ±Ç°µÄÍ¬²½ÉèÖÃ
+			// æ›´æ–°æ¯å°æœºå™¨äººå½“å‰çš„åŒæ­¥è®¾ç½®
 			set_group_sync_config(i);
 		}
 
-		// ¹ì¼£¶¯×÷´¦Àí
+		// è½¨è¿¹åŠ¨ä½œå¤„ç†
 		for (size_t i = 0; i < robotList.size(); ++i) {
-			// ¸üĞÂÍ¬²½×´Ì¬
+			// æ›´æ–°åŒæ­¥çŠ¶æ€
 			update_sync_state(i);
 		}
 
-		// Group ×´Ì¬´¦Àí
-		// Ğ­Í¬¹ì¼£ËÙ¶È¸üĞÂ
+		// Group çŠ¶æ€å¤„ç†
+		// ååŒè½¨è¿¹é€Ÿåº¦æ›´æ–°
 		//correct_sync_speed();
-		// ËùÓĞ»úÆ÷ÈË¿ÕÏĞ(Ğ­Í¬Íê³É)£¬È¡ÏûµØ¹ìÆÁ±Î
+		// æ‰€æœ‰æœºå™¨äººç©ºé—²(ååŒå®Œæˆ)ï¼Œå–æ¶ˆåœ°è½¨å±è”½
 		if (robot_group_idle()) {
-			// ´òÓ¡È¡ÏûÆÁ±ÎÈÕÖ¾
+			// æ‰“å°å–æ¶ˆå±è”½æ—¥å¿—
 			for (size_t i = 0; i < robotList.size(); ++i) {
 				robotList[i]->set_axisIdxMask({});
 			}
@@ -1031,34 +1031,34 @@ void RobotGroupManager::processCommandThread() {
 			sharedAxisState.second = -1;
 		}
 		
-		// Ö¸ÁîÏÂ·¢
+		// æŒ‡ä»¤ä¸‹å‘
 		for (size_t i = 0; i < robotList.size(); ++i) {
 
-			// Ö¸Áî»º´æ²»Îª¿Õ
+			// æŒ‡ä»¤ç¼“å­˜ä¸ä¸ºç©º
 			while (!robotList[i]->trajectory.trajectory_loaded()) {
 
-				// »úÆ÷ÈË×´Ì¬¾¯¸æ,²»Çå¿Õ¹ì¼£: ´¦ÓÚÔİÍ£×´Ì¬
+				// æœºå™¨äººçŠ¶æ€è­¦å‘Š,ä¸æ¸…ç©ºè½¨è¿¹: å¤„äºæš‚åœçŠ¶æ€
 				if (robot_warning(i))
 					break;
 
-				// »úÆ÷ÈË³öÏÖ´íÎó
+				// æœºå™¨äººå‡ºç°é”™è¯¯
 				if (robot_error(i))
 					break;
 
-				// ÔË¶¯Íê³É
+				// è¿åŠ¨å®Œæˆ
 				if (robot_idle(i))
 					break;
 
-				// »ñÈ¡µ±Ç°¹ì¼£
+				// è·å–å½“å‰è½¨è¿¹
 				auto curTraj = robotList[i]->trajectory.get_curTraj();
-				// »ñÈ¡ÉÏÒ»Ìõ¹ì¼£
+				// è·å–ä¸Šä¸€æ¡è½¨è¿¹
 				auto preTraj = robotList[i]->trajectory.get_preTraj();
 
-				// ¹ì¼£Ò»ÖÂĞÔ²»Âú×ã
+				// è½¨è¿¹ä¸€è‡´æ€§ä¸æ»¡è¶³
 				if (!robotList[i]->consistent_traj_ready(coopState[i]))
 					break;
 
-				// ĞèÒªµÈ´ıÍ¬²½ºÍĞ­Í¬: ¿ÕÏĞ + Í¬²½ºÅÏàÍ¬
+				// éœ€è¦ç­‰å¾…åŒæ­¥å’ŒååŒ: ç©ºé—² + åŒæ­¥å·ç›¸åŒ
 				if (!robot_sync_ready(i)) {
 					if (get_bit(coopState[i], 3) == 0) {
 						LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " not synced: "
@@ -1071,18 +1071,18 @@ void RobotGroupManager::processCommandThread() {
 					set_bit(coopState[i], 3, false);
 				}
 
-				// IO Í¬²½±êÖ¾¸´Î»
+				// IO åŒæ­¥æ ‡å¿—å¤ä½
 				//reset_wait_state(i);
 
-				// ¹ì¼£·Ö¸î
+				// è½¨è¿¹åˆ†å‰²
 				if (curTraj.isCartesian()) {
-					// ²ğ·Ö¹ì¼£
+					// æ‹†åˆ†è½¨è¿¹
 					robotList[i]->separate_trajectory();
-					// ¸üĞÂ¹ì¼£
+					// æ›´æ–°è½¨è¿¹
 					curTraj = robotList[i]->trajectory.get_curTraj();
 				}
 
-				// Ö¸Áî»º´æ¼ì²â
+				// æŒ‡ä»¤ç¼“å­˜æ£€æµ‹
 				if (!robotList[i]->remain_buffer_free()) {
 					if (get_bit(coopState[i], 2) == 0) {
 						set_bit(coopState[i], 2, true);
@@ -1095,30 +1095,30 @@ void RobotGroupManager::processCommandThread() {
 					set_bit(coopState[i], 2, false);
 				}
 
-				// ¼ì²éµØ¹ìÖ¸ÁîÊÇ·ñÒÑ¾­ÏÂ·¢
+				// æ£€æŸ¥åœ°è½¨æŒ‡ä»¤æ˜¯å¦å·²ç»ä¸‹å‘
 				if (robotList[i]->find_command_axis(curTraj, sharedAxisState.first) >= 0 && sharedAxisState.second >= 0 && sharedAxisState.second != i) {
-					// ÆÁ±Îµ±Ç°»úÆ÷ÈËµÄ¹«ÓÃµØ¹ìÖá
+					// å±è”½å½“å‰æœºå™¨äººçš„å…¬ç”¨åœ°è½¨è½´
 					robotList[i]->set_axisIdxMask({ sharedAxisState.first });
 				}
 				else {
-					// µØ¹ìÖáÖ¸Áî¸úËæµ±Ç°»úÆ÷ÈË·¢ËÍ
+					// åœ°è½¨è½´æŒ‡ä»¤è·Ÿéšå½“å‰æœºå™¨äººå‘é€
 					sharedAxisState.second = i;
 				}
 
-				// Ö´ĞĞÔË¶¯Ç°¶¯×÷
+				// æ‰§è¡Œè¿åŠ¨å‰åŠ¨ä½œ
 				auto action = deserialize_Move_Action(curTraj.appendix);
 				robotList[i]->execute_move_action(action.actionBefore, 0);
 
-				// ÏÂ·¢ÔË¶¯Ö¸Áî
+				// ä¸‹å‘è¿åŠ¨æŒ‡ä»¤
 				if (curTraj.isJoint()) {
 					ret = robotList[i]->execute_single_joint();
 				}
 				else if (curTraj.isCartesian()){
-					// ÏÂ·¢¹ì¼£
+					// ä¸‹å‘è½¨è¿¹
 					ret = robotList[i]->execute_single_cartesian();
 				}
 
-				// ÏÂ·¢Òì³£´¦Àí
+				// ä¸‹å‘å¼‚å¸¸å¤„ç†
 				if (ret != 0) {
 					LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " send command failed: " << ret);
 					robotList[i]->set_upperStatus(0x20);
@@ -1126,13 +1126,13 @@ void RobotGroupManager::processCommandThread() {
 					break;
 				}
 
-				// Ö´ĞĞÔË¶¯ºó¶¯×÷
+				// æ‰§è¡Œè¿åŠ¨ååŠ¨ä½œ
 				robotList[i]->execute_move_action(action.actionAfter, 1);
 
-				// ¹ì¼£ÏÂ·¢ºóµÄ´¦Àí
+				// è½¨è¿¹ä¸‹å‘åçš„å¤„ç†
 				robotList[i]->process_after_send_traj();
 
-				// ¼ÇÂ¼µ±Ç°¹ì¼£±àºÅ£¬ÓÃÓÚ¹ì¼£Íê³ÉºóµÄ´¥·¢¶¯×÷
+				// è®°å½•å½“å‰è½¨è¿¹ç¼–å·ï¼Œç”¨äºè½¨è¿¹å®Œæˆåçš„è§¦å‘åŠ¨ä½œ
 				curTraj.lineNum = robotList[i]->get_lineNum();
 				trajHistory[i].push_back(curTraj);
 
@@ -1140,7 +1140,7 @@ void RobotGroupManager::processCommandThread() {
 
 		}
 
-		// ËùÓĞÖ¸ÁîÏÂ·¢Íê±Ï
+		// æ‰€æœ‰æŒ‡ä»¤ä¸‹å‘å®Œæ¯•
 		bool taskFinish = true;
 		for (size_t i = 0; i < robotList.size(); ++i) {
 			if (!robotList[i]->trajectory.trajectory_loaded()) {
@@ -1153,16 +1153,19 @@ void RobotGroupManager::processCommandThread() {
 			return;
 		}
 
-		// ÉèÖÃÏÂ´Î»½ĞÑÊ±¼ä
+		// è®¾ç½®ä¸‹æ¬¡å”¤é†’æ—¶é—´
 		wakeUpTime += std::chrono::milliseconds(duration);
-		// ĞİÃß
 		auto now = std::chrono::steady_clock::now();
 
-		if ((now - wakeUpTime).count() > 0) {
-			// ÖÜÆÚÊ±¼äºÄ¾¡
-			long long detTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - wakeUpTime).count();
-			wakeUpTime += std::chrono::milliseconds((detTime / duration + 1) * duration);
+		// å‘¨æœŸæ—¶é—´è€—å°½
+		if (now > wakeUpTime) {
+			//long long detTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - wakeUpTime).count();
+			//wakeUpTime += std::chrono::milliseconds((detTime / duration + 1) * duration);
+			auto detTime = now - wakeUpTime;
+			while (now > wakeUpTime)
+				wakeUpTime += std::chrono::milliseconds(duration);
 		}
+		// ä¼‘çœ 
 		else {
 			std::this_thread::sleep_until(wakeUpTime);
 		}
@@ -1175,73 +1178,94 @@ void RobotGroupManager::processCommandThread() {
 
 
 void RobotGroupManager::updateStatusThread() {
-	// Ö¸Áî·µ»ØÖµ
+	// æŒ‡ä»¤è¿”å›å€¼
 	int ret = 0;
-	// »ñÈ¡µ±Ç°Ê±¼ä´Á
+	// è·å–å½“å‰æ—¶é—´æˆ³
 	auto start = std::chrono::steady_clock::now();
-	// ÏÂ´Î»½ĞÑÊ±¼ä
+	// ä¸‹æ¬¡å”¤é†’æ—¶é—´
 	auto wakeUpTime = start;
-	// Ïß³ÌÖÜÆÚ(ms)
+	// çº¿ç¨‹å‘¨æœŸ(ms)
 	long long duration = 50;
-	// ±£´æ»úÆ÷ÈË×´Ì¬
+	// ä¿å­˜æœºå™¨äººçŠ¶æ€
 	statusList.resize(robotList.size());
 
-	// Ö¸ÁîÖ´ĞĞÏß³Ì
+	// æŒ‡ä»¤æ‰§è¡Œçº¿ç¨‹
 	while (workerHealthy) {
 
-		// ¸üĞÂ×´Ì¬
+		// å¼€å§‹æ—¶é—´
+		auto tmpStart = std::chrono::steady_clock::now();
+		//LOG4CPLUS_INFO(RobotLog::getLogger(), "Start at:" << std::chrono::duration_cast<std::chrono::milliseconds>(tmpStart - start).count());
+
+		std::vector<int> dt(4, 0);
+		// æ›´æ–°çŠ¶æ€
+		auto t0 = std::chrono::steady_clock::now();
 		for (size_t i = 0; i < robotList.size(); ++i) {
-			// ¸üĞÂ»úÆ÷ÈË×´Ì¬ (Î¨Ò»¸üĞÂÍ¾¾¶)
+			// æ›´æ–°æœºå™¨äººçŠ¶æ€ (å”¯ä¸€æ›´æ–°é€”å¾„)
 			robotList[i]->update_rt_robot_status();
-			// »ñÈ¡»úÆ÷ÈË×´Ì¬: ±£Ö¤µ±Ç°ÖÜÆÚÊ¹ÓÃÏàÍ¬µÄ»úÆ÷ÈË×´Ì¬
+			// è·å–æœºå™¨äººçŠ¶æ€: ä¿è¯å½“å‰å‘¨æœŸä½¿ç”¨ç›¸åŒçš„æœºå™¨äººçŠ¶æ€
 			robotList[i]->get_rt_robot_status(statusList[i]);
 		}
+		auto t1 = std::chrono::steady_clock::now();
+		dt[0] = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
-		// »ñÈ¡ÏÂÎ»»ú»º³åÊı¾İ
-		for (size_t i = 0; i < robotList.size(); ++i) {
-			robotList[i]->get_slave_buffer();
-		}
 
-		// »ñÈ¡ÏÂÎ»»ú»º³åÊı¾İ
+
+		// è·å–ä¸‹ä½æœºç¼“å†²æ•°æ®
+		t0 = std::chrono::steady_clock::now();
+		//for (size_t i = 0; i < robotList.size(); ++i) {
+		//	robotList[i]->get_slave_buffer();
+		//}
+		t1 = std::chrono::steady_clock::now();
+		dt[1] = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+
+
+		// è·å–ä¸‹ä½æœºç¼“å†²æ•°æ®
+		t0 = std::chrono::steady_clock::now();
 		for (size_t i = 0; i < robotList.size(); ++i) {
-			// ¹ì¼£µ½Î»´¦Àí
+			// è½¨è¿¹åˆ°ä½å¤„ç†
 			robot_in_place_command(i);
 
-			// ²¶»ñÏÂÎ»»úÈÕÖ¾
+			// æ•è·ä¸‹ä½æœºæ—¥å¿—
 			robotList[i]->capture_controller_log();
 		}
+		t1 = std::chrono::steady_clock::now();
+		dt[2] = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
-		// Ö¸Áî»º´æ¼ì²â£¬Ö¸ÁîÏÂ·¢Ïß³ÌÎ´ÔËĞĞÔò¿ªÆô
+
+
+		// æŒ‡ä»¤ç¼“å­˜æ£€æµ‹ï¼ŒæŒ‡ä»¤ä¸‹å‘çº¿ç¨‹æœªè¿è¡Œåˆ™å¼€å¯
+		t0 = std::chrono::steady_clock::now();
 		for (size_t i = 0; i < robotList.size(); ++i) {
 
-			// ¿ÉÒÔÏÂ·¢ÈÎÎñ
+			// å¯ä»¥ä¸‹å‘ä»»åŠ¡
 			bool startCmdThread = true;
 
-			// »úÆ÷ÈË×´Ì¬¾¯¸æ,²»Çå¿Õ¹ì¼£: ´¦ÓÚÔİÍ£×´Ì¬
+			// æœºå™¨äººçŠ¶æ€è­¦å‘Š,ä¸æ¸…ç©ºè½¨è¿¹: å¤„äºæš‚åœçŠ¶æ€
 			if (robot_warning(i)) {
-				// ¹ØÁª»úÆ÷ÈËÍ¬²½½øÈëÔİÍ£
+				// å…³è”æœºå™¨äººåŒæ­¥è¿›å…¥æš‚åœ
 				pause_coop_robot(i);
 				startCmdThread = false;
 				//continue;
 			}
 
-			// »úÆ÷ÈË³öÏÖ´íÎó
+			// æœºå™¨äººå‡ºç°é”™è¯¯
 			if (robot_error(i)) {
 				robotList[i]->notify_waiting_robot();
-				// ¹ØÁª»úÆ÷ÈËÍ¬²½½øÈëÔİÍ£
+				// å…³è”æœºå™¨äººåŒæ­¥è¿›å…¥æš‚åœ
 				pause_coop_robot(i);
 				startCmdThread = false;
 				//continue;
 			}
 
-			// ÔË¶¯Íê³É£¬Çå¿Õ¹ì¼£
+			// è¿åŠ¨å®Œæˆï¼Œæ¸…ç©ºè½¨è¿¹
 			if (robot_idle(i)) {
 				robotList[i]->notify_waiting_robot();
 				startCmdThread = false;
 				//continue;
 			}
 
-			// »úÆ÷ÈËÎ´Òì³££¬Ö¸ÁîÏÂ·¢³ÌĞò£¬¹ì¼£Î´ÏÂ·¢Íê³É
+			// æœºå™¨äººæœªå¼‚å¸¸ï¼ŒæŒ‡ä»¤ä¸‹å‘ç¨‹åºï¼Œè½¨è¿¹æœªä¸‹å‘å®Œæˆ
 			if (startCmdThread && cmdThreadDone && !robotList[i]->trajectory.trajectory_loaded()) {
 				if (cmdThreadWorker.joinable())
 					cmdThreadWorker.join();
@@ -1249,23 +1273,35 @@ void RobotGroupManager::updateStatusThread() {
 				break;
 			}
 		}
+		t1 = std::chrono::steady_clock::now();
+		dt[3] = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
 
-		// ÉèÖÃÏÂ´Î»½ĞÑÊ±¼ä
+		// è®¾ç½®ä¸‹æ¬¡å”¤é†’æ—¶é—´
 		wakeUpTime += std::chrono::milliseconds(duration);
-		// ĞİÃß
 		auto now = std::chrono::steady_clock::now();
+		auto tmpEnd = std::chrono::steady_clock::now();
 
+		// å‘¨æœŸæ—¶é—´è€—å°½
+		if (now > wakeUpTime) {
+			//auto detTime = now - wakeUpTime;
+			//LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted:" << std::chrono::duration_cast<std::chrono::milliseconds>(detTime).count());
+			while (now > wakeUpTime)
+				wakeUpTime += std::chrono::milliseconds(duration);
 
-		if ((now - wakeUpTime).count() > 0) {
-			// ÖÜÆÚÊ±¼äºÄ¾¡
-			long long detTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - wakeUpTime).count();
-			wakeUpTime += std::chrono::milliseconds((detTime / duration + 1) * duration);
-			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted:" << detTime);
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted: "
+				<< std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - tmpStart).count() << ". "
+				<< "start at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpStart - start).count() << ". "
+				<< "end at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - start).count() << ". "
+				<< "next: " << std::chrono::duration_cast<std::chrono::milliseconds>(wakeUpTime - start).count()
+				<< "\ndt: " << vector_to_string(dt)
+			);
 		}
-		else
-			std::this_thread::sleep_until(wakeUpTime);
 
+
+		// ä¼‘çœ 
+		//std::this_thread::sleep_until(wakeUpTime);
+		std::this_thread::sleep_for(wakeUpTime - now);
 	}
 
 }
@@ -1273,7 +1309,7 @@ void RobotGroupManager::updateStatusThread() {
 
 bool RobotGroupManager::robot_error(int idx) {
 
-	// ÏÂÎ»»úÎŞÒì³££¬ÉÏÎ»»úÎŞÒì³£
+	// ä¸‹ä½æœºæ— å¼‚å¸¸ï¼Œä¸Šä½æœºæ— å¼‚å¸¸
 	if ((statusList[idx].lowerStatus >> 2) == 0 && statusList[idx].upperStatus == 0) {
 		set_bit(coopState[idx], 1, false);
 		return false;
@@ -1295,7 +1331,7 @@ bool RobotGroupManager::robot_warning(int idx) {
 	if (get_bit(statusList[idx].lowerStatus, 1) == 0) {
 		set_bit(coopState[idx], 0, false);
 	}
-	// »úÆ÷ÈË´¦ÓÚÔİÍ£×´Ì¬
+	// æœºå™¨äººå¤„äºæš‚åœçŠ¶æ€
 	else {
 		if (get_bit(coopState[idx], 0) == 0) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << idx << " warning occur: "
@@ -1307,7 +1343,7 @@ bool RobotGroupManager::robot_warning(int idx) {
 		return true;
 	}
 
-	// ÉÏÎ»»úÎ´´¥·¢ÔİÍ£
+	// ä¸Šä½æœºæœªè§¦å‘æš‚åœ
 	//if (get_bit(coopState[idx], 8)) {
 	//	return true;
 	//}
@@ -1318,13 +1354,13 @@ bool RobotGroupManager::robot_warning(int idx) {
 
 bool RobotGroupManager::robot_idle(int idx) {
 
-	// ÎŞÔË¶¯£¬¹ì¼£Íê³É£¬ÎŞÔË¶¯»º³å
+	// æ— è¿åŠ¨ï¼Œè½¨è¿¹å®Œæˆï¼Œæ— è¿åŠ¨ç¼“å†²
 	if (statusList[idx].lowerStatus == 0 && statusList[idx].lineNum == robotList[idx]->get_lineNum() && robotList[idx]->trajectory.trajectory_loaded()) {
 
 		if (get_bit(coopState[idx], 7) == 0) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << idx << " task complete.");
 
-			// ÖØĞÂÉè¶¨ÉÏÌõ¹ì¼£ÀàĞÍ
+			// é‡æ–°è®¾å®šä¸Šæ¡è½¨è¿¹ç±»å‹
 			TrajectoryPoint point;
 			auto preTraj = robotList[idx]->trajectory.get_preTraj();
 			point = preTraj.get_point();
@@ -1347,7 +1383,7 @@ bool RobotGroupManager::robot_group_idle(const std::vector<int>& ids) {
 
 	std::vector<int> idSet = ids;
 
-	// ÊäÈëÎª¿ÕÊ±¼ì²éËùÓĞ»úÆ÷ÈË
+	// è¾“å…¥ä¸ºç©ºæ—¶æ£€æŸ¥æ‰€æœ‰æœºå™¨äºº
 	if (idSet.size() == 0) {
 		idSet = std::vector<int>(robotList.size(), 0);
 		for (size_t i = 0; i < idSet.size(); ++i) {
@@ -1357,13 +1393,13 @@ bool RobotGroupManager::robot_group_idle(const std::vector<int>& ids) {
 
 	for (size_t i = 0; i < idSet.size(); ++i) {
 
-		// ÊäÈëÒì³£
+		// è¾“å…¥å¼‚å¸¸
 		if (idSet[i] > robotList.size() || idSet[i] < 0) {
 			return false;
 		}
 
 		int idx = idSet[i];
-		// Ğ­Í¬»úÆ÷ÈËÔË¶¯Î´Íê³É
+		// ååŒæœºå™¨äººè¿åŠ¨æœªå®Œæˆ
 		if (statusList[idx].lineNum != robotList[idx]->get_lineNum() || statusList[idx].lowerStatus != 0) {
 			return false;
 		}
@@ -1375,28 +1411,28 @@ bool RobotGroupManager::robot_group_idle(const std::vector<int>& ids) {
 
 void RobotGroupManager::set_group_sync_config(int robotIdx) {
 
-	// µ±Ç°ÎŞ¹ì¼£
+	// å½“å‰æ— è½¨è¿¹
 	if (robotList[robotIdx]->trajectory.trajectory_loaded()) {
 		syncReadyState[robotIdx] = 0;
 		syncState[robotIdx].clear();
 		return;
 	}
 
-	// µ±Ç°»úÆ÷ÈËÏÂ·¢µÄÔË¶¯Î´Íê³É
+	// å½“å‰æœºå™¨äººä¸‹å‘çš„è¿åŠ¨æœªå®Œæˆ
 	if (statusList[robotIdx].lowerStatus != 0 || statusList[robotIdx].lineNum != robotList[robotIdx]->get_lineNum()) {
 		syncReadyState[robotIdx] = 0;
 		syncState[robotIdx].clear();
 		return;
 	}
 
-	// ÕıÄæ½âÇĞ»»Î´Íê³É
+	// æ­£é€†è§£åˆ‡æ¢æœªå®Œæˆ
 	//if (!kinematics_mached(robotIdx)) {
 	//	syncReadyState[robotIdx] = 0;
 	//	syncState[robotIdx].clear();
 	//	return;
 	//}
 
-	// µ±Ç°ĞèÒªÏÂ·¢µÄ¹ì¼£µÄÍ¬²½²ÎÊı
+	// å½“å‰éœ€è¦ä¸‹å‘çš„è½¨è¿¹çš„åŒæ­¥å‚æ•°
 	auto curTraj = robotList[robotIdx]->trajectory.get_curTraj();
 	auto synCfg = deserialize_Sync_Config(curTraj.appendix);
 	syncState[robotIdx] = synCfg;
@@ -1406,33 +1442,33 @@ void RobotGroupManager::set_group_sync_config(int robotIdx) {
 
 void RobotGroupManager::update_sync_state(int robotIdx) {
 
-	// µÈ´ı»úÆ÷ÈËÊÇ·ñÒÑ¾ÍĞ÷
+	// ç­‰å¾…æœºå™¨äººæ˜¯å¦å·²å°±ç»ª
 	auto curSync = syncState[robotIdx];
 	syncReadyState[robotIdx] = 1;
 	
 	for (auto& ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
-		// Í¬²½ÀàĞÍ
+		// åŒæ­¥ç±»å‹
 		int type = ite->first;
 
-		// µÈ´ı¼¤»î
+		// ç­‰å¾…æ¿€æ´»
 		if (type == 4) {
 		}
-		// µÈ´ıÍ¬²½ / Ğ­Í¬
+		// ç­‰å¾…åŒæ­¥ / ååŒ
 		else if (type == 2 || type == 3) {
 
 			for (auto& syncPair : ite->second) {
 				int idx = syncPair.first;
 				int num = syncPair.second;
 
-				// Ğ­Í¬µÄÖĞ¼ä¹ì¼£ÎŞĞèµÈ´ı
+				// ååŒçš„ä¸­é—´è½¨è¿¹æ— éœ€ç­‰å¾…
 				if (type == 3 && num <= 0) {
 					break;
 				}
 
-				// Æ¥Åä»úÆ÷ÈË×´Ì¬
+				// åŒ¹é…æœºå™¨äººçŠ¶æ€
 				auto oppositeSync = syncState[idx];
 
-				// Î´Æ¥Åäµ½ÏàÍ¬µÄÍ¬²½ÀàĞÍ
+				// æœªåŒ¹é…åˆ°ç›¸åŒçš„åŒæ­¥ç±»å‹
 				auto findSyncType = oppositeSync.map.find(type);
 				if (findSyncType == oppositeSync.map.end()) {
 					syncReadyState[robotIdx] = 0;
@@ -1446,7 +1482,7 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 						}
 					}
 
-					// µÈ´ıµÄ»úÆ÷ÈËÍ¬²½ºÅ²»Æ¥Åä
+					// ç­‰å¾…çš„æœºå™¨äººåŒæ­¥å·ä¸åŒ¹é…
 					if (!syncMatch)
 						syncReadyState[robotIdx] = 0;
 				}
@@ -1460,53 +1496,53 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 
 bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 
-	// µ±Ç°Í¬²½
+	// å½“å‰åŒæ­¥
 	auto curSync = syncState[robotIdx];
 
-	// µ±Ç°¹ì¼£Í¬²½
+	// å½“å‰è½¨è¿¹åŒæ­¥
 	auto curTraj = robotList[robotIdx]->trajectory.get_curTraj();
 	auto synCfg = deserialize_Sync_Config(curTraj.appendix);
 
-	// ÎŞÍ¬²½ºÅ
+	// æ— åŒæ­¥å·
 	if (synCfg.map.empty()) {
 		return true;
 	}
 
-	// ĞÂµÄ¹ì¼£Í¬²½ÓĞ±ä»¯
+	// æ–°çš„è½¨è¿¹åŒæ­¥æœ‰å˜åŒ–
 	auto curSyncSerial = serialize_Sync_Config(curSync);
 	auto synCfgSerial = serialize_Sync_Config(synCfg);
 	if (curSync.different_from(synCfg))
 		return false;
 
 
-	// Ğ­Í¬»úÆ÷ÈËÒÑ¾ÍĞ÷
+	// ååŒæœºå™¨äººå·²å°±ç»ª
 	for (auto& ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
-		// Í¬²½ÀàĞÍ
+		// åŒæ­¥ç±»å‹
 		int type = ite->first;
 
-		// µÈ´ı¼¤»î
+		// ç­‰å¾…æ¿€æ´»
 		if (type == 4) {
 			for (auto& syncPair : ite->second) {
 				if (waitState[robotIdx].find(syncPair.second) == waitState[robotIdx].end())
 					return false;
 			}
 		}
-		// µÈ´ıÍ¬²½ / Ğ­Í¬
+		// ç­‰å¾…åŒæ­¥ / ååŒ
 		else if (type == 2 || type == 3) {
 
 			for (auto& syncPair : ite->second) {
 				int idx = syncPair.first;
 				int num = syncPair.second;
 
-				// Ğ­Í¬µÄÖĞ¼ä¹ì¼£ÎŞĞèµÈ´ı
+				// ååŒçš„ä¸­é—´è½¨è¿¹æ— éœ€ç­‰å¾…
 				if (type == 3 && num <= 0) {
 					return true;
 				}
 
-				// Æ¥Åä»úÆ÷ÈË×´Ì¬
+				// åŒ¹é…æœºå™¨äººçŠ¶æ€
 				auto oppositeSync = syncState[idx];
 
-				// Î´Æ¥Åäµ½ÏàÍ¬µÄÍ¬²½ÀàĞÍ
+				// æœªåŒ¹é…åˆ°ç›¸åŒçš„åŒæ­¥ç±»å‹
 				auto findSyncType = oppositeSync.map.find(type);
 				if (findSyncType == oppositeSync.map.end()) {
 					return false;
@@ -1520,11 +1556,11 @@ bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 						}
 					}
 
-					// »úÆ÷ÈËÍ¬²½ºÅ²»Æ¥Åä
+					// æœºå™¨äººåŒæ­¥å·ä¸åŒ¹é…
 					if (!syncMatch)
 						return false;
 
-					// µÈ´ıÍ¬²½µÄ»úÆ÷ÈË»¹ÔÚµÈ´ıÆäËû»úÆ÷ÈË
+					// ç­‰å¾…åŒæ­¥çš„æœºå™¨äººè¿˜åœ¨ç­‰å¾…å…¶ä»–æœºå™¨äºº
 					if (syncReadyState[idx] == 0)
 						return false;
 				}
@@ -1533,7 +1569,7 @@ bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 		}
 	}
 
-	// Ğ­Í¬¾ÍĞ÷
+	// ååŒå°±ç»ª
 	auto synCfgData = serialize_Sync_Config(synCfg).second;
 	if (synCfgData.size() > 1) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " sync ready: " <<
@@ -1548,15 +1584,15 @@ void RobotGroupManager::correct_sync_speed() {
 	std::vector<int> visit(robotList.size(), 0);
 
 	for (size_t i = 0; i < robotList.size(); ++i) {
-		// ÒÑ¾­±»ĞŞÕı
+		// å·²ç»è¢«ä¿®æ­£
 		if (visit[i] == 1)
 			continue;
 
-		// µ±Ç°ÎŞ¹ì¼£
+		// å½“å‰æ— è½¨è¿¹
 		if (robotList[i]->trajectory.trajectory_loaded())
 			continue;
 
-		// µ±Ç°¹ì¼£
+		// å½“å‰è½¨è¿¹
 		auto curTraj = robotList[i]->trajectory.get_curTraj();
 		auto synCfg = deserialize_Sync_Config(curTraj.appendix);
 		auto findSync = synCfg.map.find(3);
@@ -1566,13 +1602,13 @@ void RobotGroupManager::correct_sync_speed() {
 			continue;
 		visit[findSync->second[0].first] = 1;
 
-		// Ğ­Í¬¾ÍĞ÷
+		// ååŒå°±ç»ª
 		if (robot_sync_ready(i) && findSync->first > 0) {
 
-			// Ğ­Í¬¶Î¹ì¼£×ÜÊ±¼ä
+			// ååŒæ®µè½¨è¿¹æ€»æ—¶é—´
 			float curTime = robotList[i]->trajectory.get_curTraj().get_syncDist();
 
-			// ´Ó»úĞòºÅ
+			// ä»æœºåºå·
 			int idx = findSync->second[0].first;
 			float time = robotList[idx]->trajectory.get_curTraj().get_syncDist();
 
@@ -1582,26 +1618,26 @@ void RobotGroupManager::correct_sync_speed() {
 			else {
 				time = curTime;
 			}
-			// ËÙ¶ÈĞŞÕıÈÕÖ¾
+			// é€Ÿåº¦ä¿®æ­£æ—¥å¿—
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << idx << " correct duration "
 				<< robotList[idx]->trajectory.get_curTraj().get_syncDist()
 				<< " to " << time);
 
-			// ±éÀú¹ì¼££¬ĞŞÕıËÙ¶È
+			// éå†è½¨è¿¹ï¼Œä¿®æ­£é€Ÿåº¦
 			for (auto& traj : robotList[idx]->trajectory.trajList) {
-				// ½öĞŞÕıµ±Ç°Ğ­Í¬¶Î
+				// ä»…ä¿®æ­£å½“å‰ååŒæ®µ
 				auto tmpCfg = deserialize_Sync_Config(traj.appendix);
 				auto tmpFind = tmpCfg.map.find(3);
 				if (tmpFind == tmpCfg.map.end()) {
 					break;
 				}
 
-				// ¹Ø½ÚÔË¶¯²»ĞŞÕı
+				// å…³èŠ‚è¿åŠ¨ä¸ä¿®æ­£
 				if (traj.isCartesian() && time > 0) {
 					traj.speed *= robotList[idx]->trajectory.get_curTraj().get_syncDist() / time;
 				}
 
-				// ½áÊøĞ­Í¬£¬½áÊøĞŞÕı
+				// ç»“æŸååŒï¼Œç»“æŸä¿®æ­£
 				if (tmpFind->second[0].second < 0)
 					break;
 			}
@@ -1616,21 +1652,21 @@ void RobotGroupManager::correct_sync_speed() {
 
 void RobotGroupManager::robot_in_place_command(int robotIdx) {
 
-	// ÎŞÒÑÏÂ·¢¹ì¼£
+	// æ— å·²ä¸‹å‘è½¨è¿¹
 	if (trajHistory[robotIdx].empty())
 		return;
 
-	// µ±Ç°ÒÑÍê³É¹ì¼£±àºÅ
+	// å½“å‰å·²å®Œæˆè½¨è¿¹ç¼–å·
 	int lineNum = statusList[robotIdx].lineNum;
-	// µÚÒ»ÌõÀúÊ·¹ì¼£
+	// ç¬¬ä¸€æ¡å†å²è½¨è¿¹
 	auto curTraj = trajHistory[robotIdx].front();
 
-	// ¿ªÊ¼Ö´ĞĞ
+	// å¼€å§‹æ‰§è¡Œ
 	if (lineNum == curTraj.lineNum - 1 && !get_bit(coopState[robotIdx], 5)) {
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " run traj " << curTraj.lineNum << ", save seq: " << curTraj.saveSeq);
 
-		// ´¥·¢»úÆ÷ÈËµÈ´ı
+		// è§¦å‘æœºå™¨äººç­‰å¾…
 		auto syncMap = deserialize_Sync_Config(curTraj.get_appendix()).map;
 		if (syncMap.find(5) != syncMap.end()) {
 			for (const auto& notifyItem : syncMap[5]) {
@@ -1639,18 +1675,18 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 			}
 		}
 
-		// Çå¿Õµ½Î»Ç°ÔË¶¯
+		// æ¸…ç©ºåˆ°ä½å‰è¿åŠ¨
 		//Move_Action moveCfg = deserialize_Move_Action(trajHistory[robotIdx].front().get_appendix());
 		//moveCfg.actionAfter.clear();
 		//trajHistory[robotIdx].front().add_appendix(serialize_Move_Action(moveCfg));
 
-		// ÉèÖÃ¹ØÁª
+		// è®¾ç½®å…³è”
 		std::unordered_set<int> bindIdxSet;
-		// Ğ­Í¬
+		// ååŒ
 		if (syncMap.find(3) != syncMap.end()) {
 			bindIdxSet.insert(syncMap[3].front().first);
 		}
-		// °ó¶¨
+		// ç»‘å®š
 		if (syncMap.find(1) != syncMap.end()) {
 			for (auto& pair : syncMap[1]) {
 				bindIdxSet.insert(pair.first);
@@ -1663,26 +1699,26 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 			);
 		}
 
-		// ¿ªÊ¼Ö´ĞĞ¹ì¼£
+		// å¼€å§‹æ‰§è¡Œè½¨è¿¹
 		set_bit(coopState[robotIdx], 5, true);
 	}
-	// ÔË¶¯Íê³É: »úÆ÷ÈËµ½Î»
+	// è¿åŠ¨å®Œæˆ: æœºå™¨äººåˆ°ä½
 	else if (lineNum == curTraj.lineNum) {
-		// ´òÓ¡µ½Î»ÈÕÖ¾
+		// æ‰“å°åˆ°ä½æ—¥å¿—
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " reach point(" << curTraj.lineNum << ", " <<
 			static_cast<int>(curTraj.get_trajType()) << "): " <<
 			vector_to_string(curTraj.isJoint() ? statusList[robotIdx].jPos : statusList[robotIdx].cPos));
 
-		// ¹ì¼£Íê³É
+		// è½¨è¿¹å®Œæˆ
 		set_bit(coopState[robotIdx], 5, false);
-		// ÀúÊ·¹ì¼£µ¯³ö
+		// å†å²è½¨è¿¹å¼¹å‡º
 		trajHistory[robotIdx].pop_front();
 	}
-	// ¹ì¼£±àºÅÒì³£
+	// è½¨è¿¹ç¼–å·å¼‚å¸¸
 	else if (lineNum > curTraj.lineNum) {
 		
 		while (lineNum > curTraj.lineNum) {
-			// ÀúÊ·¹ì¼£µ¯³ö
+			// å†å²è½¨è¿¹å¼¹å‡º
 			if (trajHistory[robotIdx].size() > 0) {
 				trajHistory[robotIdx].pop_front();
 				curTraj = trajHistory[robotIdx].front();
@@ -1701,13 +1737,13 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 
 int RobotGroupManager::pause_coop_robot(int idx) {
 
-	// ÔİÍ£¹ØÁª»úÆ÷ÈË
+	// æš‚åœå…³è”æœºå™¨äºº
 	for (auto& robot : disableGroup[idx]) {
-		// ¹ØÁª»úÆ÷ÈËÎ´ÔİÍ£
+		// å…³è”æœºå™¨äººæœªæš‚åœ
 		if ((statusList[robot].upperStatus >> 2) > 0) {
 			robotList[robot]->task_pause();
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robot << " paused because of error in robot " << idx);
-			// ±ê¼ÇÎª±»¶¯ÔİÍ£
+			// æ ‡è®°ä¸ºè¢«åŠ¨æš‚åœ
 			robotList[robot]->set_upperStatus(0x02);
 		}
 	}
@@ -1719,25 +1755,25 @@ int RobotGroupManager::pause_coop_robot(int idx) {
 int RobotGroupManager::calc_sync_duration(int robotIdx) {
 
 	auto preTraj = robotList[robotIdx]->trajectory.get_preTraj();
-	// Ğ­Í¬¿ªÊ¼¡¢½áÊø¹ì¼£µü´úÆ÷
+	// ååŒå¼€å§‹ã€ç»“æŸè½¨è¿¹è¿­ä»£å™¨
 	auto begTraj = robotList[robotIdx]->trajectory.trajList.begin();
 	auto endTraj = robotList[robotIdx]->trajectory.trajList.begin();
 	float segmDist = 0.0;
 
 	for (auto curTraj = robotList[robotIdx]->trajectory.trajList.begin(); curTraj != robotList[robotIdx]->trajectory.trajList.end(); ++curTraj) {
 
-		// ¹Ø½ÚÔË¶¯²»Ö´ĞĞ
+		// å…³èŠ‚è¿åŠ¨ä¸æ‰§è¡Œ
 		if (curTraj->isJoint())
 			break;
 
-		// µ±Ç°¹ì¼£Í¬²½²ÎÊı
+		// å½“å‰è½¨è¿¹åŒæ­¥å‚æ•°
 		auto synCfg = deserialize_Sync_Config(curTraj->appendix);
 
 		auto findSync = synCfg.map.find(3);
-		// µ±Ç°¹ì¼£ÓĞĞ­Í¬£¬ÇÒĞ­Í¬¹ì¼£Ê±¼äÎ´¼ÆËã
+		// å½“å‰è½¨è¿¹æœ‰ååŒï¼Œä¸”ååŒè½¨è¿¹æ—¶é—´æœªè®¡ç®—
 		if (findSync != synCfg.map.end() && curTraj->get_syncDist() < 1e-2) {
 
-			// µ±Ç°¹ì¼£³¤¶È
+			// å½“å‰è½¨è¿¹é•¿åº¦
 			float curDist = 0.0;
 			if (curTraj->isCartesian()) {
 				auto trajInfo = calc_traj_info(preTraj.mainPoint, curTraj->auxPoint, curTraj->mainPoint, curTraj->isArc());
@@ -1745,18 +1781,18 @@ int RobotGroupManager::calc_sync_duration(int robotIdx) {
 				curDist /= curTraj->get_speed();
 			}
 
-			// Ğ­Í¬¿ªÊ¼
+			// ååŒå¼€å§‹
 			if (findSync->second.front().second > 0) {
 				segmDist = curDist;
 				begTraj = curTraj;
 			}
 			else {
-				// ÑØÓÃĞ­Í¬
+				// æ²¿ç”¨ååŒ
 				segmDist += curDist;
 			}
 			endTraj = curTraj;
 
-			// È¡ÏûĞ­Í¬ / ÏÂÒ»ÌõÎŞ¹ì¼£ / ÏÂÒ»ÌõÎª¹Ø½Ú
+			// å–æ¶ˆååŒ / ä¸‹ä¸€æ¡æ— è½¨è¿¹ / ä¸‹ä¸€æ¡ä¸ºå…³èŠ‚
 			endTraj++;
 			if (findSync->second.front().second < 0
 				|| (endTraj == robotList[robotIdx]->trajectory.trajList.end())
@@ -1780,12 +1816,12 @@ int RobotGroupManager::calc_sync_duration(int robotIdx) {
 
 
 int RobotGroupManager::robot_group_resume(int idx) {
-	// µ±Ç°»úÆ÷ÈË¼ÌĞø
+	// å½“å‰æœºå™¨äººç»§ç»­
 	robotList[idx]->task_resume();
-	// ÔİÍ£´¥·¢±êÖ¾¸´Î»
+	// æš‚åœè§¦å‘æ ‡å¿—å¤ä½
 	set_bit(coopState[idx], 8, false);
 
-	// Í¬²½¼ÌĞø°ó¶¨»úÆ÷ÈË
+	// åŒæ­¥ç»§ç»­ç»‘å®šæœºå™¨äºº
 	for (auto& robot : disableGroup[idx]) {
 		robotList[robot]->task_resume();
 	}
@@ -1794,10 +1830,10 @@ int RobotGroupManager::robot_group_resume(int idx) {
 
 int RobotGroupManager::robot_group_resume(const std::vector<int>& idxList) {
 	for (auto& idx : idxList) {
-		// µ±Ç°»úÆ÷ÈË¼ÌĞø
+		// å½“å‰æœºå™¨äººç»§ç»­
 		robotList[idx]->task_resume();
 
-		// Í¬²½¼ÌĞø°ó¶¨»úÆ÷ÈË
+		// åŒæ­¥ç»§ç»­ç»‘å®šæœºå™¨äºº
 		for (auto& robot : disableGroup[idx]) {
 			robotList[robot]->task_resume();
 		}
@@ -1806,12 +1842,12 @@ int RobotGroupManager::robot_group_resume(const std::vector<int>& idxList) {
 }
 
 int RobotGroupManager::robot_group_pause(int idx) {
-	// µ±Ç°»úÆ÷ÈËÔİÍ£
+	// å½“å‰æœºå™¨äººæš‚åœ
 	robotList[idx]->task_pause();
-	// ÔİÍ£´¥·¢±êÖ¾ÖÃÎ»
+	// æš‚åœè§¦å‘æ ‡å¿—ç½®ä½
 	set_bit(coopState[idx], 8, true);
 
-	// Í¬²½ÔİÍ£°ó¶¨»úÆ÷ÈË
+	// åŒæ­¥æš‚åœç»‘å®šæœºå™¨äºº
 	for (auto& robot : disableGroup[idx]) {
 		robotList[robot]->task_pause();
 	}
@@ -1821,16 +1857,16 @@ int RobotGroupManager::robot_group_pause(int idx) {
 
 int RobotGroupManager::robot_group_pause(const std::vector<int>& idxList) {
 	for (auto& idx : idxList) {
-		// µ±Ç°»úÆ÷ÈËÔİÍ£
+		// å½“å‰æœºå™¨äººæš‚åœ
 		robotList[idx]->task_pause();
 		
-		// Í¬²½ÔİÍ£°ó¶¨»úÆ÷ÈË
+		// åŒæ­¥æš‚åœç»‘å®šæœºå™¨äºº
 		for (auto& robot : disableGroup[idx]) {
 			robotList[robot]->task_pause();
 		}
 	}
 
-	// °ó¶¨»úÆ÷ÈË¾ùÔİÍ£ºó¸üĞÂÎ»ÖÃ
+	// ç»‘å®šæœºå™¨äººå‡æš‚åœåæ›´æ–°ä½ç½®
 	robot_group_update_saved_pos(idxList);
 
 	return 0;
@@ -1843,19 +1879,19 @@ int RobotGroupManager::robot_group_update_saved_pos(const std::vector<int>& idxL
 	while (!paused) {
 		paused = true;
 		for (auto& idx : idxList) {
-			// ÔË¶¯ÖĞÇÒÎ´ÔİÍ£
+			// è¿åŠ¨ä¸­ä¸”æœªæš‚åœ
 			if (get_bit(statusList[idx].lowerStatus, 0) == 1 && get_bit(statusList[idx].lowerStatus, 1) == 0) {
 				paused = false;
 				break;
 			}
 		}
 		if (!paused) {
-			// ÑÓÊ±
+			// å»¶æ—¶
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	}
 
-	// ÔİÍ£³É¹¦£¬±£´æ×´Ì¬
+	// æš‚åœæˆåŠŸï¼Œä¿å­˜çŠ¶æ€
 	for (auto& idx : idxList) {
 		robotList[idx]->trigger_action(6, {});
 	}
@@ -1863,7 +1899,7 @@ int RobotGroupManager::robot_group_update_saved_pos(const std::vector<int>& idxL
 }
 
 int RobotGroupManager::robot_group_clear_task(int idx) {
-	// ÔİÍ£´¥·¢±êÖ¾¸´Î»
+	// æš‚åœè§¦å‘æ ‡å¿—å¤ä½
 	set_bit(coopState[idx], 8, false);
 
 	robotList[idx]->task_stop();
@@ -1872,7 +1908,7 @@ int RobotGroupManager::robot_group_clear_task(int idx) {
 }
 
 int RobotGroupManager::robot_group_stop(int idx) {
-	// ÔİÍ£´¥·¢±êÖ¾¸´Î»
+	// æš‚åœè§¦å‘æ ‡å¿—å¤ä½
 	set_bit(coopState[idx], 8, false);
 
 	robotList[idx]->emergency_stop();
@@ -1883,11 +1919,11 @@ int RobotGroupManager::robot_group_stop(int idx) {
 
 void RobotGroupManager::reset_wait_state(int robotIdx) {
 
-	// µ±Ç°¹ì¼£Í¬²½
+	// å½“å‰è½¨è¿¹åŒæ­¥
 	auto curTraj = robotList[robotIdx]->trajectory.get_curTraj();
 	auto synCfg = deserialize_Sync_Config(curTraj.appendix);
 
-	// IOµÈ´ı±êÖ¾¸´Î»
+	// IOç­‰å¾…æ ‡å¿—å¤ä½
 	if (synCfg.map.find(4) != synCfg.map.end()) {
 
 		for (auto& syncPair : synCfg.map[4]) {
@@ -1938,9 +1974,9 @@ std::string vector_to_string(const std::vector<int>& data, int fixed) {
 
 int set_bit(int& state, int idx, bool enable) {
 
-	// ÅĞ¶Ï×Ü¹²ÓĞ¶àÉÙÎ»
+	// åˆ¤æ–­æ€»å…±æœ‰å¤šå°‘ä½
 
-	// Î»ÑÚÂë
+	// ä½æ©ç 
 	int mask = 0xFFFFFF - (1 << idx);
 	state = (state & mask) + (enable << idx);
 
