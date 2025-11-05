@@ -1,4 +1,4 @@
-
+﻿
 add_executable(test_fsai_app# WIN32
   test.cpp
   ../forms/logo.rc

@@ -3,9 +3,19 @@
 
 #include "RobotLogger.h"
 
+#ifndef CPPHTTPLIB_OPENSSL_SUPPORT
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#endif
+#include <httplib.h>
+#include <Windows.h>
+#include <nlohmann/json.hpp>
+
 #include <iostream>
 
 namespace FSAIRobotInterface {
+
+	//! Robot Web Services 客户端
+	std::shared_ptr<httplib::Client> client;
 
 	int RegisterBuffer::clear() {
 		num = 0;

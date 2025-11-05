@@ -1,4 +1,4 @@
-
+﻿
 add_library(interpolation
 	InterpSegment.cpp
 )

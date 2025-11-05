@@ -361,7 +361,16 @@ void FSAIApp::connect_slot() {
 	});
 	// 测试按钮2
 	QObject::connect(advanceWindow->ui->pushButton_10, &QPushButton::released, this, [&]() {
-		mainWindow->ui->textBrowser->append("Test 2: ");
+		//// 获取地址
+		//auto cmd = mainWindow->ui->lineEdit->text();
+
+		//// 发送请求
+		//WebService client;
+		//std::string ans;
+		//int ret = client.get_abb(cmd.toStdString(), ans);
+
+		//// 打印结果
+		//mainWindow->ui->textBrowser->append(QString::number(ret) + "\n" + QString::fromStdString(ans));
 	});
 
 	// 工艺窗口
