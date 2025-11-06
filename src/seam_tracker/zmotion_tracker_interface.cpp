@@ -1,4 +1,4 @@
-
+ï»¿
 #include "zmotion_tracker_interface.h"
 
 #include <iostream>
@@ -27,12 +27,12 @@ int reset_mw_filter(int idx, TYPE_TABLE* addr) {
 
 double moving_window_filter(int idx, double sample) {
 	double ret = 0.0;
-	// ³õÊ¼Êı¾İ
+	// åˆå§‹æ•°æ®
 	if (mwFilter.num[idx] < mwFilter.windowLen[idx]) {
 		mwFilter.windowSum[idx] += sample;
 		ret = mwFilter.windowSum[idx] / (mwFilter.num[idx] + 1);
 	}
-	// ¿ªÊ¼ÂË²¨
+	// å¼€å§‹æ»¤æ³¢
 	else {
 		mwFilter.windowSum[idx] += sample - mwFilter.table[idx][(mwFilter.num[idx] - mwFilter.windowLen[idx]) % mwFilter.saveLen[idx]];
 		ret = mwFilter.windowSum[idx] / mwFilter.windowLen[idx];

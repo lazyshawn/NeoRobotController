@@ -1,4 +1,4 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include<iostream>
 
 //#include "Controller.h"
@@ -13,11 +13,11 @@ int main() {
 	ScannerTracker tracker(ZController->get_handle());
 
 	for (int i = 0; i < 1e5; ++i) {
-		// ¶ÁÈ¡TCP»º´æÎ»ÖÃ
+		// è¯»å–TCPç¼“å­˜ä½ç½®
 		std::vector<motion::Time_Pos> tcpBuffer;
 		tracker.read_tcp_buffer(tcpBuffer);
 		
-		// ·¢ËÍ²¹³¥Ö¸Áî
+		// å‘é€è¡¥å¿æŒ‡ä»¤
 		tracker.send_tracking_cmd(i, { static_cast<float>(i+1), static_cast<float>(i + 2), static_cast<float>(i + 3) });
 	}
 

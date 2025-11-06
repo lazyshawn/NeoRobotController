@@ -1,26 +1,26 @@
-#pragma once
+ï»¿#pragma once
 
 #include <queue>
 
 
-// ±ß½çÌõ¼ş(boundary)
+// è¾¹ç•Œæ¡ä»¶(boundary)
 struct InterpBoundary {
 	double q0, q1;
 	double v0, v1;
 	double a0, a1;
 
-	// µ±Ç°×´Ì¬
+	// å½“å‰çŠ¶æ€
 	double qk, vk, ak, jk;
 
-	// ¼õËÙ½×¶Î¿ªÊ¼ÖÜÆÚ
+	// å‡é€Ÿé˜¶æ®µå¼€å§‹å‘¨æœŸ
 	double kd;
 
-	// ²å²¹½×¶Î±êÖ¾Î»
+	// æ’è¡¥é˜¶æ®µæ ‡å¿—ä½
 	int state;
 };
 
 
-// Ô¼ÊøÌõ¼ş(constraint)
+// çº¦æŸæ¡ä»¶(constraint)
 struct InterpConstraint {
 	double vmax, vmin;
 	double amax, amin;
@@ -32,36 +32,36 @@ struct InterpConstraint {
 
 
 enum class InterpSegmentType {
-	JOINT,   // ¹Ø½Ú
-	LINE,    // Ö±Ïß
-	CIRCLE,  // Ô²»¡
-	BEZIER,  // ±´Èû¶û
+	JOINT,   // å…³èŠ‚
+	LINE,    // ç›´çº¿
+	CIRCLE,  // åœ†å¼§
+	BEZIER,  // è´å¡å°”
 };
 
 
-// ²åÖµ¹ì¼£»ùÀà
+// æ’å€¼è½¨è¿¹åŸºç±»
 class InterpSegment {
 public:
-	// ²åÖµ¹ì¼£ÀàĞÍ
+	// æ’å€¼è½¨è¿¹ç±»å‹
 	InterpSegmentType type;
 
-	// Ô¼ÊøÌõ¼ş
+	// çº¦æŸæ¡ä»¶
 	InterpConstraint constraint;
 
-	// ±ß½çÌõ¼ş
+	// è¾¹ç•Œæ¡ä»¶
 	std::queue<InterpBoundary> boundaryQueue;
 
 
-	// ÉèÖÃÔ¼ÊøÌõ¼ş
+	// è®¾ç½®çº¦æŸæ¡ä»¶
 	int set_constraint(const InterpConstraint& constraint_);
 
-	// Ôö¼Ó²å²¹¹ì¼£¶Î
+	// å¢åŠ æ’è¡¥è½¨è¿¹æ®µ
 	int add_segment(const InterpBoundary& boundary);
 	//int add_segment(const InterpBoundary, const InterpConstraint constraint_);
 
-	// µ¯³ö¶ÓÊ×¹ì¼£
+	// å¼¹å‡ºé˜Ÿé¦–è½¨è¿¹
 	int pop_front_segment(InterpBoundary& boundary);
 
-	// ¼ÆËã²å²¹½á¹û
+	// è®¡ç®—æ’è¡¥ç»“æœ
 	int get_interp_result(int k);
 };

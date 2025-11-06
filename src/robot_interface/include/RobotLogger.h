@@ -1,8 +1,8 @@
-/***************************************************************************
+ï»¿/***************************************************************************
  * @file   RobotLogger.h
- * @biref  ÈÕÖ¾¹ÜÀí
+ * @biref  æ—¥å¿—ç®¡ç†
  *
- * Õë¶ÔÊ¹ÓÃµÄ²»Í¬µÄÈÕÖ¾¿â£¬ĞŞ¸ÄÈÕÖ¾½Ó¿Ú¡£
+ * é’ˆå¯¹ä½¿ç”¨çš„ä¸åŒçš„æ—¥å¿—åº“ï¼Œä¿®æ”¹æ—¥å¿—æ¥å£ã€‚
  * Example:
  *   class RobotLog {
  *   }
@@ -24,7 +24,7 @@
 namespace FSAIRobotInterface {
 
 /**
-* @brief  »úÆ÷ÈËÈÕÖ¾Àà
+* @brief  æœºå™¨äººæ—¥å¿—ç±»
 */
 class RobotLog {
 public:
@@ -43,7 +43,7 @@ private:
 
 
 /**
-* @brief  ¿ØÖÆ¿¨ÈÕÖ¾Àà
+* @brief  æ§åˆ¶å¡æ—¥å¿—ç±»
 */
 class ControllerLog {
 public:
@@ -62,10 +62,10 @@ private:
 
 
 /**
-* @brief  ĞòÁĞ»¯Êı¾İ×ª×Ö·û´®
-* @param  data   ĞòÁĞ»¯Êı¾İ
-* @param  fixed  ±£ÁôĞ¡ÊıµãÎ»Êı, -1:Ä¬ÈÏ
-* @return ÒÔ¶ººÅ·Ö¸ôµÄ×Ö·û´®
+* @brief  åºåˆ—åŒ–æ•°æ®è½¬å­—ç¬¦ä¸²
+* @param  data   åºåˆ—åŒ–æ•°æ®
+* @param  fixed  ä¿ç•™å°æ•°ç‚¹ä½æ•°, -1:é»˜è®¤
+* @return ä»¥é€—å·åˆ†éš”çš„å­—ç¬¦ä¸²
 */
 std::string vector_to_string(const std::vector<float>& data, int fixed = -1);
 std::string vector_to_string(const std::vector<int>& data, int fixed = -1);

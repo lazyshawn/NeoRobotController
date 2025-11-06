@@ -1,4 +1,4 @@
-#include "fsai_advanceConfigWindow.h"
+ï»¿#include "fsai_advanceConfigWindow.h"
 
 
 AdvanceConfigWindow::AdvanceConfigWindow() {
@@ -6,12 +6,12 @@ AdvanceConfigWindow::AdvanceConfigWindow() {
 
 	ui->setupUi(this);
 	
-	// ¹Ø±Õ´°¿Ú
+	// å…³é—­çª—å£
 	QObject::connect(ui->pushButton_4, &QPushButton::released, this, [&]() {
 		this->hide();
 	});
 
-	// Ä¬ÈÏ²ÎÊý
+	// é»˜è®¤å‚æ•°
 	ui->comboBox->addItem("ZMotionRobot");
 	ui->comboBox->addItem("ZVRRobot");
 	ui->comboBox->addItem("FSAIRobot");

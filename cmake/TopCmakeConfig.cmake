@@ -1,4 +1,4 @@
-# Check whether current CMakeLists is TOP level one
+﻿# Check whether current CMakeLists is TOP level one
 get_directory_property(hasParent PARENT_DIRECTORY)
 
 if(NOT hasParent)

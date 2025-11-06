@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
 #include <vector>
@@ -13,40 +13,40 @@
 namespace FSAIRobotInterface {
 
 /**
-* @brief  ËÑË÷µ±Ç°Íø¶ÎÏÂµÄ IP µØÖ·
-* @param  ipList    IP µØÖ·ÁĞ±í
+* @brief  æœç´¢å½“å‰ç½‘æ®µä¸‹çš„ IP åœ°å€
+* @param  ipList    IP åœ°å€åˆ—è¡¨
 */
 int search_ethernet_list(std::vector<std::string>& ipList);
 
 /**
-* @brief  ËÑË÷µ±Ç°Íø¶ÎÏÂµÄ IP µØÖ·
-* @param  ipAddress    IP µØÖ·
-* @param  uims         ³¬Ê±Ê±¼ä
-* @return ´æÔÚ·µ»Ø 0£¬·Ç 0 Ïê¼û´íÎóÂëËµÃ÷
+* @brief  æœç´¢å½“å‰ç½‘æ®µä¸‹çš„ IP åœ°å€
+* @param  ipAddress    IP åœ°å€
+* @param  uims         è¶…æ—¶æ—¶é—´
+* @return å­˜åœ¨è¿”å› 0ï¼Œé 0 è¯¦è§é”™è¯¯ç è¯´æ˜
 */
 int search_ethernet(const char* ipAddress, uint32 uims = 1000);
 
 /**
-* @brief  ËÑË÷µ±Ç°×î´ó PCI ¿¨Êı
-* @return ×î´ó PCI ¿¨Êı
+* @brief  æœç´¢å½“å‰æœ€å¤§ PCI å¡æ•°
+* @return æœ€å¤§ PCI å¡æ•°
 */
 int get_max_pci_card();
 
 class Controller {
-	//! Òì³£Âë
+	//! å¼‚å¸¸ç 
 	const static int errCodeBeg = 10000;
-	//! ¿ØÖÆ¿¨ÊıÁ¿
+	//! æ§åˆ¶å¡æ•°é‡
 	static int numOfController;
-	//! ¿ØÖÆÆ÷¾ä±ú
+	//! æ§åˆ¶å™¨å¥æŸ„
 	ZMC_HANDLE handle = NULL;
-	//! ÒÑÁ¬½Ó»úÆ÷ÈË
+	//! å·²è¿æ¥æœºå™¨äºº
 	uint8_t robotHandle = 0;
-	//£¡ ¿ØÖÆ¿¨×´Ì¬
+	//ï¼ æ§åˆ¶å¡çŠ¶æ€
 	uint64_t controllerStatus = 0;
-	//£¡¿ØÖÆ¿¨Ãû³Æ
+	//ï¼æ§åˆ¶å¡åç§°
 	std::string cardName;
 
-	// »¥³âËøÓëÌõ¼ş±äÁ¿ 
+	// äº’æ–¥é”ä¸æ¡ä»¶å˜é‡ 
 	//std::mutex mtx;
 	//std::condition_variable cv;
 	//bool taskDone = false;
@@ -56,125 +56,125 @@ public:
 	~Controller();
 
 	/**
-	* @brief Éè¶¨¿ØÖÆ¿¨¾ä±ú
-	* @param handle    ¿ØÖÆ¿¨¾ä±ú
+	* @brief è®¾å®šæ§åˆ¶å¡å¥æŸ„
+	* @param handle    æ§åˆ¶å¡å¥æŸ„
 	*/
 	int set_handle(const ZMC_HANDLE& handle_);
 	/**
-	* @brief »ñÈ¡¿ØÖÆ¿¨¾ä±ú
-	* @return    ¿ØÖÆ¿¨¾ä±ú
+	* @brief è·å–æ§åˆ¶å¡å¥æŸ„
+	* @return    æ§åˆ¶å¡å¥æŸ„
 	*/
 	ZMC_HANDLE get_handle();
 
 	/**
-	* @brief Á¬½Ó¿ØÖÆÆ÷
+	* @brief è¿æ¥æ§åˆ¶å™¨
 	*/
 	int connect_eth(const char *ip_addr);
 	/**
-	* @brief  Á¬½Ó¿ØÖÆÆ÷
-	* @param  cardNum    ¿¨ºÅ
+	* @brief  è¿æ¥æ§åˆ¶å™¨
+	* @param  cardNum    å¡å·
 	* @param  local      T - 750, F - 464
-	* @param  log        T - ¿ªÆô, F - ¹Ø±Õ
+	* @param  log        T - å¼€å¯, F - å…³é—­
 	*/
 	int connect_pci(uint32 cardNum, bool local = false, bool log = false);
 	int connect(const std::string& addr);
 	int lazy_connect();
 	/**
-	* @brief ¶Ï¿ªÁ¬½Ó
+	* @brief æ–­å¼€è¿æ¥
 	*/
 	int disconnect();
 	/**
-	* @brief ¿ØÖÆ¿¨ÖØÆô
+	* @brief æ§åˆ¶å¡é‡å¯
 	*/
 	int controller_reboot();
 
 	/**
-	* @brief ±£´æÉè±¸ĞÅÏ¢
+	* @brief ä¿å­˜è®¾å¤‡ä¿¡æ¯
 	*
-	* Èç¿ØÖÆ¿¨ĞÍºÅ£¬¹Ì¼ş°æ±¾£¬½ÚµãÊıµÈ
+	* å¦‚æ§åˆ¶å¡å‹å·ï¼Œå›ºä»¶ç‰ˆæœ¬ï¼ŒèŠ‚ç‚¹æ•°ç­‰
 	*/
 	int save_device_info();
 	/**
 	* @brief load_basic_project
-	*        ÉÕÂ¼ basic ¹¤³Ìµ½¿ØÖÆÆ÷
-	* @param basPath    basic ³ÌĞòÂ·¾¶
-	* @param mode       ÉÕÂ¼Ä£Ê½£»
-			 0          ÉÕÂ¼µ½ RAM
-			 1          ÉÕÂ¼µ½ ROM
+	*        çƒ§å½• basic å·¥ç¨‹åˆ°æ§åˆ¶å™¨
+	* @param basPath    basic ç¨‹åºè·¯å¾„
+	* @param mode       çƒ§å½•æ¨¡å¼ï¼›
+			 0          çƒ§å½•åˆ° RAM
+			 1          çƒ§å½•åˆ° ROM
 	*/
 	int load_basic_project(const char *basPath, uint32_t mode = 0);
 	int load_basic_pragma(const char *basPath, uint32_t mode = 0);
 
 	/**
 	* @brief allocate_robot_id
-	* @return   ´ÓĞ¡µ½´ó·ÖÅä¿ÉÓÃµÄ»úÆ÷ÈËID
+	* @return   ä»å°åˆ°å¤§åˆ†é…å¯ç”¨çš„æœºå™¨äººID
 	*/
 	int allocate_robot_id();
 	/**
 	* @brief add_robot
-	* @param   robotId    ÉêÇëĞÂÔöµÄ»úÆ÷ÈËrobotId
+	* @param   robotId    ç”³è¯·æ–°å¢çš„æœºå™¨äººrobotId
 	*/
 	int add_robot(int id);
 	/**
 	* @brief remove_robot
-	* @param   robotId    ÉêÇëÒÆ³ıµÄ»úÆ÷ÈËrobotId
+	* @param   robotId    ç”³è¯·ç§»é™¤çš„æœºå™¨äººrobotId
 	*/
 	int remove_robot(int id);
 	/**
 	* @brief get_robot_id
-	* @return   ÒÑ¾­±»Õ¼ÓÃµÄ»úÆ÷ÈËID
+	* @return   å·²ç»è¢«å ç”¨çš„æœºå™¨äººID
 	*/
 	std::vector<int> get_robot_id();
 
 	/**
-	* @brief Òì³£´¦Àí
-	* @param    errCode    ´íÎóÂë
+	* @brief å¼‚å¸¸å¤„ç†
+	* @param    errCode    é”™è¯¯ç 
 	*/
-	//! ´íÎóÂë´¦Àí
+	//! é”™è¯¯ç å¤„ç†
 	int32 handle_zaux_error(int32 errCode);
-	////! ÉÏÎ»»ú½ô¼±Í£Ö¹
+	////! ä¸Šä½æœºç´§æ€¥åœæ­¢
 	//int32 emergency_stop();
-	////! ÉÏÎ»»ú½ô¼±ÔİÍ£
+	////! ä¸Šä½æœºç´§æ€¥æš‚åœ
 	//int32 emergency_pause();
-	////! ÉÏÎ»»ú½ô¼±»Ö¸´
+	////! ä¸Šä½æœºç´§æ€¥æ¢å¤
 	//int32 emergency_resume();
-	////! ¿ØÖÆ¿¨±êÖ¾Î»¸´Î»
+	////! æ§åˆ¶å¡æ ‡å¿—ä½å¤ä½
 	//int32 basic_reset();
 
 	/**
-	* @brief  »ñÈ¡ÏÂÎ»»úÊ±¼ä´Á
-	* @param       taskId     ÈÎÎñºÅ
-	* @return      ÏÂÎ»»úÊ±¼ä´Á£¬¼´>> ?ticks(taskId) µÄ·µ»ØÖµ
+	* @brief  è·å–ä¸‹ä½æœºæ—¶é—´æˆ³
+	* @param       taskId     ä»»åŠ¡å·
+	* @return      ä¸‹ä½æœºæ—¶é—´æˆ³ï¼Œå³>> ?ticks(taskId) çš„è¿”å›å€¼
 	*/
 	long long get_time_stamp(int taskId = 0);
 
 	/**
-	* @brief  ¼ÓÔØÅäÖÃÎÄ¼ş
-	* @param       fname     ÅäÖÃÎÄ¼şÂ·¾¶
+	* @brief  åŠ è½½é…ç½®æ–‡ä»¶
+	* @param       fname     é…ç½®æ–‡ä»¶è·¯å¾„
 	*/
 	int load_config(const std::string& fname);
 
 	/**
-	* @brief  µ¼³öÅäÖÃÎÄ¼ş
-	* @param       fname     ÅäÖÃÎÄ¼şÂ·¾¶
+	* @brief  å¯¼å‡ºé…ç½®æ–‡ä»¶
+	* @param       fname     é…ç½®æ–‡ä»¶è·¯å¾„
 	*/
 	int export_config(const std::string& fname);
 
 	/**
-	* @brief  ¶ÁÈ¡¶àÖá²ÎÊı
-	* @param       axisList     ĞèÒª»ñÈ¡²ÎÊıµÄÖáºÅÁĞ±í
-	* @param       paramName    ²ÎÊıÃû³Æ
-	* @param[out]  paramList    ·µ»ØµÄ²ÎÊıÁĞ±í
+	* @brief  è¯»å–å¤šè½´å‚æ•°
+	* @param       axisList     éœ€è¦è·å–å‚æ•°çš„è½´å·åˆ—è¡¨
+	* @param       paramName    å‚æ•°åç§°
+	* @param[out]  paramList    è¿”å›çš„å‚æ•°åˆ—è¡¨
 	*/
 	int get_axis_param(const std::vector<int>& axisList, const char* paramName, std::vector<float>& paramList);
 	int get_axis_param(int axis, const char* paramName, float& value);
 
 	/**
-	* @brief ÉèÖÃ¶àÖá²ÎÊı
-	* @param       axisList     ĞèÒª»ñÈ¡²ÎÊıµÄÖáºÅÁĞ±í
-	* @param       paramName    ²ÎÊıÃû³Æ
-	* @param       paramList    ²ÎÊıÊı×é
-	* @param       principal    Ö÷ÖáË÷Òı: -1 Á¢¼´ÉèÖÃ; >0 »º³åÖĞÉèÖÃ
+	* @brief è®¾ç½®å¤šè½´å‚æ•°
+	* @param       axisList     éœ€è¦è·å–å‚æ•°çš„è½´å·åˆ—è¡¨
+	* @param       paramName    å‚æ•°åç§°
+	* @param       paramList    å‚æ•°æ•°ç»„
+	* @param       principal    ä¸»è½´ç´¢å¼•: -1 ç«‹å³è®¾ç½®; >0 ç¼“å†²ä¸­è®¾ç½®
 	*/
 	int set_axis_param(const std::vector<int>& axisList, const char* paramName, const std::vector<float>& paramList, int principal = -1);
 	int set_axis_param(int axis, const char* paramName, float value, int principal = -1);
@@ -183,47 +183,47 @@ public:
 	int set_axis_connect(const std::vector<int>& master, const std::vector<int>& slave, const std::vector<float>& ratio);
 
 	/**
-	* @brief Öáµş¼Ó
-	* @param axis      ±»µş¼ÓÖá
-	* @param addAxis   µş¼ÓÖá
+	* @brief è½´å åŠ 
+	* @param axis      è¢«å åŠ è½´
+	* @param addAxis   å åŠ è½´
 	*/
 	int addax(const std::vector<int>& axis, const std::vector<int>& addAxis);
 
 	/**
-	* @brief ¶ÁÈ¡¼Ä´æÆ÷Öµ
-	* @param       start      ²Ù×÷µÄ¼Ä´æÆ÷ÆğÊ¼±àºÅ
-	* @param       numes      ²Ù×÷¸öÊı
-	* @param[out]  pfValue    Êı¾İÁĞ±í
-	* @param       type       ¼Ä´æÆ÷ÀàĞÍ: 0 TABLE; 1 VR
+	* @brief è¯»å–å¯„å­˜å™¨å€¼
+	* @param       start      æ“ä½œçš„å¯„å­˜å™¨èµ·å§‹ç¼–å·
+	* @param       numes      æ“ä½œä¸ªæ•°
+	* @param[out]  pfValue    æ•°æ®åˆ—è¡¨
+	* @param       type       å¯„å­˜å™¨ç±»å‹: 0 TABLE; 1 VR
 	*/
 	int get_register(int start, int numes, std::vector<float>& pfValue, int type = 0);
 
 	/**
-	* @brief ÉèÖÃ¼Ä´æÆ÷Öµ
-	* @param       start      ²Ù×÷µÄ¼Ä´æÆ÷ÆğÊ¼±àºÅ
-	* @param       numes      ²Ù×÷¸öÊı
-	* @param       pfValue    Êı¾İÁĞ±í
-	* @param       type       ¼Ä´æÆ÷ÀàĞÍ: 0 TABLE; 1 VR
+	* @brief è®¾ç½®å¯„å­˜å™¨å€¼
+	* @param       start      æ“ä½œçš„å¯„å­˜å™¨èµ·å§‹ç¼–å·
+	* @param       numes      æ“ä½œä¸ªæ•°
+	* @param       pfValue    æ•°æ®åˆ—è¡¨
+	* @param       type       å¯„å­˜å™¨ç±»å‹: 0 TABLE; 1 VR
 	*/
 	int set_register(int start, const std::vector<float>& pfValue, int type = 0);
 
 	/**
-	* @brief ±£´ætableÊı¾İµ½±¾µØ
+	* @brief ä¿å­˜tableæ•°æ®åˆ°æœ¬åœ°
 	*/
 	int save_table(size_t startIdx, size_t num = 1, const std::string& path = "./tableData.txt");
 
 	/**
-	* @brief  »º³åµÈ´ı
-	* @param  base_axis	²å²¹Ö÷Öá±àºÅ
-	* @param  paraname	²ÎÊıÃû×Ö·û´® DPOS MPOS IN AIN VPSPEED MSPEED MODBUS_REG MODBUS_IEEE MODBUS_BIT NVRAM VECT_BUFFED  REMAIN
-	* @param  inum		²ÎÊı±àºÅ»òÖáºÅ
-	* @param  Cmp_mode	±È½ÏÌõ¼ş 1 >=   0=  -1<=  ¶ÔINµÈBITÀàĞÍ²ÎÊıÎŞĞ§¡£
-	* @param  fvalue	ĞŞ¸ÄÖµ
+	* @brief  ç¼“å†²ç­‰å¾…
+	* @param  base_axis	æ’è¡¥ä¸»è½´ç¼–å·
+	* @param  paraname	å‚æ•°åå­—ç¬¦ä¸² DPOS MPOS IN AIN VPSPEED MSPEED MODBUS_REG MODBUS_IEEE MODBUS_BIT NVRAM VECT_BUFFED  REMAIN
+	* @param  inum		å‚æ•°ç¼–å·æˆ–è½´å·
+	* @param  Cmp_mode	æ¯”è¾ƒæ¡ä»¶ 1 >=   0=  -1<=  å¯¹INç­‰BITç±»å‹å‚æ•°æ— æ•ˆã€‚
+	* @param  fvalue	ä¿®æ”¹å€¼
 	*/
 	int move_wait(uint32 base_axis, const char * paraname, int inum, int Cmp_mode, float fvalue);
 
 	/**
-	* @brief ÉèÖÃIO
+	* @brief è®¾ç½®IO
 	*/
 	int get_in(int ioNum);
 	int get_invert_in(int ioNum);
@@ -232,29 +232,29 @@ public:
 	int set_op(int ioNum, int state);
 
 	/**
-	* @brief  »ñÈ¡×ÜÏß½ÚµãĞÅÏ¢
-	* @param  info    ½ÚµãĞÅÏ¢ <VENDER, DEVICE, VERSION, ALIAS>
-	* @return 0       Õı³£·µ»Ø
-	          -1      ½ÚµãÊıÒì³£
+	* @brief  è·å–æ€»çº¿èŠ‚ç‚¹ä¿¡æ¯
+	* @param  info    èŠ‚ç‚¹ä¿¡æ¯ <VENDER, DEVICE, VERSION, ALIAS>
+	* @return 0       æ­£å¸¸è¿”å›
+	          -1      èŠ‚ç‚¹æ•°å¼‚å¸¸
 	*/
 	int get_node_info(std::vector<std::vector<int>>& info);
 
 	/**
-	* @brief  ĞŞ¸Ä PDO
-	* @param  node        ½ÚµãĞòºÅ
-	* @param  index       PDO Ë÷Òı
-	* @param  subIndex    PDO ×ÓË÷Òı
-	* @param  type        PDO ÀàĞÍ
-	* @param  value       ´ıĞ´ÈëÖµ
+	* @brief  ä¿®æ”¹ PDO
+	* @param  node        èŠ‚ç‚¹åºå·
+	* @param  index       PDO ç´¢å¼•
+	* @param  subIndex    PDO å­ç´¢å¼•
+	* @param  type        PDO ç±»å‹
+	* @param  value       å¾…å†™å…¥å€¼
 	*/
 	int write_node_pdo(int node, int index, int subIndex, int type, int value);
 	/**
-	* @brief ¶ÁÈ¡ PDO
-	* @param        node        ½ÚµãĞòºÅ
-	* @param        index       PDO Ë÷Òı
-	* @param        subIndex    PDO ×ÓË÷Òı
-	* @param        type        PDO ÀàĞÍ
-	* @param [out]  value       ¶ÁÈ¡Öµ
+	* @brief è¯»å– PDO
+	* @param        node        èŠ‚ç‚¹åºå·
+	* @param        index       PDO ç´¢å¼•
+	* @param        subIndex    PDO å­ç´¢å¼•
+	* @param        type        PDO ç±»å‹
+	* @param [out]  value       è¯»å–å€¼
 	*/
 	int read_node_pdo(int node, int index, int subIndex, int type, int *value);
 
@@ -262,54 +262,54 @@ public:
 
 
 	/**
-	* @brief Jog µã¶¯
-	* @param       axis    ÔË¶¯ÖáºÅ
-	* @param       dir     ÔË¶¯·½Ïò
-					 0     Í£Ö¹ÔË¶¯
-				     1     ÕıÏòÔË¶¯
-				    -1     ¸ºÏòÔË¶¯
+	* @brief Jog ç‚¹åŠ¨
+	* @param       axis    è¿åŠ¨è½´å·
+	* @param       dir     è¿åŠ¨æ–¹å‘
+					 0     åœæ­¢è¿åŠ¨
+				     1     æ­£å‘è¿åŠ¨
+				    -1     è´Ÿå‘è¿åŠ¨
 	*/
 	int axis_jog(int axis, int dir);
 
 	/**
-	* @brief ¶àÖáÏà¶ÔÔË¶¯
-	* @param       axis         ÔË¶¯ÖáºÅ
-	* @param       relMove      Ïà¶ÔÎ»ÒÆ
-	* @param       moveType     ÔË¶¯ÀàĞÍ
-	                       0    SP ÔË¶¯
-						   1    ÆÕÍ¨ÔË¶¯
-	* @param       mask         ÖáÆÁ±Î×´Ì¬
+	* @brief å¤šè½´ç›¸å¯¹è¿åŠ¨
+	* @param       axis         è¿åŠ¨è½´å·
+	* @param       relMove      ç›¸å¯¹ä½ç§»
+	* @param       moveType     è¿åŠ¨ç±»å‹
+	                       0    SP è¿åŠ¨
+						   1    æ™®é€šè¿åŠ¨
+	* @param       mask         è½´å±è”½çŠ¶æ€
 	*/
 	int move(const std::vector<int>& axis, const std::vector<float>& relMove, int moveType = 0, const std::vector<int>& mask = {});
 	/**
-	* @brief ¶àÖá¾ø¶ÔÔË¶¯
-	* @param       axis         ÔË¶¯ÖáºÅ
-	* @param       endMove      Ä¿±êÎ»ÖÃ
-	* @param       moveType     ÔË¶¯ÀàĞÍ
-						   0    SP ÔË¶¯
-						   1    ÆÕÍ¨ÔË¶¯
-	* @param       mask         ÖáÆÁ±Î×´Ì¬
+	* @brief å¤šè½´ç»å¯¹è¿åŠ¨
+	* @param       axis         è¿åŠ¨è½´å·
+	* @param       endMove      ç›®æ ‡ä½ç½®
+	* @param       moveType     è¿åŠ¨ç±»å‹
+						   0    SP è¿åŠ¨
+						   1    æ™®é€šè¿åŠ¨
+	* @param       mask         è½´å±è”½çŠ¶æ€
 	*/
 	int moveABS(const std::vector<int>& axis, const std::vector<float>& endMove, int moveType = 0, const std::vector<int>& mask = {});
 
 	int baseCMD(const std::vector<int>& axis, const char * paraname, const std::vector<float>& cmdData);
 
 	/**
-	* @brief ÖáÍ£Ö¹
-	* @param    axis    Í£Ö¹ÖáºÅ
-	* @param    mode    Í£Ö¹Ä£Ê½
+	* @brief è½´åœæ­¢
+	* @param    axis    åœæ­¢è½´å·
+	* @param    mode    åœæ­¢æ¨¡å¼
 	*/
 	int axis_stop(const std::vector<int>& axis, int mode = 2);
 
 	/**
-	* @brief ÏÂ·¢×Ô±àÖ¸Áî
-	* @param       pszCommand     ÏÂ·¢Ö¸Áî£¬³¤¶È2048
-	* @param       psResponse     Ö¸Áî·µ»ØÖµ£¬³¤¶È2048
+	* @brief ä¸‹å‘è‡ªç¼–æŒ‡ä»¤
+	* @param       pszCommand     ä¸‹å‘æŒ‡ä»¤ï¼Œé•¿åº¦2048
+	* @param       psResponse     æŒ‡ä»¤è¿”å›å€¼ï¼Œé•¿åº¦2048
 	* @param       cmdType        0 - ZAux_Execute. 1 - ZAux_DirectCommand
 	*/
 	int sendCmd(const char* pszCommand, char* psResponse, int cmdType = 1);
 	/**
-	* @brief ²¶»ñRtsysÈÕÖ¾
+	* @brief æ•è·Rtsysæ—¥å¿—
 	*/
 	int read_message();
 };

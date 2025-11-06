@@ -1,4 +1,4 @@
-
+﻿
 set(QT5_DIR "D:/Qt/Qt5.12.8/5.12.8/msvc2017_64")
 find_package(Qt5 PATHS "${QT5_DIR}/lib/cmake/Qt5" REQUIRED COMPONENTS Core Widgets LinguistTools Concurrent Network)
 set(CMAKE_AUTOUIC ON)
@@ -26,7 +26,7 @@ target_include_directories(qt_ui PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# FSAI app: �źźͲ�
+# FSAI app: 信号和槽
 add_library(fsai_app
   fsai_app.cpp
 )

@@ -1,4 +1,4 @@
-
+ï»¿
 #include <iostream>
 
 #include "interpolation/InterpSegment.h"
@@ -6,11 +6,11 @@
 int main() {
 	std::cout << "hello world" << std::endl;
 
-	// ²å²¹½á¹û²ÉÑùÖÜÆÚ
+	// æ’è¡¥ç»“æœé‡‡æ ·å‘¨æœŸ
 	double Ts = 1e-3;
-	// ²ÉÑùÏ¸»¯±¶ÂÊ
+	// é‡‡æ ·ç»†åŒ–å€ç‡
 	int N = 10;
-	// ²å²¹¼ÆËãÖÜÆÚ
+	// æ’è¡¥è®¡ç®—å‘¨æœŸ
 	double dt = Ts / N;
 
 	InterpConstraint constraint(5,-5, 10,-8, 30,-40);
@@ -18,23 +18,23 @@ int main() {
 	InterpSegment seg0;
 	seg0.set_constraint(constraint);
 
-	// µ±Ç°²å²¹¹ì¼£
+	// å½“å‰æ’è¡¥è½¨è¿¹
 	InterpBoundary boundary;
 	std::queue<InterpBoundary> boundaryQueue;
-	// ²å²¹¹ì¼£ĞòºÅ
-	// ¹ì¼£¿ªÊ¼²å²¹ÖÜÆÚÊı, ½áÊøÖÜÆÚÊı, ¿ªÊ¼¼õËÙÖÜÆÚÊı
+	// æ’è¡¥è½¨è¿¹åºå·
+	// è½¨è¿¹å¼€å§‹æ’è¡¥å‘¨æœŸæ•°, ç»“æŸå‘¨æœŸæ•°, å¼€å§‹å‡é€Ÿå‘¨æœŸæ•°
 	int k0 = -1, k1 = 0, kd = 0;
 	for (size_t i = 0; i < 1e3; ++i) {
-		// ¸üĞÂ²å²¹¹ì¼£
+		// æ›´æ–°æ’è¡¥è½¨è¿¹
 		if (k0 < 0) {
 			boundary = boundaryQueue.front();
 			boundaryQueue.pop();
 			k0 = i;
 		}
 
-		// ¿ªÊ¼²å²¹
+		// å¼€å§‹æ’è¡¥
 
-		// Êä³ö²å²¹½á¹û
+		// è¾“å‡ºæ’è¡¥ç»“æœ
 	}
 
 	return 0;

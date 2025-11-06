@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <QDialog>
 
@@ -8,7 +8,7 @@
 
 class AdvanceConfigWindow : public QDialog {
 public:
-	// Ö÷Ò³Ãæ
+	// ä¸»é¡µé¢
 	std::shared_ptr<Ui_AdvanceConfigWindow> ui;
 
 private:
@@ -18,14 +18,14 @@ public:
 	AdvanceConfigWindow();
 	virtual ~AdvanceConfigWindow();
 
-	// Êä³öµ±Ç°ÏÔÊ¾Êı¾İ
+	// è¾“å‡ºå½“å‰æ˜¾ç¤ºæ•°æ®
 	void export_display_data(MainWindowDisplayData& data);
 
 private:
 
 	Q_OBJECT
 public slots:
-	// Ë¢ĞÂÏÔÊ¾Êı¾İ
+	// åˆ·æ–°æ˜¾ç¤ºæ•°æ®
 	void refresh_display_data(const MainWindowDisplayData& data);
 
 signals:

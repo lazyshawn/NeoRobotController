@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 #include <map>
@@ -8,11 +8,11 @@
 
 namespace FSAIRobotInterface {
 
-// ×Ô¶¨Òå²ÎÊı
+// è‡ªå®šä¹‰å‚æ•°
 struct Sync_Unit {
-	// Í¬²½ÀàĞÍ: -1:ÎŞ, 1:¹ØÁª, 2:Í¬²½, 3:Ğ­Í¬, 4:µÈ´ı, 5:¼¤»î
+	// åŒæ­¥ç±»å‹: -1:æ— , 1:å…³è”, 2:åŒæ­¥, 3:ååŒ, 4:ç­‰å¾…, 5:æ¿€æ´»
 	int type = -1;
-	// Í¬²½×é: <»úÆ÷ÈËID, Í¬²½±àºÅ>
+	// åŒæ­¥ç»„: <æœºå™¨äººID, åŒæ­¥ç¼–å·>
 	std::pair<int, int> item;
 
 	Sync_Unit() {};
@@ -21,26 +21,26 @@ struct Sync_Unit {
 
 struct Sync_Config {
 
-	// <Í¬²½ÀàĞÍ, <»úÆ÷ÈËID£¬Í¬²½±àºÅ>>
+	// <åŒæ­¥ç±»å‹, <æœºå™¨äººIDï¼ŒåŒæ­¥ç¼–å·>>
 	std::map<int, std::vector<std::pair<int, int>>> map;
 
-	// Çå¿Õ
+	// æ¸…ç©º
 	inline void clear() {
 		map.clear();
 	}
-	// Í¬²½×éÅÅĞò
+	// åŒæ­¥ç»„æ’åº
 	void sort();
 
-	// ´¦ÀíÌí¼Ó¹æÔò
+	// å¤„ç†æ·»åŠ è§„åˆ™
 	int add_sync_item(int syncType, int robotId, int num);
 	int add_sync_item(const Sync_Unit item);
-	// Í¬²½²ÎÊıÊÇ·ñÏàÍ¬
+	// åŒæ­¥å‚æ•°æ˜¯å¦ç›¸åŒ
 	bool different_from(Sync_Config& next);
 };
 
 
 struct Move_Action {
-	//! ´¥·¢µ×²ã·â×°µÄÌØÊâ¶¯×÷ <¶¯×÷ÀàĞÍ£¬¶¯×÷²ÎÊı>
+	//! è§¦å‘åº•å±‚å°è£…çš„ç‰¹æ®ŠåŠ¨ä½œ <åŠ¨ä½œç±»å‹ï¼ŒåŠ¨ä½œå‚æ•°>
 	std::vector<std::pair<int, std::vector<float>>> actionBefore;
 	std::vector<std::pair<int, std::vector<float>>> actionAfter;
 };
@@ -50,37 +50,37 @@ struct Move_Config {
 	float smooth = -1;
 };
 
-// ×Ô¶¨Òå²ÎÊıÀàĞÍ
+// è‡ªå®šä¹‰å‚æ•°ç±»å‹
 enum class AppendixType {
 	WAVE_CFG, TRACK_CFG, WELD_CFG, REARC_CFG, MOTION_CFG, Sync_CFG, MOVE_CONFIG
 };
 
-// ×Ô¶¨Òå²ÎÊıĞòÁĞ»¯Óë·´ĞòÁĞ»¯
-// °Úº¸²ÎÊı
+// è‡ªå®šä¹‰å‚æ•°åºåˆ—åŒ–ä¸ååºåˆ—åŒ–
+// æ‘†ç„Šå‚æ•°
 std::pair<int, std::vector<float>> serialize_Weave(const Weave& waveCfg);
 Weave deserialize_Weave(const std::map<int, std::vector<float>>& appendix);
 
-// º¸½Ó²ÎÊı
+// ç„Šæ¥å‚æ•°
 std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_WeldingParaItem& weldCfg);
 Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vector<float>>& appendix);
 
-// ÔÙÆğ»¡²ÎÊı
+// å†èµ·å¼§å‚æ•°
 std::pair<int, std::vector<float>> serialize_ReArc(const ReArc& cfg);
 ReArc serialize_ReArc(const std::map<int, std::vector<float>>& appendix);
 
-// ¸ú×Ù²ÎÊı
+// è·Ÿè¸ªå‚æ•°
 std::pair<int, std::vector<float>> serialize_Track(const Track& trackCfg);
 Track deserialize_Track(const std::map<int, std::vector<float>>& appendix);
 
-// »º³åÔË¶¯²ÎÊı
+// ç¼“å†²è¿åŠ¨å‚æ•°
 std::pair<int, std::vector<float>> serialize_Move_Action(const Move_Action& waveCfg);
 Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& appendix);
 
-// Ğ­Í¬²ÎÊı
+// ååŒå‚æ•°
 std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg);
 Sync_Config deserialize_Sync_Config(const std::map<int, std::vector<float>>& appendix);
 
-// ÔË¶¯²ÎÊı
+// è¿åŠ¨å‚æ•°
 std::pair<int, std::vector<float>> serialize_Move_Config(const Move_Config& moveCfg);
 Move_Config deserialize_Move_Config(const std::map<int, std::vector<float>>& appendix);
 

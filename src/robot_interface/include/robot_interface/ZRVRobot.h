@@ -1,8 +1,8 @@
-#pragma once
+ï»¿#pragma once
 /*********************************
  * TODO:
- * 1. ÖáºÅÆÁ±Î¡£
- * 1. ÔİÍ£ºóµã¶¯¡£
+ * 1. è½´å·å±è”½ã€‚
+ * 1. æš‚åœåç‚¹åŠ¨ã€‚
  *********************************/
 
 #include "CoopRobot.h"
@@ -12,12 +12,12 @@ namespace FSAIRobotInterface {
 
 class ZRVRobot : public RobotBase {
 
-	// ½Ó¿Ú
+	// æ¥å£
 public:
-	//! »ñÈ¡ÏÂ·¢Ö¸ÁîÖáºÅ£¬Ö÷ÒªÓÃÓÚÈ·¶¨ÔË¶¯Ö÷Öá
+	//! è·å–ä¸‹å‘æŒ‡ä»¤è½´å·ï¼Œä¸»è¦ç”¨äºç¡®å®šè¿åŠ¨ä¸»è½´
 	std::vector<int> get_execute_axis() override;
 
-	// »úÆ÷ÈË×´Ì¬
+	// æœºå™¨äººçŠ¶æ€
 	int update_rt_robot_status() override;
 	int get_all_robot_status(RobotStatus& status) override;
 
@@ -31,13 +31,13 @@ public:
 	int moveCABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) override;
 
 	/**
-	* @brief  ÉèÖÃÊÖ¶¯ËÙ¶È±ÈÂÊ
-	* @param  ratio    ËÙ¶È±ÈÂÊ(0-100)
-	* @return ÉèÖÃ×´Ì¬: 0 - ÉèÖÃ³É¹¦; 1 - Î´´¦ÓÚÊÖ¶¯Ä£Ê½
+	* @brief  è®¾ç½®æ‰‹åŠ¨é€Ÿåº¦æ¯”ç‡
+	* @param  ratio    é€Ÿåº¦æ¯”ç‡(0-100)
+	* @return è®¾ç½®çŠ¶æ€: 0 - è®¾ç½®æˆåŠŸ; 1 - æœªå¤„äºæ‰‹åŠ¨æ¨¡å¼
 	*/
 	int set_manual_speed(float ratio) override;
 
-	// ×Ô¶¯ÈÎÎñ
+	// è‡ªåŠ¨ä»»åŠ¡
 	int update_swing_config() override;
 	int update_track_config() override;
 	int update_welder_config() override;
@@ -47,21 +47,21 @@ public:
 	int execute_single_joint() override;
 	int execute_single_cartesian() override;
 
-	// ÉèÖÃÔË¶¯ĞĞºÅ
+	// è®¾ç½®è¿åŠ¨è¡Œå·
 	int send_line_num(int axis, const SingleTrajectory &curTraj) override;
 
-	// Ê£Óà»º³å¼ì²â
+	// å‰©ä½™ç¼“å†²æ£€æµ‹
 	int remain_buffer_free() override;
 
-	// Ò»ÖÂĞÔ¹ì¼£Ô¤´¦Àí£¬¿ÉÒÔÁ¬ĞøÏÂ·¢µÄ¹ì¼£
+	// ä¸€è‡´æ€§è½¨è¿¹é¢„å¤„ç†ï¼Œå¯ä»¥è¿ç»­ä¸‹å‘çš„è½¨è¿¹
 	int set_ready_for_consistent_traj(int& state) override;
 
-	// Ò»ÖÂĞÔ¹ì¼£¾ÍĞ÷
+	// ä¸€è‡´æ€§è½¨è¿¹å°±ç»ª
 	int consistent_traj_ready(int& state) override;
 
 	int separate_trajectory() override;
 
-	/* *************************** ÉÏ²ã×Ô¶¨Òå½Ó¿Ú *************************** */
+	/* *************************** ä¸Šå±‚è‡ªå®šä¹‰æ¥å£ *************************** */
 	int read_saved_status(RobotStatus& status) override;
 
 	int get_local_world_dpos(std::vector<float>& dpos) override;
@@ -80,11 +80,11 @@ public:
 	int task_stop() override;
 	int emergency_stop() override;
 
-	// Éè±¸²Ù×÷
+	// è®¾å¤‡æ“ä½œ
 	int device_operation() override;
 
-	/* *************************** ¿ÉĞŞ¸Ä½Ó¿Ú *************************** */
-	// ¹ì¼£ÏÂ·¢ºó´¦Àí
+	/* *************************** å¯ä¿®æ”¹æ¥å£ *************************** */
+	// è½¨è¿¹ä¸‹å‘åå¤„ç†
 	int process_after_send_traj() override;
 
 private:
@@ -100,7 +100,7 @@ public:
 	std::vector<int> get_robot_tcp_axis();
 
 
-	// °Úº¸²ÎÊı
+	// æ‘†ç„Šå‚æ•°
 	int get_swing_num();
 
 	int update_swing_table(const Weave& waveCfg);

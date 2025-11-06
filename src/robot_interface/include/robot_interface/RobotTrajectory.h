@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <eigen3/Eigen/Dense>
 #include <list>
@@ -12,41 +12,41 @@ typedef float DT_scale;
 const DT_scale DT_PI = 3.14159265358979323846;
 
 
-// ¼ÆËãµÈĞ§µÄ zyx Å·À­½Ç
+// è®¡ç®—ç­‰æ•ˆçš„ zyx æ¬§æ‹‰è§’
 Eigen::Matrix<DT_scale, 3, 1> get_equivalent_zyx_euler(const Eigen::Matrix<DT_scale, 3, 1>& endEuler);
 
-// ¼ÆËãÁ½×é zyx Å·À­½ÇÖ®¼äµÄÏà¶Ô¾àÀë
+// è®¡ç®—ä¸¤ç»„ zyx æ¬§æ‹‰è§’ä¹‹é—´çš„ç›¸å¯¹è·ç¦»
 Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 1>& begEuler, Eigen::Matrix<DT_scale, 3, 1>& endEuler, bool chooseMimumDist = true);
 
-// ¼ÆËãÁ½×é zyx Å·À­½ÇÖ®¼äµÄÏà¶Ô¾àÀë£¬¾­¹ıÖĞ¼äµã
+// è®¡ç®—ä¸¤ç»„ zyx æ¬§æ‹‰è§’ä¹‹é—´çš„ç›¸å¯¹è·ç¦»ï¼Œç»è¿‡ä¸­é—´ç‚¹
 Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 1>& begEuler, Eigen::Matrix<DT_scale, 3, 1>& midEuler, Eigen::Matrix<DT_scale, 3, 1>& endEuler);
 
-// ¼ÆËã¹ì¼£ĞÅÏ¢
+// è®¡ç®—è½¨è¿¹ä¿¡æ¯
 std::vector<DT_scale> calc_traj_info(const std::vector<DT_scale>& begPnt, const std::vector<DT_scale>& midPnt, const std::vector<DT_scale>& endPnt, int mode);
 
 
-// ¹ì¼£ÀàĞÍ
+// è½¨è¿¹ç±»å‹
 enum class TrajType {
-	// Î´¶¨Òå
+	// æœªå®šä¹‰
 	None,
 
-	// ¾ø¶ÔÔË¶¯
+	// ç»å¯¹è¿åŠ¨
 	//JointABS, LineABS, ArcABS,
-	// Ïà¶ÔÔË¶¯
+	// ç›¸å¯¹è¿åŠ¨
 	Joint, Line, Arc,
 
-	// »úÆ÷ÈË×ø±êÏµÎ»ÖÃ
+	// æœºå™¨äººåæ ‡ç³»ä½ç½®
 	Line_R, Arc_R
 };
 
 
 struct TrajectoryPoint {
-	// ¹ì¼£ÀàĞÍ
+	// è½¨è¿¹ç±»å‹
 	TrajType trajType = TrajType::None;
 
-	// ¹ì¼£µãÊı¾İ
+	// è½¨è¿¹ç‚¹æ•°æ®
 	std::vector<DT_scale> mainPoint;
-	// ²¹³äÊı¾İ£¬ÈçÔ²»¡ÔË¶¯µÄÖĞ¼äµãµÈ
+	// è¡¥å……æ•°æ®ï¼Œå¦‚åœ†å¼§è¿åŠ¨çš„ä¸­é—´ç‚¹ç­‰
 	std::vector<DT_scale> auxPoint;
 
 	TrajectoryPoint();
@@ -73,12 +73,12 @@ struct TrajectoryPoint {
 		return auxPoint;
 	}
 
-	// Óë¸ø¶¨µãÏà½ü
+	// ä¸ç»™å®šç‚¹ç›¸è¿‘
 	//bool isClose(const TrajectoryPoint& other) const;
 
 	/**
-	* @brief  ²éÑ¯ÊÇ·ñÊÇ¹Ø½ÚÔË¶¯
-	* @return ²éÑ¯½á¹û
+	* @brief  æŸ¥è¯¢æ˜¯å¦æ˜¯å…³èŠ‚è¿åŠ¨
+	* @return æŸ¥è¯¢ç»“æœ
 	*/
 	int isJoint() const;
 	int isLine() const;
@@ -89,18 +89,18 @@ struct TrajectoryPoint {
 
 
 struct TrajectoryConfig {
-	// ËÙ¶È
+	// é€Ÿåº¦
 	DT_scale speed = 10;
-	// Æ½»¬¶È
+	// å¹³æ»‘åº¦
 	DT_scale smooth = 0;
-	// »úÆ÷ÈË×ø±êÏµÏÂÔË¶¯
+	// æœºå™¨äººåæ ‡ç³»ä¸‹è¿åŠ¨
 	bool moveInBase = false;
-	// ÖáºÅÑÚÂë
+	// è½´å·æ©ç 
 	std::vector<int> axisMask;
-	// Ğ­Í¬¶Î×Ü¾àÀë
+	// ååŒæ®µæ€»è·ç¦»
 	DT_scale syncDist = 0;
 
-	// ×Ô¶¨Òå²ÎÊı
+	// è‡ªå®šä¹‰å‚æ•°
 	std::map<int, std::vector<DT_scale>> appendix;
 
 public:
@@ -164,9 +164,9 @@ public:
 
 class SingleTrajectory : public TrajectoryPoint, public TrajectoryConfig {
 public:
-	//! ±£´æ±àºÅ
+	//! ä¿å­˜ç¼–å·
 	int saveSeq = -1;
-	//! ¹ì¼£±àºÅ
+	//! è½¨è¿¹ç¼–å·
 	int lineNum = 0;
 
 	SingleTrajectory();
@@ -183,68 +183,68 @@ public:
 
 
 class DiscreteTrajectory {
-	//! ¹ì¼£ĞòºÅ
+	//! è½¨è¿¹åºå·
 	//int trajNum = -1;
-	// µ±Ç°¶Î¹ì¼£Êı¾İ
+	// å½“å‰æ®µè½¨è¿¹æ•°æ®
 	DT_scale dist;
 	std::vector<DT_scale> dir;
 	std::vector<DT_scale> knot;
-	// ÉÏÒ»Ìõ¹ì¼£
+	// ä¸Šä¸€æ¡è½¨è¿¹
 	SingleTrajectory preTraj;
 
 public:
-	// ¹ì¼£Á´±í
+	// è½¨è¿¹é“¾è¡¨
 	std::list<SingleTrajectory> trajList;
 
 	DiscreteTrajectory();
 
-	// Ìí¼Ó¹ì¼£
+	// æ·»åŠ è½¨è¿¹
 	int moveJABS(const std::vector<DT_scale>& end, const TrajectoryConfig& config);
 	int moveLABS(const std::vector<DT_scale>& end, const TrajectoryConfig& config);
 	int moveCABS(const std::vector<DT_scale>& mid, const std::vector<DT_scale>& end, const TrajectoryConfig& config);
 
-	// Ìí¼ÓÁ¬Ğø¹ì¼£
+	// æ·»åŠ è¿ç»­è½¨è¿¹
 	int push_new_trajectory(const DiscreteTrajectory& newTraj);
 
-	// Ê©¼Ó×ª»»
+	// æ–½åŠ è½¬æ¢
 	int apply_rotate(const Eigen::Matrix<DT_scale, 3, 3>& rotMat);
 
 
-	// µ±Ç°¹ì¼£³¤¶È
+	// å½“å‰è½¨è¿¹é•¿åº¦
 	inline int size() {
 		return trajList.size();
 	}
-	// ¹ì¼£Ö¸ÁîÑ¹Õ»Íê³É, empty
+	// è½¨è¿¹æŒ‡ä»¤å‹æ ˆå®Œæˆ, empty
 	bool trajectory_loaded();
-	// µü´úÆ÷ÒÆ¶¯µ½ÏÂÒ»Ìõ¹ì¼£
+	// è¿­ä»£å™¨ç§»åŠ¨åˆ°ä¸‹ä¸€æ¡è½¨è¿¹
 	int next();
 	void clear();
-	// µ±Ç°¹ì¼£ÊÇ×îºóÒ»Ìõ
+	// å½“å‰è½¨è¿¹æ˜¯æœ€åä¸€æ¡
 	bool atLast() const;
-	// »ñÈ¡µ±Ç°¹ì¼£
+	// è·å–å½“å‰è½¨è¿¹
 	SingleTrajectory get_curTraj() const;
-	// »ñÈ¡ÉÏÒ»Ìõ¹ì¼£
+	// è·å–ä¸Šä¸€æ¡è½¨è¿¹
 	SingleTrajectory get_preTraj() const;
-	// »ñÈ¡ÏÂÒ»Ìõ¹ì¼£
+	// è·å–ä¸‹ä¸€æ¡è½¨è¿¹
 	SingleTrajectory get_aftTraj() const;
-	// ÉèÖÃÉÏÒ»Ìõ¹ì¼£
+	// è®¾ç½®ä¸Šä¸€æ¡è½¨è¿¹
 	int set_preTraj(const SingleTrajectory& traj);
 	int set_preTraj(const TrajectoryPoint& point);
-	// ÉèÖÃµ±Ìõ¹ì¼£µÄĞòºÅ
+	// è®¾ç½®å½“æ¡è½¨è¿¹çš„åºå·
 	inline int set_current_line_num(int num) {
 		trajList.front().lineNum = num;
 		return 0;
 	}
-	// Éè¶¨ÉÏÌõ¹ì¼£µÄĞòºÅ
+	// è®¾å®šä¸Šæ¡è½¨è¿¹çš„åºå·
 	inline int set_previous_line_num(int num) {
 		preTraj.lineNum = num;
 		return 0;
 	}
 
 
-	// ¼ÆËã¹ì¼£ĞÅÏ¢
+	// è®¡ç®—è½¨è¿¹ä¿¡æ¯
 	int calc_traj_info();
-	// »ñÈ¡Ïà¶Ô¾àÀë
+	// è·å–ç›¸å¯¹è·ç¦»
 	std::vector<DT_scale> get_relative_distance();
 	inline DT_scale get_dist() {
 		return dist;
@@ -259,16 +259,16 @@ public:
 
 
 /**
-* @brief ·Ö¶Î¹ì¼£
+* @brief åˆ†æ®µè½¨è¿¹
 		------------------------------------------------
-		|             ¡ü              ¡ü               |
+		|             â†‘              â†‘               |
 		preTraj(0)     begRatio        endRatio        curTraj(1 or dist)
-					  ©¸--------------©¼ ans
-* @param  preTraj     Ç°Ò»Ìõ¹ì¼£/Æğµã
-* @param  curTraj     Ä¿±ê¹ì¼£/ÖÕµã
-* @param  begRatio    ·Ö¶ÎÆğµã
-* @param  endRatio    ·Ö¶ÎÖÕµã
-* @param  mode        Ä£Ê½: 0-±ÈÀı, 1-¾àÀë
+					  â””--------------â”˜ ans
+* @param  preTraj     å‰ä¸€æ¡è½¨è¿¹/èµ·ç‚¹
+* @param  curTraj     ç›®æ ‡è½¨è¿¹/ç»ˆç‚¹
+* @param  begRatio    åˆ†æ®µèµ·ç‚¹
+* @param  endRatio    åˆ†æ®µç»ˆç‚¹
+* @param  mode        æ¨¡å¼: 0-æ¯”ä¾‹, 1-è·ç¦»
 * @return
 */
 //TrajectoryPoint partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode);
