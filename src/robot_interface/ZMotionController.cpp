@@ -730,7 +730,7 @@ int Controller::move(const std::vector<int>& axis, const std::vector<float>& rel
 
 	int ret = 0;
 	// …˙≥…√¸¡Ó
-	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
+	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048] = { 0 };
 
 	strcpy(cmdbuff, "BASE(");
 	for (size_t i = 0; i < num; i++) {

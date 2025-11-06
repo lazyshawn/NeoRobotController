@@ -632,7 +632,10 @@ int ZMotionRobot::execute_single_cartesian() {
 		// 正弦摆
 		if (waveCfg.Shape == 0) {
 			// 第一个1/4周期占用的相位角
-			float detQ = std::asin((waveCfg.LeftWidth - waveCfg.RightWidth) / (waveCfg.LeftWidth + waveCfg.RightWidth));
+			float detQ = 0;
+			if (std::fabs(waveCfg.LeftWidth + waveCfg.RightWidth) > 1e-3) {
+				detQ = std::asin((waveCfg.LeftWidth - waveCfg.RightWidth) / (waveCfg.LeftWidth + waveCfg.RightWidth));
+			}
 			float rightPartial = 1.0 / numPeriod * (DT_PI / 2 - detQ) / (2 * DT_PI);
 			float leftPartial = 1.0 / numPeriod * (DT_PI / 2 + detQ) / (2 * DT_PI);
 
