@@ -21,6 +21,9 @@ struct Sync_Unit {
 
 struct Sync_Config {
 
+	//! 启用同步
+	int Id = 1;
+
 	// <同步类型, <机器人ID，同步编号>>
 	std::map<int, std::vector<std::pair<int, int>>> map;
 

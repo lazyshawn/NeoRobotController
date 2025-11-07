@@ -308,8 +308,9 @@ std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg) {
 
 	// <mapSize, <type, size, <robot, num>>>
 	std::pair<int, std::vector<float>> ans;
-	std::vector<float> param;
+	std::vector<float> param(1, syncCfg.Id);
 
+	// 同步类型个数
 	param.push_back(syncCfg.map.size());
 
 	for (const auto& unit : syncCfg.map) {
@@ -330,11 +331,14 @@ std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg) {
 Sync_Config deserialize_Sync_Config(const std::map<int, std::vector<float>>& appendix) {
 	Sync_Config cfg;
 	auto ite = appendix.find(static_cast<int>(AppendixType::Sync_CFG));
-	if (ite == appendix.end())
+	if (ite == appendix.end()) {
+		cfg.Id = 0;
 		return cfg;
+	}
 	std::vector<float> param = ite->second;
 
-	int cfgSize = param[0], beg = 1, end = 1;
+	cfg.Id = param[0];
+	int cfgSize = param[1], beg = 2, end = 2;
 	for (size_t i = 0; i < cfgSize; ++i) {
 		int type = param[beg++];
 		int vecSize = param[beg++];
