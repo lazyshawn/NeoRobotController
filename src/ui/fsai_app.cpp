@@ -553,19 +553,24 @@ void FSAIApp::connect_slot() {
 		// 使能
 		for (auto& idx : idxList) {
 			group.robotList[idx]->switch_enable(true);
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
 	});
 
 	// 重启机器人
 	QObject::connect(mainWindow->ui->pushButton_11, &QPushButton::pressed, this, [&]() {
-		if (worker->displayData->interpAlgo == 0) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZMotionRobot.zar", 0);
-		}
-		else if (worker->displayData->interpAlgo == 1) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZRVRobot.zar", 0);
-		}
-		else if (worker->displayData->interpAlgo == 2) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/FSAIRobot.zar", 0);
+		std::vector<int> idxList = get_selected_robot_idx();
+
+		for (auto& idx : idxList) {
+			if (worker->displayData->interpAlgo == 0) {
+				group.robotList[idx]->reboot("./ctr/ZMotionRobot.zar", 0);
+			}
+			else if (worker->displayData->interpAlgo == 1) {
+				group.robotList[idx]->reboot("./ctr/ZRVRobot.zar", 0);
+			}
+			else if (worker->displayData->interpAlgo == 2) {
+				group.robotList[idx]->reboot("./ctr/FSAIRobot.zar", 0);
+			}
 		}
 	});
 
