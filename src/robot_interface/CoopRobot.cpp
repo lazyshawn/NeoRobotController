@@ -1083,7 +1083,7 @@ void RobotGroupManager::processCommandThread() {
 				if (!robot_sync_ready(i)) {
 					if (get_bit(coopState[i], 3) == 0) {
 						LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " not synced: "
-							<< vector_to_string(serialize_Sync_Config(deserialize_Sync_Config(curTraj.appendix)).second));
+							<< vector_to_string(serialize_Sync_Config(deserialize_Sync_Config(curTraj.appendix)).second), 2);
 						set_bit(coopState[i], 3, true);
 					}
 					break;
@@ -1093,7 +1093,7 @@ void RobotGroupManager::processCommandThread() {
 				}
 
 				// IO 同步标志复位
-				//reset_wait_state(i);
+				reset_wait_state(i);
 
 				// 检查地轨指令是否已经下发
 				if (robotList[i]->find_command_axis(curTraj, sharedAxisState.first) >= 0 && sharedAxisState.second >= 0 && sharedAxisState.second != i) {
@@ -1128,6 +1128,7 @@ void RobotGroupManager::processCommandThread() {
 
 				// 执行运动后动作
 				robotList[i]->execute_move_action(action.actionAfter, 1);
+
 
 				// 轨迹下发后的处理
 				robotList[i]->process_after_send_traj();
@@ -1289,13 +1290,13 @@ void RobotGroupManager::updateStatusThread() {
 			while (now > wakeUpTime)
 				wakeUpTime += std::chrono::milliseconds(duration);
 
-			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted: "
-				<< std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - tmpStart).count() << ". "
-				<< "start at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpStart - start).count() << ". "
-				<< "end at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - start).count() << ". "
-				<< "next: " << std::chrono::duration_cast<std::chrono::milliseconds>(wakeUpTime - start).count()
-				<< "\ndt: " << vector_to_string(dt)
-			);
+			//LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted: "
+			//	<< std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - tmpStart).count() << ". "
+			//	<< "start at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpStart - start).count() << ". "
+			//	<< "end at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - start).count() << ". "
+			//	<< "next: " << std::chrono::duration_cast<std::chrono::milliseconds>(wakeUpTime - start).count()
+			//	<< "\ndt: " << vector_to_string(dt)
+			//);
 		}
 
 
@@ -1451,6 +1452,7 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 
 		// 等待激活
 		if (type == 4) {
+			bool syncMatch = false;
 			for (auto& syncPair : ite->second) {
 				if (waitState[robotIdx].find(syncPair.second) == waitState[robotIdx].end()) {
 					syncReadyState[robotIdx] = 0;
@@ -1523,8 +1525,13 @@ bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 		// 同步类型
 		int type = ite->first;
 
+		// 等待激活
+		if (type == 4) {
+			if (syncReadyState[robotIdx] == 0)
+				return false;
+		}
 		// 等待同步 / 协同
-		if (type == 2 || type == 3) {
+		else if (type == 2 || type == 3) {
 
 			for (auto& syncPair : ite->second) {
 				int idx = syncPair.first;
@@ -1636,12 +1643,15 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " run traj " << curTraj.lineNum << ", save seq: " << curTraj.saveSeq);
 
 		// 触发机器人等待
-		auto syncMap = deserialize_Sync_Config(curTraj.get_appendix()).map;
+		auto synCfg = deserialize_Sync_Config(curTraj.get_appendix());
+		auto syncMap = synCfg.map;
 		if (syncMap.find(5) != syncMap.end()) {
 			for (const auto& notifyItem : syncMap[5]) {
 				//set_bit(waitState[notifyItem.first], notifyItem.second, 1);
 				waitState[notifyItem.first].insert(notifyItem.second);
 			}
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " active: "
+				<< vector_to_string(serialize_Sync_Config(synCfg).second, 2));
 		}
 
 		// 清空到位前运动
@@ -1898,9 +1908,11 @@ void RobotGroupManager::reset_wait_state(int robotIdx) {
 	// IO等待标志复位
 	if (synCfg.map.find(4) != synCfg.map.end()) {
 
-		for (auto& syncPair : synCfg.map[4]) {
-			waitState[robotIdx].erase(syncPair.second);
-		}
+		//for (auto& syncPair : synCfg.map[4]) {
+		//	// 删除所有激活信号
+		//	std::remove(waitState[robotIdx].begin(), waitState[robotIdx].end(), syncPair.second);
+		//}
+		waitState[robotIdx] = {};
 
 	}
 
