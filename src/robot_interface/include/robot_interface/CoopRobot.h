@@ -175,7 +175,7 @@ protected:
 	//! 控制卡分配的 ID
 	int robotId = -1;
 	//! 指令行号: 下发的运动个数
-	int cmdNum = -1;
+	int cmdNum = 0;
 	//! 指定编号
 	int aliasId = -1;
 	//! 状态刷新线程

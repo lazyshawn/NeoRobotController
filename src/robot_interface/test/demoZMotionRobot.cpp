@@ -1,4 +1,4 @@
-#include <windows.h>
+Ôªø#include <windows.h>
 #include<iostream>
 #include <algorithm>
 #include <eigen3/Eigen/Dense>
@@ -7,12 +7,12 @@
 #include "RobotLogger.h"
 
 
-// øÿ÷∆ø®
+// ÊéßÂà∂Âç°
 std::shared_ptr<FSAIRobotInterface::Controller> ZController(new FSAIRobotInterface::Controller);
-// ª˙∆˜»À
+// Êú∫Âô®‰∫∫
 std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::ZMotionRobot), robot2(new FSAIRobotInterface::ZMotionRobot);
 FSAIRobotInterface::RobotGroupManager group;
-// πÏº£
+// ËΩ®Ëøπ
 DiscreteTrajectory trajList, trajList2;
 TrajectoryConfig trajCfg, trajCfg2;
 std::vector<int> finish;

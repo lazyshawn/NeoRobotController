@@ -1,4 +1,4 @@
-
+ï»¿
 #include "robot_interface/ZMotionController.h"
 
 #include "RobotLogger.h"
@@ -7,12 +7,12 @@
 
 namespace FSAIRobotInterface {
 
-// ¿ØÖÆ¿¨ÈÕÖ¾
+// æ§åˆ¶å¡æ—¥å¿—
 log4cplus::Logger ControllerLog::logger;
 ControllerLog::ControllerLog() {
 	log4cplus::helpers::SharedObjectPtr<log4cplus::Appender> _append;
-	_append = log4cplus::helpers::SharedObjectPtr<log4cplus::Appender>(new log4cplus::RollingFileAppender("./log/ZMotionController.log", 8 * 1024 * 1024, 8));//°´ÕÕ¹Ì¶¨´óĞ¡½øĞĞlog·Ö¸î
-	_append->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(LOG4CPLUS_TEXT("%D{%m/%d/%Y %H:%M:%S:%q} [%t] %-5p - %m %n"))));//("%D{%m/%d/%y %H:%M:%S},´óĞ´µÄD´ú±í±±¾©Ê±¼ä·ñÔò²»×¼																															/* step 4: Instantiate a logger object */
+	_append = log4cplus::helpers::SharedObjectPtr<log4cplus::Appender>(new log4cplus::RollingFileAppender("./log/ZMotionController.log", 8 * 1024 * 1024, 8));//æŒ‰ç…§å›ºå®šå¤§å°è¿›è¡Œlogåˆ†å‰²
+	_append->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(LOG4CPLUS_TEXT("%D{%m/%d/%Y %H:%M:%S:%q} [%t] %-5p - %m %n"))));//("%D{%m/%d/%y %H:%M:%S},å¤§å†™çš„Dä»£è¡¨åŒ—äº¬æ—¶é—´å¦åˆ™ä¸å‡†																															/* step 4: Instantiate a logger object */
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("ZCONTROLLER_LOG"));
 	logger.setLogLevel(log4cplus::INFO_LOG_LEVEL);
 	logger.addAppender(_append);
@@ -30,14 +30,14 @@ int search_ethernet_list(std::vector<std::string>& ipList) {
 	char buffer[4096 + 256 + 1];
 	int32 iresult;
 
-	// ¼ìË÷IP µØÖ·µ½ Buffer
+	// æ£€ç´¢IP åœ°å€åˆ° Buffer
 	iresult = ZAux_SearchEthlist(buffer, 4096 + 256 + 1, 100);
-	// Ê§°ÜÍË³ö 
+	// å¤±è´¥é€€å‡º 
 	if (0 != iresult) {
 		return iresult;
 	}
 
-	//´Ó×Ö·û´®×ª»»¹ıÀ´ 
+	//ä»å­—ç¬¦ä¸²è½¬æ¢è¿‡æ¥ 
 	int ipos = 0;
 	const char * pstring;
 	pstring = buffer;
@@ -45,20 +45,20 @@ int search_ethernet_list(std::vector<std::string>& ipList) {
 	buffer2[0] = '\0';
 	for (int j = 0; j < 20; j++) {
 
-		//Ìø¹ı¿Õ¸ñ 
+		//è·³è¿‡ç©ºæ ¼ 
 		while (' ' == pstring[0]) {
 			pstring++;
 		}
 		memset(buffer2, 0, sizeof(buffer2));
 
-		//»ñÈ¡µØÖ·µ½ buffer2
+		//è·å–åœ°å€åˆ° buffer2
 		ipos = sscanf(pstring, "%s", &buffer2);
 		if (-1 == ipos) { break; }
 		//printf("%s\n", buffer2);
 		std::string ipStr = buffer2;
 		ipList.push_back(ipStr);
 
-		//Ö¸µ½IP µØÖ·Ä©Î²
+		//æŒ‡åˆ°IP åœ°å€æœ«å°¾
 		while ((' ' != pstring[0]) && ('\t' != pstring[0]) && ('\0' != pstring[0])) {
 			pstring++;
 		}
@@ -76,7 +76,7 @@ int get_max_pci_card() {
 }
 
 
-// ¿ØÖÆ¿¨¹ÜÀíÀà
+// æ§åˆ¶å¡ç®¡ç†ç±»
 Controller::Controller() {
 
 }
@@ -95,7 +95,7 @@ ZMC_HANDLE Controller::get_handle() {
 	return handle;
 }
 
-/* ******************************** ¿ØÖÆ¿¨Á¬½Ó ********************************* */
+/* ******************************** æ§åˆ¶å¡è¿æ¥ ********************************* */
 int Controller::connect_eth(const char *ip_addr) {
 	printf("Connecting to: %s... ", ip_addr);
 	int ret = ZAux_OpenEth(const_cast<char *>(ip_addr), &handle);
@@ -107,10 +107,10 @@ int Controller::connect_eth(const char *ip_addr) {
 	}
 	printf("Succeed\n");
 
-	// ÈÕÖ¾Ä£Ê½
+	// æ—¥å¿—æ¨¡å¼
 	ZAux_SetTraceFile(4, "sdf");
 
-	// ¿ØÖÆ¿¨Ãû³Æ
+	// æ§åˆ¶å¡åç§°
 	cardName = std::string(ip_addr);
 
 	return 0;
@@ -121,7 +121,7 @@ int Controller::connect_pci(uint32 cardNum, bool local, bool log) {
 
 	std::string pciStr = local ? "LOCAL" : "PCI" + std::to_string(cardNum);
 
-	// ¿ØÖÆ¿¨Ãû³Æ
+	// æ§åˆ¶å¡åç§°
 	cardName = pciStr;
 
 	int ret = ZAux_FastOpen(local ? 5 : 4, const_cast<char*>(pciStr.c_str()), 1000, &handle);
@@ -148,23 +148,23 @@ int Controller::lazy_connect() {
 	if (this->connect_pci(0, true, true) == 0) {
 		return 0;
 	}
-	// ·ÂÕæÆ÷
+	// ä»¿çœŸå™¨
 	else if (this->connect_eth((char *)"127.0.0.1") == 0) {
 		return 0;
 	}
-	// Ä¬ÈÏÊµÌå¿ØÖÆ¿¨ IP
+	// é»˜è®¤å®ä½“æ§åˆ¶å¡ IP
 	else if (this->connect_eth((char *)"192.168.1.14") == 0) {
 		return 0;
 	}
-	// Ğ­×÷±Û IP
+	// åä½œè‡‚ IP
 	else if (this->connect_eth((char *)"169.254.180.11") == 0) {
 		return 0;
 	}
-	// PCI ¿¨
+	// PCI å¡
 	else if (this->connect_pci(0) == 0) {
 		return 0;
 	}
-	// Á¬½ÓÊ§°Ü
+	// è¿æ¥å¤±è´¥
 	return errCodeBeg + 1;
 }
 
@@ -173,7 +173,7 @@ int Controller::connect(const std::string& addr) {
 		return connect_eth(addr.c_str());
 	}
 	else {
-		// ×ª»»³Éuint32
+		// è½¬æ¢æˆuint32
 		uint32 cardNum = static_cast<uint32>(std::atoi(addr.c_str()));
 		return connect_pci(cardNum);
 	}
@@ -181,7 +181,7 @@ int Controller::connect(const std::string& addr) {
 }
 
 int Controller::disconnect() {
-	//¹Ø±ÕÁ¬½Ó 
+	//å…³é—­è¿æ¥ 
 	if (ZAux_Close(handle) > 0) {
 		printf("Error: # ZauxRobot::disconnect()!\n");
 		return 1;
@@ -192,9 +192,9 @@ int Controller::disconnect() {
 }
 
 
-/* ******************************** ¿ØÖÆ¿¨ÉèÖÃ ********************************* */
+/* ******************************** æ§åˆ¶å¡è®¾ç½® ********************************* */
 int Controller::load_basic_pragma(const char *basPath, uint32_t mode) {
-	// ¼ÓÔØ bas ³ÌĞò
+	// åŠ è½½ bas ç¨‹åº
 	if (ZAux_BasDown(handle, basPath, mode) != 0) {
 		printf("Error: # ZauxRobot::load_basic_pragma() check basPath.\n");
 		return errCodeBeg + 2;
@@ -203,7 +203,7 @@ int Controller::load_basic_pragma(const char *basPath, uint32_t mode) {
 }
 
 int Controller::load_basic_project(const char *basPath, uint32_t mode) {
-	// ¼ÓÔØ zar ³ÌĞò
+	// åŠ è½½ zar ç¨‹åº
 	if (ZAux_ZarDown(handle, basPath, mode) != 0) {
 		printf("Error: # ZauxRobot::load_basic_pragma() check basPath.\n");
 		return errCodeBeg + 2;
@@ -214,7 +214,7 @@ int Controller::load_basic_project(const char *basPath, uint32_t mode) {
 int Controller::allocate_robot_id() {
 	int robotID = -1;
 
-	// ·ÖÅä»úÆ÷ÈËID
+	// åˆ†é…æœºå™¨äººID
 	uint8_t robotList = robotHandle;
 	for (size_t i = 0; i < 8; ++i) {
 		if (robotList % 2 == 0) {
@@ -224,49 +224,49 @@ int Controller::allocate_robot_id() {
 		robotList = robotList >> 1;
 	}
 
-	// ·ÖÅä»úÆ÷ÈËÖáºÅ
+	// åˆ†é…æœºå™¨äººè½´å·
 
 	return robotID;
 }
 
 int Controller::add_robot(int id) {
-	// robotId ºÏ·¨ĞÔ¼ì²é
+	// robotId åˆæ³•æ€§æ£€æŸ¥
 	if (id >= 8 || id < 0) {
 		return -1;
 	}
 
-	// robotId ÒÑ±»Õ¼ÓÃ£¬Ê¹ÓÃ allocate_robot_id ÉêÇëĞÂrobotId
+	// robotId å·²è¢«å ç”¨ï¼Œä½¿ç”¨ allocate_robot_id ç”³è¯·æ–°robotId
 	uint8_t robotList = robotHandle;
 	if ((robotList >> id) % 2 == 1) {
 		return -2;
 	}
 
-	// ½«robotId±ê¼ÇÎªÒÑÕ¼ÓÃ
+	// å°†robotIdæ ‡è®°ä¸ºå·²å ç”¨
 	robotHandle += (1 << id);
 
 	return 0;
 }
 
 int Controller::remove_robot(int id) {
-	// robotId ºÏ·¨ĞÔ¼ì²é
+	// robotId åˆæ³•æ€§æ£€æŸ¥
 	if (id >= 8 || id < 0) {
 		return 1;
 	}
 
-	// Ö¸¶¨ robotId Î´±»Õ¼ÓÃ
+	// æŒ‡å®š robotId æœªè¢«å ç”¨
 	uint8_t robotList = robotHandle;
 	if ((robotList >> id) % 2 == 0) {
 		return 2;
 	}
 
-	// ½« robotId ±ê¼ÇÎªÎ´Õ¼ÓÃ
+	// å°† robotId æ ‡è®°ä¸ºæœªå ç”¨
 	robotHandle -= (1 << id);
 
 	return 0;
 }
 
 
-/* ******************************** Òì³£´¦Àí ********************************* */
+/* ******************************** å¼‚å¸¸å¤„ç† ********************************* */
 int Controller::handle_zaux_error(int32 errCode) {
 	if (errCode != 0) {
 	}
@@ -274,12 +274,12 @@ int Controller::handle_zaux_error(int32 errCode) {
 }
 
 
-/* ******************************** ¶ÁĞ´Öá²ÎÊı ********************************* */
-// ¼ÓÔØÅäÖÃÎÄ¼ş
+/* ******************************** è¯»å†™è½´å‚æ•° ********************************* */
+// åŠ è½½é…ç½®æ–‡ä»¶
 int Controller::load_config(const std::string& fname) {
 	std::ifstream file;
 	file.open(fname, std::ios::in);
-	// ÎÄ¼ş´ò¿ªÊ§°Ü
+	// æ–‡ä»¶æ‰“å¼€å¤±è´¥
 	if (!file.is_open()) {
 		std::cout << "not found" << std::endl;
 		return -1;
@@ -288,18 +288,18 @@ int Controller::load_config(const std::string& fname) {
 	char cmdbuffAck[2048];
 	std::string buf;
 	while (getline(file, buf)){
-		// Ìø¹ı¿ÕĞĞ
+		// è·³è¿‡ç©ºè¡Œ
 		if (std::all_of(buf.begin(), buf.end(), isspace))
 			continue;
 
-		// Ìø¹ı±¸×¢
+		// è·³è¿‡å¤‡æ³¨
 		if (buf[0] == '\'')
 			continue;
 
-		// ÏÂ·¢Ö¸Áî
+		// ä¸‹å‘æŒ‡ä»¤
 		int ret = sendCmd(buf.c_str(), cmdbuffAck);
 
-		// Ö¸ÁîÏÂ·¢Ê§°Ü
+		// æŒ‡ä»¤ä¸‹å‘å¤±è´¥
 		if (ret != 0) {
 			file.close();
 			return -2;
@@ -314,7 +314,7 @@ int Controller::load_config(const std::string& fname) {
 int Controller::export_config(const std::string& fname) {
 	std::ofstream file;
 	file.open(fname, std::ios::out);
-	// ÎÄ¼ş´ò¿ªÊ§°Ü
+	// æ–‡ä»¶æ‰“å¼€å¤±è´¥
 	if (!file.is_open()) {
 		std::cout << "not found" << std::endl;
 		return -1;
@@ -323,11 +323,11 @@ int Controller::export_config(const std::string& fname) {
 	file.precision(5);
 	//file.unsetf(std::ios::showpoint);
 
-	//! ËùÓĞVR: ?SYS_ZFEATURE(16)
-	// Ò»´Î¶ÁÒ»Ç§¸ö
+	//! æ‰€æœ‰VR: ?SYS_ZFEATURE(16)
+	// ä¸€æ¬¡è¯»ä¸€åƒä¸ª
 	size_t unitSize = 1000;
 
-	// Ö»¶ÁËÄ¸ö»úÆ÷ÈËÅäÖÃºÍÈ«¾ÖÅäÖÃ
+	// åªè¯»å››ä¸ªæœºå™¨äººé…ç½®å’Œå…¨å±€é…ç½®
 	for (size_t i = 0; i < 5; ++i) {
 		std::vector<float> pfValue(unitSize, 0);
 
@@ -338,7 +338,7 @@ int Controller::export_config(const std::string& fname) {
 			return -1;
 		}
 		else {
-			// ±£´æ·ÇÁãÖµ
+			// ä¿å­˜éé›¶å€¼
 			for (size_t j = 0; j < unitSize; ++j) {
 				if (std::fabs(pfValue[j]) > 1e-2) {
 					//std::cout << "VR(" << i * unitSize + j << ")=" << pfValue[j] << std::endl;
@@ -353,7 +353,7 @@ int Controller::export_config(const std::string& fname) {
 }
 
 
-// »ñÈ¡ÖáºÅĞÅÏ¢
+// è·å–è½´å·ä¿¡æ¯
 int Controller::get_axis_param(const std::vector<int>& axisList, const char* paramName, std::vector<float>& paramList) {
 	char  cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 	int ret = 0;
@@ -363,7 +363,7 @@ int Controller::get_axis_param(const std::vector<int>& axisList, const char* par
 	}
 	paramList = std::vector<float>(axisList.size(), 0);
 
-	// Éú³ÉÃüÁî
+	// ç”Ÿæˆå‘½ä»¤
 	sprintf(cmdbuff, "?%s(%d)", paramName, axisList[0]);
 	for (size_t i = 1; i < axisList.size(); ++i) {
 		sprintf(tempbuff, ",%s(%d)", paramName, axisList[i]);
@@ -372,12 +372,12 @@ int Controller::get_axis_param(const std::vector<int>& axisList, const char* par
 
 	int32 iresult = ZAux_DirectCommand(handle, cmdbuff, cmdbuffAck, 2048);
 
-	// ÅĞ¶Ï·µ»Ø×´Ì¬
+	// åˆ¤æ–­è¿”å›çŠ¶æ€
 	if (ERR_OK != iresult || 0 == strlen(cmdbuffAck)) {
 		return errCodeBeg + 4;
 	}
 
-	// ½âÎö·µ»ØÖµ
+	// è§£æè¿”å›å€¼
 	std::stringstream ackStr(cmdbuffAck);
 	std::string word;
 	// Extract word from the stream
@@ -403,7 +403,7 @@ int Controller::get_axis_param(int axis, const char* paramName, float& value) {
 	return ret;
 }
 
-// ÉèÖÃÖáºÅĞÅÏ¢
+// è®¾ç½®è½´å·ä¿¡æ¯
 int Controller::set_axis_param(const std::vector<int>& axisList, const char* paramName, const std::vector<float>& paramList, int principal) {
 	char  cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 	int ret = 0;
@@ -414,7 +414,7 @@ int Controller::set_axis_param(const std::vector<int>& axisList, const char* par
 
 	int num = (std::min)(paramList.size(), axisList.size());
 
-	// Á¢¼´ÉèÖÃ
+	// ç«‹å³è®¾ç½®
 	if (principal < 0) {
 		sprintf(cmdbuff, "%s(%d)=%f", paramName, axisList[0], paramList[0]);
 		for (size_t i = 1; i < num; ++i) {
@@ -422,7 +422,7 @@ int Controller::set_axis_param(const std::vector<int>& axisList, const char* par
 			strcat(cmdbuff, tempbuff);
 		}
 	}
-	// »º³åÖĞĞŞ¸ÄTABLE
+	// ç¼“å†²ä¸­ä¿®æ”¹TABLE
 	else if (_stricmp(paramName, "TABLE") == 0) {
 		sprintf(cmdbuff, "MOVE_TABLE(%d,%f) axis(%d)", axisList[0], paramList[0], principal);
 		for (size_t i = 1; i < num; ++i) {
@@ -430,7 +430,7 @@ int Controller::set_axis_param(const std::vector<int>& axisList, const char* par
 			strcat(cmdbuff, tempbuff);
 		}
 	}
-	// »º³åÖĞÉèÖÃ
+	// ç¼“å†²ä¸­è®¾ç½®
 	else {
 		sprintf(cmdbuff, "MOVE_PARA(%s,%d,%f) axis(%d)", paramName, axisList[0], paramList[0], principal);
 		for (size_t i = 1; i < num; ++i) {
@@ -531,12 +531,12 @@ long long Controller::get_time_stamp(int taskId) {
 	char  cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 	int ret = 0;
 
-	//Éú³ÉÃüÁî
+	//ç”Ÿæˆå‘½ä»¤
 	sprintf(cmdbuff, "?ticks(%d)", taskId);
 
 	int32 iresult = ZAux_DirectCommand(handle, cmdbuff, cmdbuffAck, 2048);
 
-	// ÅĞ¶Ï·µ»Ø×´Ì¬
+	// åˆ¤æ–­è¿”å›çŠ¶æ€
 	if (ERR_OK != iresult) {
 		return handle_zaux_error(iresult);
 	}
@@ -544,7 +544,7 @@ long long Controller::get_time_stamp(int taskId) {
 		return handle_zaux_error(ERR_NOACK);
 	}
 
-	// ½âÎö·µ»ØÖµ
+	// è§£æè¿”å›å€¼
 	std::stringstream ackStr(cmdbuffAck);
 	std::string word;
 	// Extract word from the stream
@@ -552,37 +552,37 @@ long long Controller::get_time_stamp(int taskId) {
 	return std::stoll(word);
 }
 
-// ±£´ætable
+// ä¿å­˜table
 int Controller::save_table(size_t startIdx, size_t num, const std::string& path) {
 	if (num == 0) {
 		return 0;
 	}
 	int ret = 0;
 
-	// µ¥´Î×î´ó¶ÁÈ¡ÊıÁ¿
+	// å•æ¬¡æœ€å¤§è¯»å–æ•°é‡
 	size_t maxNum = 1000;
-	// ¶ÁÈ¡»º³å
+	// è¯»å–ç¼“å†²
 	std::vector<float> tableData(maxNum, 0);
-	// ¶ÁÈ¡´ÎÊı
+	// è¯»å–æ¬¡æ•°
 	size_t times = std::floor(num / maxNum);
-	// Êä³öÎÄ¼ş
+	// è¾“å‡ºæ–‡ä»¶
 	std::ofstream out(path, std::ios::trunc);
 
 	for (size_t i = 0; i < times; ++i) {
-		// ¶ÁÈ¡Êı¾İ
+		// è¯»å–æ•°æ®
 		ret = ZAux_Direct_GetTable(handle, startIdx + maxNum * i, maxNum, tableData.data());
-		// ÅĞ¶Ï·µ»Ø×´Ì¬
+		// åˆ¤æ–­è¿”å›çŠ¶æ€
 		if (ret != 0)
 			return handle_zaux_error(ret);
-		// ±£´æµ½ÎÄ¼ş
+		// ä¿å­˜åˆ°æ–‡ä»¶
 		for (const auto& data : tableData) {
 			out << data << std::endl;
 		}
 	}
 
-	// Ê£ÓàÊı¾İ³¤¶È
+	// å‰©ä½™æ•°æ®é•¿åº¦
 	size_t remain = num - maxNum * times;
-	// ¶ÁÈ¡Ê£ÓàÊı¾İ
+	// è¯»å–å‰©ä½™æ•°æ®
 	ZAux_Direct_GetTable(handle, startIdx + maxNum * times, remain, tableData.data());
 	for (size_t i = 0; i < remain; ++i) {
 		out << tableData[i] << std::endl;
@@ -635,12 +635,12 @@ int Controller::get_node_info(std::vector<std::vector<int>>& info) {
 	int ret = 0;
 	std::vector<int> infoIdx = { 0,1,2,3 };
 
-	// »ñÈ¡½ÚµãÊı
+	// è·å–èŠ‚ç‚¹æ•°
 	std::vector<float> value;
 	ret = get_axis_param({ 0 }, "NODE_COUNT", value);
 	int num = static_cast<int>(value[0]);
 
-	// ½ÚµãÊıÒì³£
+	// èŠ‚ç‚¹æ•°å¼‚å¸¸
 	if (num <= 0)
 		return -1;
 
@@ -651,7 +651,7 @@ int Controller::get_node_info(std::vector<std::vector<int>>& info) {
 
 		auto paramList = std::vector<float>(infoIdx.size(), 0);
 
-		// Éú³ÉÃüÁî
+		// ç”Ÿæˆå‘½ä»¤
 		sprintf(cmdbuff, "?NODE_INFO(0,%d,%d)", num, infoIdx[0]);
 		for (size_t j = 1; j < infoIdx.size(); ++j) {
 			sprintf(tempbuff, ",NODE_INFO(0,%d,%d)", num, infoIdx[j]);
@@ -660,12 +660,12 @@ int Controller::get_node_info(std::vector<std::vector<int>>& info) {
 
 		int32 iresult = ZAux_DirectCommand(handle, cmdbuff, cmdbuffAck, 2048);
 
-		// ÅĞ¶Ï·µ»Ø×´Ì¬
+		// åˆ¤æ–­è¿”å›çŠ¶æ€
 		if (ERR_OK != iresult || 0 == strlen(cmdbuffAck)) {
 			return errCodeBeg + 4;
 		}
 
-		// ½âÎö·µ»ØÖµ
+		// è§£æè¿”å›å€¼
 		std::stringstream ackStr(cmdbuffAck);
 		std::string word;
 		// Extract word from the stream
@@ -701,19 +701,19 @@ int Controller::read_node_pdo(int node, int index, int subIndex, int type, int *
 }
 
 
-/* ******************************** »ù´¡ÔË¶¯Ö¸Áî·â×° ********************************* */
+/* ******************************** åŸºç¡€è¿åŠ¨æŒ‡ä»¤å°è£… ********************************* */
 // jog
 int Controller::axis_jog(int axis, int dir) {
 	int ret;
-	// ÔË¶¯½áÊø
+	// è¿åŠ¨ç»“æŸ
 	if (dir == 0) {
 		ret = ZAux_Direct_Single_Cancel(handle, axis, 4);
 	}
-	// ÕıÏòÔË¶¯
+	// æ­£å‘è¿åŠ¨
 	else if (dir > 0) {
 		ret = ZAux_Direct_Single_Vmove(handle, axis, 1);
 	}
-	// ¸ºÏòÔË¶¯
+	// è´Ÿå‘è¿åŠ¨
 	else {
 		ret = ZAux_Direct_Single_Vmove(handle, axis, -1);
 	}
@@ -723,18 +723,18 @@ int Controller::axis_jog(int axis, int dir) {
 
 // move
 int Controller::move(const std::vector<int>& axis, const std::vector<float>& relMove, int moveType, const std::vector<int>& mask) {
-	// ¹ì¼£µãÎ¬¶ÈÓëÇı¶¯ÖáÎ¬¶ÈµÄ½ÏĞ¡Öµ
+	// è½¨è¿¹ç‚¹ç»´åº¦ä¸é©±åŠ¨è½´ç»´åº¦çš„è¾ƒå°å€¼
 	size_t num = std::min(relMove.size(), axis.size());
 	if (num < 1)
 		return 1;
 
 	int ret = 0;
-	// Éú³ÉÃüÁî
-	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
+	// ç”Ÿæˆå‘½ä»¤
+	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048] = { 0 };
 
 	strcpy(cmdbuff, "BASE(");
 	for (size_t i = 0; i < num; i++) {
-		// ÖáÆÁ±Î
+		// è½´å±è”½
 		if (mask.size() > i && mask[i] <= 0) {
 			continue;
 		}
@@ -752,7 +752,7 @@ int Controller::move(const std::vector<int>& axis, const std::vector<float>& rel
 	}
 
 	for (size_t i = 0; i < num; i++) {
-		// ÖáÆÁ±Î
+		// è½´å±è”½
 		if (mask.size() > i && mask[i] <= 0) {
 			continue;
 		}
@@ -761,25 +761,25 @@ int Controller::move(const std::vector<int>& axis, const std::vector<float>& rel
 	}
 	strcat(cmdbuff, ")");
 
-	//µ÷ÓÃÃüÁîÖ´ĞĞº¯Êı
+	//è°ƒç”¨å‘½ä»¤æ‰§è¡Œå‡½æ•°
 	ret = ZAux_DirectCommand(handle, cmdbuff, cmdbuffAck, 2048);
 	return ret;
 }
 
 // moveABS
 int Controller::moveABS(const std::vector<int>& axis, const std::vector<float>& endMove, int moveType, const std::vector<int>& mask) {
-	// ¹ì¼£µãÎ¬¶ÈÓëÇı¶¯ÖáÎ¬¶ÈµÄ½ÏĞ¡Öµ
+	// è½¨è¿¹ç‚¹ç»´åº¦ä¸é©±åŠ¨è½´ç»´åº¦çš„è¾ƒå°å€¼
 	size_t num = std::min(endMove.size(), axis.size());
 	if (num < 1)
 		return 1;
 
 	int ret = 0;
-	// Éú³ÉÃüÁî
+	// ç”Ÿæˆå‘½ä»¤
 	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];
 
 	strcpy(cmdbuff, "BASE(");
 	for (size_t i = 0; i < num; i++) {
-		// ÖáÆÁ±Î
+		// è½´å±è”½
 		if (mask.size() > i && mask[i] <= 0) {
 			continue;
 		}
@@ -797,7 +797,7 @@ int Controller::moveABS(const std::vector<int>& axis, const std::vector<float>& 
 	}
 
 	for (size_t i = 0; i < num ; i++) {
-		// ÖáÆÁ±Î
+		// è½´å±è”½
 		if (mask.size() > i && mask[i] <= 0) {
 			continue;
 		}
@@ -807,7 +807,7 @@ int Controller::moveABS(const std::vector<int>& axis, const std::vector<float>& 
 	}
 	strcat(cmdbuff, ")");
 
-	//µ÷ÓÃÃüÁîÖ´ĞĞº¯Êı
+	//è°ƒç”¨å‘½ä»¤æ‰§è¡Œå‡½æ•°
 	ret = ZAux_DirectCommand(handle, cmdbuff, cmdbuffAck, 2048);
 	return ret;
 }
@@ -816,7 +816,7 @@ int Controller::moveABS(const std::vector<int>& axis, const std::vector<float>& 
 int Controller::baseCMD(const std::vector<int>& axis, const char * paraname, const std::vector<float>& cmdData) {
 
 	int ret = 0;
-	// Éú³ÉÃüÁî
+	// ç”Ÿæˆå‘½ä»¤
 	char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048] = {0};
 
 	strcpy(cmdbuff, "BASE(");
@@ -834,7 +834,7 @@ int Controller::baseCMD(const std::vector<int>& axis, const char * paraname, con
 	}
 	strcat(cmdbuff, ")");
 
-	//µ÷ÓÃÃüÁîÖ´ĞĞº¯Êı
+	//è°ƒç”¨å‘½ä»¤æ‰§è¡Œå‡½æ•°
 	ret = sendCmd(cmdbuff, cmdbuffAck);
 	return ret;
 
@@ -869,9 +869,9 @@ int Controller::sendCmd(const char* pszCommand, char* psResponse, int cmdType) {
 
 int Controller::read_message() {
 
-	// ¶ÁÈ¡»º³å
+	// è¯»å–ç¼“å†²
 	char psResponse[2048];
-	// Êµ¼Ê¶ÁÈ¡³¤¶È
+	// å®é™…è¯»å–é•¿åº¦
 	uint32 puiread;
 
 	int ret = ZMC_ReadMessage(handle, psResponse, 2048, &puiread);

@@ -1,23 +1,23 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include<iostream>
 
 #include "robot_interface/ZRVRobot.h"
 #include "RobotLogger.h"
 
 
-// ¿ØÖÆ¿¨
+// æ§åˆ¶å¡
 std::shared_ptr<FSAIRobotInterface::Controller> ZController(new FSAIRobotInterface::Controller);
-// »úÆ÷ÈË
+// æœºå™¨äºº
 std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::ZRVRobot), robot2(new FSAIRobotInterface::ZRVRobot);
 FSAIRobotInterface::RobotGroupManager group;
-// ¹ì¼£
+// è½¨è¿¹
 DiscreteTrajectory trajList, trajList2;
 TrajectoryConfig trajCfg, trajCfg2;
 std::vector<int> finish;
 
 
 /*
-// test1.cpp : ¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌĞòµÄÈë¿Úµã¡£
+// test1.cpp : å®šä¹‰æ§åˆ¶å°åº”ç”¨ç¨‹åºçš„å…¥å£ç‚¹ã€‚
 //
 #include "robot_interface/ZMotionController.h"
 //#include "stdafx.h"
@@ -27,7 +27,7 @@ std::vector<int> finish;
 
 void commandCheckHandler(const char *command, int ret)
 {
-	if (ret)//·Ç0ÔòÊ§°Ü
+	if (ret)//é0åˆ™å¤±è´¥
 	{
 		printf("%s return code is %d\n", command, ret);
 	}
@@ -37,100 +37,100 @@ void commandCheckHandler(const char *command, int ret)
 int main()
 {
 
-	ZMC_HANDLE handle = NULL;                   //Á¬½Ó¾ä±ú
+	ZMC_HANDLE handle = NULL;                   //è¿æ¥å¥æŸ„
 
-	char MotionID[32] = "127.0.0.1";				//¸ÄÄ£Ê½µ±Ç°¶Ô×Ö·û´®ÎŞÒªÇó£¬¿ÉÌî¿Õ×Ö·û´®
-	//int ret = ZAux_FastOpen(2, MotionID, 1000, &handle);	//Á¬½Ó·ÂÕæÆ÷
-	int ret=ZAux_FastOpen(5, "MotionRT1",1000 ,&handle);	//Á¬½ÓMotionRT
+	char MotionID[32] = "127.0.0.1";				//æ”¹æ¨¡å¼å½“å‰å¯¹å­—ç¬¦ä¸²æ— è¦æ±‚ï¼Œå¯å¡«ç©ºå­—ç¬¦ä¸²
+	//int ret = ZAux_FastOpen(2, MotionID, 1000, &handle);	//è¿æ¥ä»¿çœŸå™¨
+	int ret=ZAux_FastOpen(5, "MotionRT1",1000 ,&handle);	//è¿æ¥MotionRT
 
 	if (ERR_SUCCESS != ret)
 	{
-		printf("¿ØÖÆÆ÷Á¬½ÓÊ§°Ü£¡\n");
+		printf("æ§åˆ¶å™¨è¿æ¥å¤±è´¥ï¼\n");
 		handle = NULL;
 		getchar();
 		return -1;
 	}
-	printf("¿ØÖÆÆ÷Á¬½Ó³É¹¦£¡\n");
+	printf("æ§åˆ¶å™¨è¿æ¥æˆåŠŸï¼\n");
 	ZAux_SetTraceFile(4, "sdf");
 
 	char ackbuff[2048] = {0};
-	ret = ZAux_DirectCommand(handle, "Table(7003)=0.000", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "Table(7003)=0.000", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("Table", ret);
-	ret = ZAux_DirectCommand(handle, "Table(7007)=-1", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "Table(7007)=-1", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("Table", ret);
 
 	Sleep(1000);
-	ret = ZAux_DirectCommand(handle, "Table(7051)=-1", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "Table(7051)=-1", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("Table", ret);
 	Sleep(1000);
 
-	ret = ZAux_DirectCommand(handle, "FORCE_SPEED(0)=0.8", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "FORCE_SPEED(0)=0.8", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("FORCE_SPEED  ", ret);
 
-	ret = ZAux_DirectCommand(handle, "ZSMOOTH(0)=10", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "ZSMOOTH(0)=10", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("ZSMOOTH  ", ret);
 
-	ret = ZAux_DirectCommand(handle, "BASE(0,1,2,3,4,5,6,7,8,)\n MOVERV_JABS(-5.174500,-26.632299,19.890400,2.188700,-65.369301,-176.445099,-0.001900,-0.004400,0.000000,)", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "BASE(0,1,2,3,4,5,6,7,8,)\n MOVERV_JABS(-5.174500,-26.632299,19.890400,2.188700,-65.369301,-176.445099,-0.001900,-0.004400,0.000000,)", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("MOVERV_JABS   ", ret);
 
 
 	
 
-	//ret = ZAux_DirectCommand(handle, "MOVE_DELAY(6000) AXIS(15)", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
-	//commandCheckHandler("MOVE_DELAY   ", ret);//Ìí¼Ómove_dalayÖ¸Áî
+	//ret = ZAux_DirectCommand(handle, "MOVE_DELAY(6000) AXIS(15)", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
+	//commandCheckHandler("MOVE_DELAY   ", ret);//æ·»åŠ move_dalayæŒ‡ä»¤
 
 
-	ret = ZAux_DirectCommand(handle, "MOVE_TABLE(7003, 1.000000) axis(15)", ackbuff, 2048);//MOVE_TABLEÖ¸Áî
+	ret = ZAux_DirectCommand(handle, "MOVE_TABLE(7003, 1.000000) axis(15)", ackbuff, 2048);//MOVE_TABLEæŒ‡ä»¤
 	commandCheckHandler("MOVE_TABLE   ", ret);
 
 	ret = ZAux_DirectCommand(handle, "MOVE_TABLE(7187,0.000000) axis(15)", ackbuff, 2048);
 	commandCheckHandler("MOVE_TABLE   ", ret);
 
 
-	ret = ZAux_DirectCommand(handle, "ZSMOOTH(15)=100", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "ZSMOOTH(15)=100", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("ZSMOOTH  ", ret);
 
-	ret = ZAux_DirectCommand(handle, "FORCE_SPEED(15)=20", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "FORCE_SPEED(15)=20", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("FORCE_SPEED  ", ret);
 
 
-	ret = ZAux_DirectCommand(handle, "?*dpos", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "?*dpos", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("FORCE_SPEED  ", ret);
 	printf("dpos=%s\n", ackbuff);
-	ret = ZAux_DirectCommand(handle, "?*endmove", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "?*endmove", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("FORCE_SPEED  ", ret);
 	printf("endmove=%s\n", ackbuff);
 
 
-	ret = ZAux_DirectCommand(handle, "BASE(15,16,17,12,13,14,6,7,8,)\n MOVERV_LABS(-1.000000,906.722900,-111.649902,2239.583740,-3.667,27.206203,-176.7927,-0.001900,-0.004400,0.000000,)", ackbuff, 2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	ret = ZAux_DirectCommand(handle, "BASE(15,16,17,12,13,14,6,7,8,)\n MOVERV_LABS(-1.000000,906.722900,-111.649902,2239.583740,-3.667,27.206203,-176.7927,-0.001900,-0.004400,0.000000,)", ackbuff, 2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	commandCheckHandler("MOVERV_LABS   ", ret);
 
 	ret = ZAux_DirectCommand(handle, "MOVE_TABLE(7003,2.000000) axis(15)", ackbuff, 2048);
 	commandCheckHandler("MOVE_TABLE   ", ret);
 
-	//ret=ZAux_DirectCommand(handle,"BASE(0,1,2,3,4,5,6)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
-	//ret=ZAux_DirectCommand(handle,"MOVERV_JABS(0,-20,20,0,90,0)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
-	//ret=ZAux_DirectCommand(handle,"BASE(0,1,2,3,4,5,6)\n MOVERV_JABS(0,-20,20,0,90,0)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	//ret=ZAux_DirectCommand(handle,"BASE(0,1,2,3,4,5,6)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
+	//ret=ZAux_DirectCommand(handle,"MOVERV_JABS(0,-20,20,0,90,0)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
+	//ret=ZAux_DirectCommand(handle,"BASE(0,1,2,3,4,5,6)\n MOVERV_JABS(0,-20,20,0,90,0)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	//commandCheckHandler("MOVERV_JABS   ", ret);
 
-	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
-	//ret=ZAux_DirectCommand(handle,"moverv_l(-1, 200,0,0,0,0,0)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
-	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_l(-1, 200,0,0,0,0,0)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
+	//ret=ZAux_DirectCommand(handle,"moverv_l(-1, 200,0,0,0,0,0)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
+	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_l(-1, 200,0,0,0,0,0)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	//commandCheckHandler("MOVERV_l   ", ret);
 
-	//ret=ZAux_DirectCommand(handle,"BASE(0,1,2,3,4,5,6)\n moverv_jabs(-10,16,7,1,70,0)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	//ret=ZAux_DirectCommand(handle,"BASE(0,1,2,3,4,5,6)\n moverv_jabs(-10,16,7,1,70,0)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	//commandCheckHandler("MOVERV_JABS   ", ret);
 
-	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_l(-1,0,100,0,0,10,10)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_l(-1,0,100,0,0,10,10)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	//commandCheckHandler("MOVERV_l   ", ret);
 
-	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_arc(-1, -16,-12,0,-20,-20,0,0,0,90)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_arc(-1, -16,-12,0,-20,-20,0,0,0,90)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	//commandCheckHandler("MOVERV_ARC   ", ret);
 
-	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_p(-1,0,-100,0,0,-10,-10)",ackbuff,2048);//Ö±½Ó·½Ê½£¬ÔÚÏßÃüÁî
+	//ret=ZAux_DirectCommand(handle,"base(15,16,17,12,13,14)\n moverv_p(-1,0,-100,0,0,-10,-10)",ackbuff,2048);//ç›´æ¥æ–¹å¼ï¼Œåœ¨çº¿å‘½ä»¤
 	//commandCheckHandler("MOVERV_P   ", ret);
 
-	//ÔË¶¯ÀàĞÍ»ñÈ¡}
+	//è¿åŠ¨ç±»å‹è·å–}
 	//Sleep(10000);
 	ret = ZAux_Close(handle);
 	handle = NULL;

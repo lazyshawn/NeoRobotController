@@ -191,7 +191,6 @@ FSAIApp::FSAIApp() {
 	weldCfg.Id = 0;
 	auto weldPair = FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg);
 	proc[weldPair.first] = weldPair.second;
-	procedureWindow->procedure[0] = proc;
 
 	// 开启状态刷新线程
 	worker->moveToThread(&workerThread);
@@ -361,7 +360,16 @@ void FSAIApp::connect_slot() {
 	});
 	// 测试按钮2
 	QObject::connect(advanceWindow->ui->pushButton_10, &QPushButton::released, this, [&]() {
-		mainWindow->ui->textBrowser->append("Test 2: ");
+		//// 获取地址
+		//auto cmd = mainWindow->ui->lineEdit->text();
+
+		//// 发送请求
+		//WebService client;
+		//std::string ans;
+		//int ret = client.get_abb(cmd.toStdString(), ans);
+
+		//// 打印结果
+		//mainWindow->ui->textBrowser->append(QString::number(ret) + "\n" + QString::fromStdString(ans));
 	});
 
 	// 工艺窗口
@@ -539,25 +547,31 @@ void FSAIApp::connect_slot() {
 
 		// 清除任务
 		for (auto& idx : idxList) {
-			group.robotList[idx]->task_stop();
+			//group.robotList[idx]->task_stop();
+			group.robot_group_clear_task(idx);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		// 使能
 		for (auto& idx : idxList) {
 			group.robotList[idx]->switch_enable(true);
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
 	});
 
 	// 重启机器人
 	QObject::connect(mainWindow->ui->pushButton_11, &QPushButton::pressed, this, [&]() {
-		if (worker->displayData->interpAlgo == 0) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZMotionRobot.zar", 0);
-		}
-		else if (worker->displayData->interpAlgo == 1) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/ZRVRobot.zar", 0);
-		}
-		else if (worker->displayData->interpAlgo == 2) {
-			group.robotList[worker->displayData->selectedRobot]->reboot("./ctr/FSAIRobot.zar", 0);
+		std::vector<int> idxList = get_selected_robot_idx();
+
+		for (auto& idx : idxList) {
+			if (worker->displayData->interpAlgo == 0) {
+				group.robotList[idx]->reboot("./ctr/ZMotionRobot.zar", 0);
+			}
+			else if (worker->displayData->interpAlgo == 1) {
+				group.robotList[idx]->reboot("./ctr/ZRVRobot.zar", 0);
+			}
+			else if (worker->displayData->interpAlgo == 2) {
+				group.robotList[idx]->reboot("./ctr/FSAIRobot.zar", 0);
+			}
 		}
 	});
 
@@ -689,6 +703,11 @@ void FSAIApp::connect_slot() {
 		moveCfg.smooth = -1;
 		auto movePair = FSAIRobotInterface::serialize_Move_Config(moveCfg);
 		mainWindow->moveCfg[row][movePair.first] = movePair.second;
+		// 设置当前默认协同参数
+		FSAIRobotInterface::Sync_Config syncCfg;
+		syncCfg.Id = 0;
+		auto syncPair = FSAIRobotInterface::serialize_Sync_Config(syncCfg);
+		mainWindow->moveCfg[row][syncPair.first] = syncPair.second;
 
 		insert_teach_point_config_button({ row });
 	});
@@ -763,23 +782,54 @@ void FSAIApp::display_procedure_data(int procIdx, int cmdIdx) {
 	// 未指定行号，仅修改工艺
 	if (cmdIdx >= 0) {
 		auto moveCfg = FSAIRobotInterface::deserialize_Move_Config(mainWindow->moveCfg[cmdIdx]);
+		// 平滑度
 		procedureWindow->ui->spinBox_11->setValue(moveCfg.smooth);
 
-		// 设置不可切换工艺
-		procedureWindow->ui->groupBox_9->setDisabled(false);
+		// 协同参数
+		FSAIRobotInterface::Sync_Config syncCfg = FSAIRobotInterface::deserialize_Sync_Config(mainWindow->moveCfg[cmdIdx]);
+		procedureWindow->ui->groupBox_12->setChecked(syncCfg.Id > 0);
+		std::vector<int> syncRobot;
+		if ((syncCfg.Id > 0 || syncCfg.map.size() > 0) && (syncCfg.map.begin() != syncCfg.map.end())) {
+			auto firstSync = *(syncCfg.map.begin());
+			procedureWindow->ui->spinBox_22->setValue(firstSync.first);
+			procedureWindow->ui->spinBox_23->setValue(firstSync.second.begin()->second);
+			for (auto& pair : firstSync.second) {
+				syncRobot.push_back(pair.first);
+			}
+			QString syncRobotStr;
+			for (int i = 0; i < syncRobot.size() - 1; ++i) {
+				syncRobotStr += QString::number(syncRobot[i]) + ", ";
+			}
+			syncRobotStr += QString::number(syncRobot.back());
+			procedureWindow->ui->lineEdit_2->setText(syncRobotStr);
+		}
+		else {
+			procedureWindow->ui->spinBox_22->setValue(-1);
+			procedureWindow->ui->spinBox_23->setValue(0);
+			procedureWindow->ui->lineEdit_2->setText("");
+		}
 
 		// 可编辑工艺和运动参数
+		procedureWindow->ui->groupBox_9->setDisabled(false);
+		procedureWindow->ui->groupBox_12->setDisabled(false);
+
+		// 设置不可切换工艺
 		procedureWindow->ui->comboBox_4->setDisabled(true);
 
 	}
 	else {
 		procedureWindow->ui->spinBox_11->setValue(-1);
 
-		// 设置可切换工艺
-		procedureWindow->ui->comboBox_4->setDisabled(false);
+		procedureWindow->ui->spinBox_22->setValue(-1);
+		procedureWindow->ui->spinBox_23->setValue(0);
+		procedureWindow->ui->lineEdit_2->setText("");
 
 		// 仅修改工艺，不修改运动参数
 		procedureWindow->ui->groupBox_9->setDisabled(true);
+		procedureWindow->ui->groupBox_12->setDisabled(true);
+
+		// 设置可切换工艺
+		procedureWindow->ui->comboBox_4->setDisabled(false);
 
 	}
 
@@ -943,17 +993,36 @@ void FSAIApp::save_procedure_data() {
 	proc[movePair.first] = movePair.second;
 
 
+
 	// 保存工艺参数
 	procedureWindow->procedure[procIdx] = proc;
 
 
-	// 保存运动参数
+	// 保存轨迹参数
 	if (procedureWindow->cmdIdx >= 0) {
+		// 运动参数
 		FSAIRobotInterface::Move_Config moveCfg;
 		moveCfg.smooth = procedureWindow->ui->spinBox_11->value();
 
 		auto pair = FSAIRobotInterface::serialize_Move_Config(moveCfg);
 		mainWindow->moveCfg[procedureWindow->cmdIdx][pair.first] = pair.second;
+
+		// 协同参数
+		FSAIRobotInterface::Sync_Config syncCfg;
+		syncCfg.Id = procedureWindow->ui->groupBox_12->isChecked();
+		int syncType = procedureWindow->ui->spinBox_22->value();
+		int syncId = procedureWindow->ui->spinBox_23->value();
+		QString str = procedureWindow->ui->lineEdit_2->text();
+		QStringList strList = str.split(",");
+		for (auto& word : strList) {
+			bool ok;
+			int syncRobot = word.toInt(&ok);
+			if (ok)
+				syncCfg.add_sync_item(syncType, syncRobot, syncId);
+		}
+
+		auto syncPair = FSAIRobotInterface::serialize_Sync_Config(syncCfg);
+		mainWindow->moveCfg[procedureWindow->cmdIdx][syncPair.first] = syncPair.second;
 	}
 
 }
@@ -1193,6 +1262,10 @@ int FSAIApp::teach_point_to_trajectory(const std::string teachPointStr, int row,
 	// 速度
 	float speed = teachPoint[row]["Speed"].get<float>();
 
+	// 协同号
+	auto syncCfg = FSAIRobotInterface::deserialize_Sync_Config(moveCfgMap);
+	trajCfg.add_appendix(FSAIRobotInterface::serialize_Sync_Config(syncCfg));
+
 
 	// 关节运动
 	if (moveType == 0) {
@@ -1308,7 +1381,10 @@ int FSAIApp::save_project(std::string fileName) {
 	// 按插入顺序保存
 	nlohmann::ordered_json json;
 
+	// 工程版本号
 	json["version"] = 250916;
+
+	// 工程名称
 
 	// 保存每个机器人的示教点
 	for (size_t i = 0; i < worker->displayData->robotNum; ++i) {
@@ -1354,6 +1430,7 @@ int FSAIApp::save_project(std::string fileName) {
 		FSAIRobotInterface::Move_Config moveCfg = FSAIRobotInterface::deserialize_Move_Config(proc);
 		auto movePair = FSAIRobotInterface::serialize_Move_Config(moveCfg);
 		procedure[std::to_string(i)][std::to_string(movePair.first)] = movePair.second;
+
 	}
 	json["procedure"] = procedure;
 

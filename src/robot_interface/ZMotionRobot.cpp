@@ -632,7 +632,10 @@ int ZMotionRobot::execute_single_cartesian() {
 		// 正弦摆
 		if (waveCfg.Shape == 0) {
 			// 第一个1/4周期占用的相位角
-			float detQ = std::asin((waveCfg.LeftWidth - waveCfg.RightWidth) / (waveCfg.LeftWidth + waveCfg.RightWidth));
+			float detQ = 0;
+			if (std::fabs(waveCfg.LeftWidth + waveCfg.RightWidth) > 1e-3) {
+				detQ = std::asin((waveCfg.LeftWidth - waveCfg.RightWidth) / (waveCfg.LeftWidth + waveCfg.RightWidth));
+			}
 			float rightPartial = 1.0 / numPeriod * (DT_PI / 2 - detQ) / (2 * DT_PI);
 			float leftPartial = 1.0 / numPeriod * (DT_PI / 2 + detQ) / (2 * DT_PI);
 
@@ -1063,6 +1066,7 @@ int ZMotionRobot::separate_trajectory() {
 
 	// 备份需要修改的运动参数
 	Move_Action moveCfgBk = deserialize_Move_Action(curTraj.get_appendix());
+	Sync_Config synCfgBk = deserialize_Sync_Config(curTraj.get_appendix());
 
 	// 旋转角度小，用直线近似
 	Eigen::Vector3f dir = Eigen::Vector3f(trajectory.get_dir().data());
@@ -1113,9 +1117,14 @@ int ZMotionRobot::separate_trajectory() {
 		auto moveCfg = moveCfgBk;
 		moveCfg.actionBefore.clear();
 		traj.add_appendix(serialize_Move_Action(moveCfg));
-		// 修改当前轨迹(最后一段)
+		// 清空协同
+		auto synCfg = synCfgBk;
+		synCfg.clear_item({ 2,3,4 });
+		traj.add_appendix(serialize_Sync_Config(synCfg));
+		// 修改当前轨迹为最后一段(至少两段)
 		*ite = traj;
 
+		// 从第一段开始插入
 		begPartial = 0.0, endPartial = 0.0;
 		for (size_t i = 0; i < trajSize - 1; ++i) {
 
@@ -1130,17 +1139,23 @@ int ZMotionRobot::separate_trajectory() {
 			traj.auxPoint = segment.auxPoint;
 
 			auto moveCfg = moveCfgBk;
+			auto synCfg = synCfgBk;
 			// 第一条轨迹
 			if (i == 0) {
 				// 清空轨迹后动作
 				moveCfg.actionAfter.clear();
 				traj.add_appendix(serialize_Move_Action(moveCfg));
+				// 保留协同参数
+				traj.add_appendix(serialize_Sync_Config(synCfg));
 			}
 			else {
 				// 清空轨迹动作
 				moveCfg.actionBefore.clear();
 				moveCfg.actionAfter.clear();
 				traj.add_appendix(serialize_Move_Action(moveCfg));
+				// 清空协同
+				synCfg.clear_item({ 2,3,4 });
+				traj.add_appendix(serialize_Sync_Config(synCfg));
 			}
 
 			// 插入新轨迹
@@ -1410,43 +1425,14 @@ int ZMotionRobot::task_stop() {
 
 	return 0;
 
-	// 停止记录位置
-	save_task_status(false, -1);
-	// 焊接标志位复位
-	ZController->set_axis_param(get_state_idx_base()+6, "TABLE", 0);
-
-	// 清空执行轴，摆焊轴
-	std::vector<int> axis;
-	auto camAxis = get_execute_axis();
-	axis.push_back(camAxis[0]);
-	//camAxis = get_tcp_axis();
-	//axis.push_back(camAxis[0]);
-	camAxis = get_cam_axis();
-	axis.insert(axis.end(), camAxis.begin(), camAxis.end());
-
-	// 轴停止，清空已下发任务
-	ZController->axis_stop(axis);
-
-	// 摆焊轴位置回零
-	auto zeroPos = std::vector<float>(camAxis.size(), 0);
-	ZController->set_axis_param(camAxis, "DPOS", zeroPos);
-
-	// 轨迹序号复位
-	reset_line_num();
-
-	// 下位机复位
-	ZController->set_axis_param(get_state_idx_base(), "TABLE", 0);
-
-	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
-
-	return 0;
 }
 
 int ZMotionRobot::emergency_stop() {
 
 	int stateIdxBase = get_state_idx_base();
 	trajectory.clear();
-	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+	// 保留旧版本急停按钮，后续版本将取消
+	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 	ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
 
 	// 上位机下发停止

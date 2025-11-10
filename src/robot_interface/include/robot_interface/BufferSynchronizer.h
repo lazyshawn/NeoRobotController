@@ -1,13 +1,13 @@
-#pragma once
+ï»¿#pragma once
 
 #include <deque>
 #include <vector>
 
-// »º´æÇøÊı¾İ¸ñÊ½
+// ç¼“å­˜åŒºæ•°æ®æ ¼å¼
 class BufferUnit {
 	long long timeStamp;
 
-	// Î»ÖÃ
+	// ä½ç½®
 	std::vector<float> dpos;
 
 public:
@@ -15,47 +15,47 @@ public:
 };
 
 /* **********************************************************
-* @brief  ÉÏÏÂÎ»»ú»º³åÊı¾İÍ¬²½
+* @brief  ä¸Šä¸‹ä½æœºç¼“å†²æ•°æ®åŒæ­¥
 *
 * Step:
-* 1. ¶ÔÆëÉÏÏÂÎ»»úÊ±¼ä´Á
-* 2. »º´æÊı¾İ°ü
-* 3. ²éÑ¯/²å²¹¼ÆËã¸ø¶¨ÉÏÎ»»úÊ±¼äÏÂµÄÊµÊ±Êı¾İ
+* 1. å¯¹é½ä¸Šä¸‹ä½æœºæ—¶é—´æˆ³
+* 2. ç¼“å­˜æ•°æ®åŒ…
+* 3. æŸ¥è¯¢/æ’è¡¥è®¡ç®—ç»™å®šä¸Šä½æœºæ—¶é—´ä¸‹çš„å®æ—¶æ•°æ®
 *********************************************************** */
 class BufferSynchronizer {
-	//! ×î´ó»º´æÊı¾İ³¤¶È
+	//! æœ€å¤§ç¼“å­˜æ•°æ®é•¿åº¦
 	int maxBuffLen = 100;
-	// ! ×î´ó²å²¹¼äÏ¶
+	// ! æœ€å¤§æ’è¡¥é—´éš™
 	long long maxDetT;
-	//! ÉÏÎ»»úÊ±¼ä²Î¿¼»ù×¼(ÈÎÒâºÁÃëÎªµ¥Î»µÄlonglongÀàĞÍ)
+	//! ä¸Šä½æœºæ—¶é—´å‚è€ƒåŸºå‡†(ä»»æ„æ¯«ç§’ä¸ºå•ä½çš„longlongç±»å‹)
 	long long masterTimeBase;
-	//! ÏÂÎ»»úÊ±¼ä²Î¿¼»ù×¼
+	//! ä¸‹ä½æœºæ—¶é—´å‚è€ƒåŸºå‡†
 	long long slaveTimeBase;
 
-	//! ÏÂÎ»»ú»º³åÇøÊı¾İ
+	//! ä¸‹ä½æœºç¼“å†²åŒºæ•°æ®
 	std::deque<BufferUnit> slaveBuffer;
-	//! ÉÏÎ»»ú»º³åÇøÊı¾İ
+	//! ä¸Šä½æœºç¼“å†²åŒºæ•°æ®
 	std::deque<BufferUnit> masterBuffer;
 
 public:
-	// Ê±¼ä´ÁÍ¬²½
+	// æ—¶é—´æˆ³åŒæ­¥
 	int stamp_synchronize(long long masterStamp, long long slaveStamp);
 
-	// ÉÏÎ»»úÊ±¼ä´Á×ª»¯ÎªÏÂÎ»»úÊ±¼ä´Á
+	// ä¸Šä½æœºæ—¶é—´æˆ³è½¬åŒ–ä¸ºä¸‹ä½æœºæ—¶é—´æˆ³
 	long long to_slave_time(long long masterStamp) const;
 
-	// ÏÂÎ»»úÊ±¼ä´Á×ª»¯ÎªÉÏÎ»»úÊ±¼ä´Á
+	// ä¸‹ä½æœºæ—¶é—´æˆ³è½¬åŒ–ä¸ºä¸Šä½æœºæ—¶é—´æˆ³
 	long long to_master_time(long long slaveStamp) const;
 
-	// ĞÂÔöÏÂÎ»»úÊı¾İ
+	// æ–°å¢ä¸‹ä½æœºæ•°æ®
 	int push_slave_buffer(long long slaveStamp, const std::vector<float>& data);
 
-	// ĞÂÔöÉÏÎ»»úÊı¾İ
+	// æ–°å¢ä¸Šä½æœºæ•°æ®
 	int push_master_buffer(long long masterStamp, const std::vector<float>& data);
 
-	// °´ÏÂÎ»»úÊ±¼ä²éÑ¯ÏÂÎ»»úÊı¾İ
+	// æŒ‰ä¸‹ä½æœºæ—¶é—´æŸ¥è¯¢ä¸‹ä½æœºæ•°æ®
 	int query_slave_buffer(long long slaveStamp, std::vector<float>& data) const;
-	// °´ÏÂÎ»»úÊ±¼ä²éÑ¯ÏÂÎ»»úÊı¾İ
+	// æŒ‰ä¸‹ä½æœºæ—¶é—´æŸ¥è¯¢ä¸‹ä½æœºæ•°æ®
 	int query_slave_buffer(int idx, float value, std::vector<float>& data, float maxDist) const;
 
 

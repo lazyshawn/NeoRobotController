@@ -1,29 +1,29 @@
-#pragma once
+ï»¿#pragma once
 
 
 #include <string>
 class Corner {
 public:
 	//
-	double WeldingSpeed = 15;		        //º¸½ÓËÙ¶È
-	double MaxRotorSpeed = 0.0;             //×î´ó×ªËÙ
-	double WeldingCrt_Spd = 220;	        //º¸½ÓµçÁ÷
-	double WeldingVtg_Strth = 23;           //º¸½ÓµçÑ¹
-	int	VtgUniCorrection = 0;				//µçÑ¹Ò»ÔªĞŞÕıÖµ
-	double Front_Lengh = 0.0;				//¹Õ½ÇÇ°¾àÀë
-	double Back_Lengh = 0.0;				//¹Õ½Çºó¾àÀë
+	double WeldingSpeed = 15;		        //ç„Šæ¥é€Ÿåº¦
+	double MaxRotorSpeed = 0.0;             //æœ€å¤§è½¬é€Ÿ
+	double WeldingCrt_Spd = 220;	        //ç„Šæ¥ç”µæµ
+	double WeldingVtg_Strth = 23;           //ç„Šæ¥ç”µå‹
+	int	VtgUniCorrection = 0;				//ç”µå‹ä¸€å…ƒä¿®æ­£å€¼
+	double Front_Lengh = 0.0;				//æ‹è§’å‰è·ç¦»
+	double Back_Lengh = 0.0;				//æ‹è§’åè·ç¦»
 	//
-	int Weave_Enable = 1;                   //ÆôÓÃ°Úº¸
-	int Shape = 0;							// °Ú»¡ĞÎ×´: 0 ÕıÏÒ, 1 Ô²»¡, 2 8×ÖĞÎ, 3 Èı½Ç
-	double LeftWidth = 4;					//×óÕñ·ù
-	double RightWidth = 4;					//ÓÒÕñ·ù
+	int Weave_Enable = 1;                   //å¯ç”¨æ‘†ç„Š
+	int Shape = 0;							// æ‘†å¼§å½¢çŠ¶: 0 æ­£å¼¦, 1 åœ†å¼§, 2 8å­—å½¢, 3 ä¸‰è§’
+	double LeftWidth = 4;					//å·¦æŒ¯å¹…
+	double RightWidth = 4;					//å³æŒ¯å¹…
 
-	double Freq = 0.0;					    //°Ú»¡ÆµÂÊ Hz 
-	double L_StayTime = 0.0;				//×óÍ£ÁôÊ±¼ä
-	double R_StayTime = 0.0;			    //ÓÒÍ£ÁôÊ±¼ä
-	double L_Angle = 0.0;				    //×ó°Ú½Ç¶È
-	double R_Angle = 0.0;				    //ÓÒ°Ú½Ç¶È
-	int StayMode = 0;					    //Í£Áô·½Ê½: 0 Í£Ö¹°Ú¶¯¼ÌĞøÏòÇ°, 1 ÍêÈ«¾²Ö¹
+	double Freq = 0.0;					    //æ‘†å¼§é¢‘ç‡ Hz 
+	double L_StayTime = 0.0;				//å·¦åœç•™æ—¶é—´
+	double R_StayTime = 0.0;			    //å³åœç•™æ—¶é—´
+	double L_Angle = 0.0;				    //å·¦æ‘†è§’åº¦
+	double R_Angle = 0.0;				    //å³æ‘†è§’åº¦
+	int StayMode = 0;					    //åœç•™æ–¹å¼: 0 åœæ­¢æ‘†åŠ¨ç»§ç»­å‘å‰, 1 å®Œå…¨é™æ­¢
 	//
 
 };
@@ -32,156 +32,156 @@ public:
 class ReArc {
 public :
 
-	int ReArc_Enable = 1;					//ÆôÓÃÔÙÆğ»¡
-	int ReArcCount = 0;						//ÔÙÆğ»¡´ÎÊı
-	double ReArcTime = 0.0;					//ÔÙÆğ»¡Ê±¼ä
-	double ReArcSnagTime = 0.0;				//ÔÙÆğ»¡³éË¿Ê±¼ä
+	int ReArc_Enable = 1;					//å¯ç”¨å†èµ·å¼§
+	int ReArcCount = 0;						//å†èµ·å¼§æ¬¡æ•°
+	double ReArcTime = 0.0;					//å†èµ·å¼§æ—¶é—´
+	double ReArcSnagTime = 0.0;				//å†èµ·å¼§æŠ½ä¸æ—¶é—´
 	//
 
-	int ScrubArc_Enable = 1;				//ÆôÓÃ¹Î²ÁÆğ»¡	
-	double ScrubArcCrt = 0.0;				//¹Î²ÁµçÁ÷
-	double ScrubArcVtg = 0.0;				//¹Î²ÁµçÑ¹
-	double ScrubArcVtgCorrect = 0.0;		//¹Î²ÁµçÑ¹ĞŞÕıÖµ
-	int ScrubArcCount = 0;					//¹Î²ÁÆğ»¡´ÎÊı
-	double ScrubArcLengh = 0.0;				//¹Î²Á¾àÀë
-	double ScrubArcSpeed = 0.0;				//¹Î²ÁËÙ¶È
-	double SnagTime = 0.0;					//³éË¿Ê±¼ä
+	int ScrubArc_Enable = 1;				//å¯ç”¨åˆ®æ“¦èµ·å¼§	
+	double ScrubArcCrt = 0.0;				//åˆ®æ“¦ç”µæµ
+	double ScrubArcVtg = 0.0;				//åˆ®æ“¦ç”µå‹
+	double ScrubArcVtgCorrect = 0.0;		//åˆ®æ“¦ç”µå‹ä¿®æ­£å€¼
+	int ScrubArcCount = 0;					//åˆ®æ“¦èµ·å¼§æ¬¡æ•°
+	double ScrubArcLengh = 0.0;				//åˆ®æ“¦è·ç¦»
+	double ScrubArcSpeed = 0.0;				//åˆ®æ“¦é€Ÿåº¦
+	double SnagTime = 0.0;					//æŠ½ä¸æ—¶é—´
 	//
 
-	int Weave_Enable = 1;                   //ÆôÓÃ°Úº¸
-	int Shape = 0;							//°Ú»¡ĞÎ×´: 0 ÕıÏÒ, 1 Ô²»¡, 2 8×ÖĞÎ, 3 Èı½Ç
-	double LeftWidth = 4;					//×óÕñ·ù
-	double RightWidth = 4;					//ÓÒÕñ·ù
+	int Weave_Enable = 1;                   //å¯ç”¨æ‘†ç„Š
+	int Shape = 0;							//æ‘†å¼§å½¢çŠ¶: 0 æ­£å¼¦, 1 åœ†å¼§, 2 8å­—å½¢, 3 ä¸‰è§’
+	double LeftWidth = 4;					//å·¦æŒ¯å¹…
+	double RightWidth = 4;					//å³æŒ¯å¹…
 
-	double Freq = 0.0;					    //°Ú»¡ÆµÂÊ Hz 
-	double L_StayTime = 0.0;				//×óÍ£ÁôÊ±¼ä
-	double R_StayTime = 0.0;			    //ÓÒÍ£ÁôÊ±¼ä
-	double L_Angle = 0.0;				    //×ó°Ú½Ç¶È
-	double R_Angle = 0.0;				    //ÓÒ°Ú½Ç¶È
-	int StayMode = 0;					    //Í£Áô·½Ê½: 0 Í£Ö¹°Ú¶¯¼ÌĞøÏòÇ°, 1 ÍêÈ«¾²Ö¹
+	double Freq = 0.0;					    //æ‘†å¼§é¢‘ç‡ Hz 
+	double L_StayTime = 0.0;				//å·¦åœç•™æ—¶é—´
+	double R_StayTime = 0.0;			    //å³åœç•™æ—¶é—´
+	double L_Angle = 0.0;				    //å·¦æ‘†è§’åº¦
+	double R_Angle = 0.0;				    //å³æ‘†è§’åº¦
+	int StayMode = 0;					    //åœç•™æ–¹å¼: 0 åœæ­¢æ‘†åŠ¨ç»§ç»­å‘å‰, 1 å®Œå…¨é™æ­¢
     //
 };
 
 
-//°Úº¸²ÎÊı
+//æ‘†ç„Šå‚æ•°
 class Weave {
 public:
 	int Id = 0;
-	int Master = 0;				            //°Ú»¡»ù×¼£¿ÖÜÆÚ
-	int Shape = 3;				            //°Ú»¡ĞÎ×´: 0 ÕıÏÒ, 1 Ô²»¡, 2 8×ÖĞÎ, 3 Èı½Ç
+	int Master = 0;				            //æ‘†å¼§åŸºå‡†ï¼Ÿå‘¨æœŸ
+	int Shape = 3;				            //æ‘†å¼§å½¢çŠ¶: 0 æ­£å¼¦, 1 åœ†å¼§, 2 8å­—å½¢, 3 ä¸‰è§’
 	double Length = 1.47;			
-	double Width = 8;					    //Õñ·ù
-	double Radius = 0;					    //°Ú»¡°ë¾¶
-	double Bias = 0;					    //°Ú»¡Æ«²î
-	int Dwell_type = 1;					    //µÈ´ıÀàĞÍ: 0 °Ú¶¯Í£Ö¹, 1 »úÆ÷ÈËÍ£Ö¹
-	double Dwell_left = 0.5;			    //×ó²àµÈ´ı
-	double Dwell_center = 0.1;			    //ÖĞĞÄµÈ´ı
-	double Dwell_right = 0.5;			    //ÓÒ²àµÈ´ı
-	double Angle_plane = 0;					//Ñö½ÇÀàĞÍ: 0 VĞÍ, 1 Èı½Ç
-	double Angle_tilt = 0;					//ÇãĞ±½Ç¶È
+	double Width = 8;					    //æŒ¯å¹…
+	double Radius = 0;					    //æ‘†å¼§åŠå¾„
+	double Bias = 0;					    //æ‘†å¼§åå·®
+	int Dwell_type = 1;					    //ç­‰å¾…ç±»å‹: 0 æ‘†åŠ¨åœæ­¢, 1 æœºå™¨äººåœæ­¢
+	double Dwell_left = 0.5;			    //å·¦ä¾§ç­‰å¾…
+	double Dwell_center = 0.1;			    //ä¸­å¿ƒç­‰å¾…
+	double Dwell_right = 0.5;			    //å³ä¾§ç­‰å¾…
+	double Angle_plane = 0;					//ä»°è§’ç±»å‹: 0 Vå‹, 1 ä¸‰è§’
+	double Angle_tilt = 0;					//å€¾æ–œè§’åº¦
 	double Angle_lead = 0;
-	double Angle_Ltype_top = 30;			//ÉÏÑö½Ç¶È
-	double Angle_Ltype_btm = 30;			//ÏÂÑö½Ç¶È
-	double Phase = 0;					    //²¨ĞÎ·´Ïà: 0 Õı³£, 1 ·´Ïò   
+	double Angle_Ltype_top = 30;			//ä¸Šä»°è§’åº¦
+	double Angle_Ltype_btm = 30;			//ä¸‹ä»°è§’åº¦
+	double Phase = 0;					    //æ³¢å½¢åç›¸: 0 æ­£å¸¸, 1 åå‘   
 	double Offset = 0;
 	double Invert = 0;
-	double IsWeave_3D = 1;				    //3D°Ú»¡
-	double LeftWidth = 4;					//×óÕñ·ù
-	double RightWidth = 4;					//ÓÒÕñ·ù
+	double IsWeave_3D = 1;				    //3Dæ‘†å¼§
+	double LeftWidth = 4;					//å·¦æŒ¯å¹…
+	double RightWidth = 4;					//å³æŒ¯å¹…
 	double LengthLE_value = 0.68;
 
-	double Freq = 0.0;					    //°Ú»¡ÆµÂÊ Hz
+	double Freq = 0.0;					    //æ‘†å¼§é¢‘ç‡ Hz
 };
 
 
-//µç»¡¸ú×Ù²ÎÊı
+//ç”µå¼§è·Ÿè¸ªå‚æ•°
 class Track {
 public:
 	int Id = 0;
-	int Lr_enable = 1;						//ÉÏÏÂ¸ú×ÙÊ¹ÄÜ
-	int Ud_enable = 1;						//×óÓÒ¸ú×ÙÊ¹ÄÜ
-	int Signal_Type = 0;					//ĞÅºÅÔ´ 0º¸»ú
-	int TrackerPar_Id = 0;					//¸ú×ÙÆ÷ID
+	int Lr_enable = 1;						//ä¸Šä¸‹è·Ÿè¸ªä½¿èƒ½
+	int Ud_enable = 1;						//å·¦å³è·Ÿè¸ªä½¿èƒ½
+	int Signal_Type = 0;					//ä¿¡å·æº 0ç„Šæœº
+	int TrackerPar_Id = 0;					//è·Ÿè¸ªå™¨ID
 	int RefCurrentType = 0;					//
-	int InvalidSampleCount = 3;				//ÎŞĞ§²ÉÑù¼ÆÊı
-	double AdjustDelayTime = 0.5;			//²ÉÑùÑÓ³ÙÊ±¼ä
-	double SegCorrectMaxProportion = 0.0;   //·Ö¶Î¾ÀÆ«×î´ó±ÈÀı
-	double SegCorrectCycles = 0.0;          //·Ö¶Î¾ÀÆ«ÖÜÆÚÊı
-	// double filterCoeff = 20;               //ÂË²¨ÏµÊı
+	int InvalidSampleCount = 3;				//æ— æ•ˆé‡‡æ ·è®¡æ•°
+	double AdjustDelayTime = 0.5;			//é‡‡æ ·å»¶è¿Ÿæ—¶é—´
+	double SegCorrectMaxProportion = 0.0;   //åˆ†æ®µçº åæœ€å¤§æ¯”ä¾‹
+	double SegCorrectCycles = 0.0;          //åˆ†æ®µçº åå‘¨æœŸæ•°
+	// double filterCoeff = 20;               //æ»¤æ³¢ç³»æ•°
 
-	double Lr_gain = 0.28;					//×óÓÒ¸ú×ÙÔöÒæ
-	double Lr_offset = 0;					//×óÓÒ»ù×¼Æ«²î
-	double Lr_maxSingleCompensation = 3;	//×óÓÒµ¥´Î×î´ó²¹³¥Á¿
-	double Lr_minCompensation = 0;			//×óÓÒ×îĞ¡²¹³¥Á¿
-	double Lr_maxCompensation = 200;		//×óÓÒ×î´ó²¹³¥Á¿
-	int Lr_startTrackCount = 5;				//×óÓÒ¿ªÊ¼¸ú×Ù¼ÆÊı
-	double Lr_MaxCorrectAngle = 0.0;        //×óÓÒ×î´ó¾ÀÆ«½Ç¶È
+	double Lr_gain = 0.28;					//å·¦å³è·Ÿè¸ªå¢ç›Š
+	double Lr_offset = 0;					//å·¦å³åŸºå‡†åå·®
+	double Lr_maxSingleCompensation = 3;	//å·¦å³å•æ¬¡æœ€å¤§è¡¥å¿é‡
+	double Lr_minCompensation = 0;			//å·¦å³æœ€å°è¡¥å¿é‡
+	double Lr_maxCompensation = 200;		//å·¦å³æœ€å¤§è¡¥å¿é‡
+	int Lr_startTrackCount = 5;				//å·¦å³å¼€å§‹è·Ÿè¸ªè®¡æ•°
+	double Lr_MaxCorrectAngle = 0.0;        //å·¦å³æœ€å¤§çº åè§’åº¦
 
-	double Ud_gain = -0.25;					//ÉÏÏÂ¸ú×ÙÔöÒæ
-	double Ud_offset = 0;					//ÉÏÏÂ»ù×¼Æ«²î
+	double Ud_gain = -0.25;					//ä¸Šä¸‹è·Ÿè¸ªå¢ç›Š
+	double Ud_offset = 0;					//ä¸Šä¸‹åŸºå‡†åå·®
 	double Ud_refCurrent = 0;					
 	double Ud_constRefCurrent = 0;			//	
-	double Ud_maxSingleCompensation = 3;	//ÉÏÏÂµ¥´Î×î´ó²¹³¥Á¿
-	double Ud_minCompensation = 0;			//ÉÏÏÂ×îĞ¡²¹³¥Á¿
-	double Ud_maxCompensation = 200;		//ÉÏÏÂ×î´ó²¹³¥Á¿
-	int Ud_refSampleCount = 0;				//ÉÏÏÂÒıÓÃ²ÉÑù¼ÆÊı | »ù×¼µçÁ÷²ÉÑùÖÜÆÚÊı
-	int Ud_startTrackCount = 5;				//ÉÏÏÂ¿ªÊ¼¸ú×Ù¼ÆÊı | ¿ªÊ¼¸ú×ÙÖÜÆÚÊı
-	double Ud_sampleFreq = 5;				//ÉÏÏÂ²ÉÑùÆµÂÊ
-	double Ud_MaxCorrectAngle = 0.0;        //ÉÏÏÂ×î´ó¾ÀÆ«½Ç¶È
+	double Ud_maxSingleCompensation = 3;	//ä¸Šä¸‹å•æ¬¡æœ€å¤§è¡¥å¿é‡
+	double Ud_minCompensation = 0;			//ä¸Šä¸‹æœ€å°è¡¥å¿é‡
+	double Ud_maxCompensation = 200;		//ä¸Šä¸‹æœ€å¤§è¡¥å¿é‡
+	int Ud_refSampleCount = 0;				//ä¸Šä¸‹å¼•ç”¨é‡‡æ ·è®¡æ•° | åŸºå‡†ç”µæµé‡‡æ ·å‘¨æœŸæ•°
+	int Ud_startTrackCount = 5;				//ä¸Šä¸‹å¼€å§‹è·Ÿè¸ªè®¡æ•° | å¼€å§‹è·Ÿè¸ªå‘¨æœŸæ•°
+	double Ud_sampleFreq = 5;				//ä¸Šä¸‹é‡‡æ ·é¢‘ç‡
+	double Ud_MaxCorrectAngle = 0.0;        //ä¸Šä¸‹æœ€å¤§çº åè§’åº¦
 
 
 };
 
 
-//º¸½Ó²ÎÊı
+//ç„Šæ¥å‚æ•°
 class Arc_WeldingParaItem {
 public:
 	int Id = -1;
-	int CurrentMode = 0;		            //µçÁ÷Ä£Ê½: 0 µçÁ÷Öµ
-	int VoltageMode = 1;		            //µçÑ¹Ä£Ê½: 0 ·Ö±ğ, 1 Ò»Ôª»¯
-	int CoolingMode = 0;		            //ÀäÈ´Ä£Ê½
-	int Inductance = 0;                     //µç¸Ğ
+	int CurrentMode = 0;		            //ç”µæµæ¨¡å¼: 0 ç”µæµå€¼
+	int VoltageMode = 1;		            //ç”µå‹æ¨¡å¼: 0 åˆ†åˆ«, 1 ä¸€å…ƒåŒ–
+	int CoolingMode = 0;		            //å†·å´æ¨¡å¼
+	int Inductance = 0;                     //ç”µæ„Ÿ
 	int BaseCurrentRatio = 0;
 	double ReburnCorrectionTime = 0;
 
-	//Æğ»¡²ÎÊı
-	int ArcOnWorkMode = 0;			        //Æğ»¡Ä£Ê½ 0Ö±Á÷ 1Âö³å 2JobÄ£Ê½ 3¶ÏĞøº¸ 4·Ö±ğÄ£Ê½
+	//èµ·å¼§å‚æ•°
+	int ArcOnWorkMode = 0;			        //èµ·å¼§æ¨¡å¼ 0ç›´æµ 1è„‰å†² 2Jobæ¨¡å¼ 3æ–­ç»­ç„Š 4åˆ†åˆ«æ¨¡å¼
 	int JobChannelNum = 0;
-	double ArcOnCrt_Spd = 220;		        //Æğ»¡µçÁ÷
-	double ArcOnVtg_Strth = 23;		        //Æğ»¡µçÑ¹
-	double ArcOnTime = 0.5;			        //Æğ»¡Ê±¼ä
-	double ArcOnVtg_Correction = 0.0;       //Æğ»¡µçÑ¹ĞŞÕıÖµ
-	double ArcOnBlowTime = 0.5;             //ÒıÆøÊ±¼ä
-	double SlowUpTime = 0.0;                //»ºÉıÊ±¼ä
+	double ArcOnCrt_Spd = 220;		        //èµ·å¼§ç”µæµ
+	double ArcOnVtg_Strth = 23;		        //èµ·å¼§ç”µå‹
+	double ArcOnTime = 0.5;			        //èµ·å¼§æ—¶é—´
+	double ArcOnVtg_Correction = 0.0;       //èµ·å¼§ç”µå‹ä¿®æ­£å€¼
+	double ArcOnBlowTime = 0.5;             //å¼•æ°”æ—¶é—´
+	double SlowUpTime = 0.0;                //ç¼“å‡æ—¶é—´
 
-	//º¸½Ó²ÎÊı
-	int WeldingWorkMode = 0;		        //¹¤×÷Ä£Ê½£º 0Ö±Á÷ 1Âö³å 2JobÄ£Ê½ 3¶ÏĞøº¸ 4·Ö±ğÄ£Ê½
-	double WeldingCrt_Spd = 220;		    //º¸½ÓµçÁ÷
-	double WeldingVtg_Strth = 23;		    //º¸½ÓµçÑ¹
-	double WeldingSpeed = 15;		        //º¸½ÓËÙ¶È
+	//ç„Šæ¥å‚æ•°
+	int WeldingWorkMode = 0;		        //å·¥ä½œæ¨¡å¼ï¼š 0ç›´æµ 1è„‰å†² 2Jobæ¨¡å¼ 3æ–­ç»­ç„Š 4åˆ†åˆ«æ¨¡å¼
+	double WeldingCrt_Spd = 220;		    //ç„Šæ¥ç”µæµ
+	double WeldingVtg_Strth = 23;		    //ç„Šæ¥ç”µå‹
+	double WeldingSpeed = 15;		        //ç„Šæ¥é€Ÿåº¦
 
-	//ÊÕ»¡²ÎÊı
-	int ArcOffWorkMode = 0;				    //Æğ»¡Ä£Ê½ 0Ö±Á÷ 1Âö³å 2JobÄ£Ê½ 3¶ÏĞøº¸ 4·Ö±ğÄ£Ê½
-	double ArcOffCrt_Spd = 200;				//ÊÕ»¡µçÁ÷
-	double ArcOffVtg_Strth = 25;			//ÊÕ»¡µçÑ¹
-	double ArcOffTime = 0.5;				//ÊÕ»¡Ê±¼ä
-	double UnstickCurrent = 30;				//·ÀÕ³Ë¿µçÁ÷
-	double UnstickVoltage = 25;				//·ÀÕ³Ë¿µçÑ¹
-	double UnstickTimeOut = 0;				//·ÀÕ³Ë¿Ê±¼ä
-	double ArcOffVtg_Correction = 0.0;      //ÊÕ»¡µçÑ¹ĞŞÕıÖµ
-	double ArcOffBlowTime = 0.5;            //ÊÕÆøÊ±¼ä
-	double SlowDownTime = 0.0;              //»º½µÊ±¼ä
+	//æ”¶å¼§å‚æ•°
+	int ArcOffWorkMode = 0;				    //èµ·å¼§æ¨¡å¼ 0ç›´æµ 1è„‰å†² 2Jobæ¨¡å¼ 3æ–­ç»­ç„Š 4åˆ†åˆ«æ¨¡å¼
+	double ArcOffCrt_Spd = 200;				//æ”¶å¼§ç”µæµ
+	double ArcOffVtg_Strth = 25;			//æ”¶å¼§ç”µå‹
+	double ArcOffTime = 0.5;				//æ”¶å¼§æ—¶é—´
+	double UnstickCurrent = 30;				//é˜²ç²˜ä¸ç”µæµ
+	double UnstickVoltage = 25;				//é˜²ç²˜ä¸ç”µå‹
+	double UnstickTimeOut = 0;				//é˜²ç²˜ä¸æ—¶é—´
+	double ArcOffVtg_Correction = 0.0;      //æ”¶å¼§ç”µå‹ä¿®æ­£å€¼
+	double ArcOffBlowTime = 0.5;            //æ”¶æ°”æ—¶é—´
+	double SlowDownTime = 0.0;              //ç¼“é™æ—¶é—´
 
 
 
-	int	 WelderParamType = 0;				//º¸»ú²ÎÊıÀàĞÍ: 0 Ò»ÔªÄ£Ê½, 1 ·Ö±ğÄ£Ê½
-	int	VtgUniCorrection = 0;				//µçÑ¹Ò»ÔªĞŞÕıÖµ
-	double ArcOnTimeoutTime = 0.0;			//Æğ»¡³¬Ê±Ê±¼ä
-	double ArcInterruptReconnectTime = 0.0;	//¶Ï»¡ÖØÁ¬Ê±¼ä
+	int	 WelderParamType = 0;				//ç„Šæœºå‚æ•°ç±»å‹: 0 ä¸€å…ƒæ¨¡å¼, 1 åˆ†åˆ«æ¨¡å¼
+	int	VtgUniCorrection = 0;				//ç”µå‹ä¸€å…ƒä¿®æ­£å€¼
+	double ArcOnTimeoutTime = 0.0;			//èµ·å¼§è¶…æ—¶æ—¶é—´
+	double ArcInterruptReconnectTime = 0.0;	//æ–­å¼§é‡è¿æ—¶é—´
 
-	double SearchSpeedLimit = 0.0;          //Ñ°Î»ÏŞËÙ
-	double MaxRotorSpeed = 0.0;             //×î´ó×ªËÙ
-	double LowpassFilter = 0.0;             //µÍÍ¨ÂË²¨
+	double SearchSpeedLimit = 0.0;          //å¯»ä½é™é€Ÿ
+	double MaxRotorSpeed = 0.0;             //æœ€å¤§è½¬é€Ÿ
+	double LowpassFilter = 0.0;             //ä½é€šæ»¤æ³¢
 	//
 	//
 	//

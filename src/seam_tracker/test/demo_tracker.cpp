@@ -1,4 +1,4 @@
-
+ï»¿
 #include <iostream>
 #include <random>
 #include <chrono>
@@ -15,10 +15,10 @@ int main() {
 	std::default_random_engine engine(seed);
 	std::normal_distribution<double> distribute(100, 5);
 
-	// ÂË²¨³õÊ¼»¯
+	// æ»¤æ³¢åˆå§‹åŒ–
 	reset_mw_filter(0, sampleVec);
 
-	// ¿ªÊ¼ÂË²¨
+	// å¼€å§‹æ»¤æ³¢
 	//for (size_t i = 0; i < sampleNum; ++i) {
 	//	sampleVec[0] = i + 1;
 	//	sampleVec[i + 1] = distribute(engine);

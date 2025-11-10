@@ -1,4 +1,4 @@
-
+﻿
 add_library(FSAIRobotInterface
   ZMotionController.cpp
   CoopRobot.cpp
@@ -18,11 +18,13 @@ target_include_directories(FSAIRobotInterface PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/clogger>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/zmotion>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/openssl-3/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_directories(FSAIRobotInterface PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/zmotion>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/clogger>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/openssl-3>
 )
 #get_target_property(LINK_DIRS FSAIRobotInterface LINK_DIRECTORIES)
 #message("Link directories: ${LINK_DIRS}")
@@ -32,6 +34,8 @@ target_link_libraries(FSAIRobotInterface PUBLIC
   zauxdll
   zmotion
   log4cplus$<$<CONFIG:Debug>:D>
+  libssl
+  libcrypto
 )
 
 # Install headers

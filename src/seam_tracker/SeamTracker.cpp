@@ -1,4 +1,4 @@
-
+ï»¿
 #include "SeamTracker.h"
 #include <iostream>
 
@@ -26,10 +26,10 @@ ScannerTracker::~ScannerTracker() {
 
 
 void ScannerTracker::clear() {
-	// Ö÷¶¯ÊÍ·Å
+	// ä¸»åŠ¨é‡Šæ”¾
 	//ZController.reset();
 
-	// Çå¿ÕÊı¾İ
+	// æ¸…ç©ºæ•°æ®
 	tcpTimeBuff.clear();
 	seamTimeBuff.clear();
 	tcpBuff.clear();
@@ -40,7 +40,7 @@ void ScannerTracker::clear() {
 int ScannerTracker::synchronize() {
 	this->clear();
 
-	// ÉèÖÃ²Î¿¼Ê±¼ä
+	// è®¾ç½®å‚è€ƒæ—¶é—´
 	slaveTimeRef = ZController->get_time_stamp();
 	masterTimeRef = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -49,41 +49,41 @@ int ScannerTracker::synchronize() {
 
 
 int ScannerTracker::read_tcp_buffer(std::vector<motion::Time_Pos>& tcpBuffer) {
-	// 1. ¶ÁÈ¡»º´æÇø
+	// 1. è¯»å–ç¼“å­˜åŒº
 	std::vector<float> retValue;
-	// ¿É¶Á»º´æÇøË÷Òı(1) + ÏÂ·¢»º´æÇø¾ÍĞ÷(1) + [Ê±¼ä´Á(1) + Ö÷ÔË¶¯¾àÀë(1) + tcpÎ»×Ë(6)] * 10 * 2
+	// å¯è¯»ç¼“å­˜åŒºç´¢å¼•(1) + ä¸‹å‘ç¼“å­˜åŒºå°±ç»ª(1) + [æ—¶é—´æˆ³(1) + ä¸»è¿åŠ¨è·ç¦»(1) + tcpä½å§¿(6)] * 10 * 2
 	ZController->get_register(100000, 163, retValue);
-	// ¿É¶Á»º´æÇøµÄË÷Òı
+	// å¯è¯»ç¼“å­˜åŒºçš„ç´¢å¼•
 	int readIdx = static_cast<int>(retValue[1]);
-	// ÏÂ·¢»º´æÇø
+	// ä¸‹å‘ç¼“å­˜åŒº
 	slaveCmdReady = static_cast<int>(retValue[2]);
 
-	// 2. Êı¾İºÏ·¨ĞÔĞ£Ñé
-	// Á½¸ö»º´æÇø¾ù²»¿É¶Á
+	// 2. æ•°æ®åˆæ³•æ€§æ ¡éªŒ
+	// ä¸¤ä¸ªç¼“å­˜åŒºå‡ä¸å¯è¯»
 	if (readIdx == 0) {
 		return 1;
 	}
 	tcpBuffer = std::vector<motion::Time_Pos>(10);
 
-	// 3. Îª½á¹¹Ìå¸³Öµ
+	// 3. ä¸ºç»“æ„ä½“èµ‹å€¼
 	float preTime = 0.0;
 	for (int i = 0; i < 10; ++i) {
-		// ÏÂÎ»»úÊ±¼ä´Á
+		// ä¸‹ä½æœºæ—¶é—´æˆ³
 		long long slaveTime = retValue[80 * (readIdx - 1) + 3 + 8 * i];
 
-		// Ê±¼ä´ÁĞ£Ñé
+		// æ—¶é—´æˆ³æ ¡éªŒ
 		if (preTime < slaveTime) {
 			return 2;
 		}
 		preTime = slaveTime;
 
-		// ±£´æµ±Ç°µãÊ¸Á¿¾àÀë
+		// ä¿å­˜å½“å‰ç‚¹çŸ¢é‡è·ç¦»
 		float dist = retValue[80 * (readIdx - 1) + 8 * i + 4];
 
-		// ÏÂÎ»»úÊ±¼ä×ª»¯Îª¶ÔÓ¦µÄÉÏÎ»»úÊ±¼ä
+		// ä¸‹ä½æœºæ—¶é—´è½¬åŒ–ä¸ºå¯¹åº”çš„ä¸Šä½æœºæ—¶é—´
 		long long masterTime = (slaveTimeRef - slaveTime) + masterTimeRef;
 
-		// Ê±¼ä´Á×ª»»Îª±ê×¼¸ñÊ½
+		// æ—¶é—´æˆ³è½¬æ¢ä¸ºæ ‡å‡†æ ¼å¼
 		auto masterTm = gettm(masterTime);
 		tcpBuffer[i].time.y = masterTm->tm_year + 1900;
 		tcpBuffer[i].time.m = masterTm->tm_mon + 1;
@@ -93,7 +93,7 @@ int ScannerTracker::read_tcp_buffer(std::vector<motion::Time_Pos>& tcpBuffer) {
 		tcpBuffer[i].time.s = masterTm->tm_sec;
 		tcpBuffer[i].time.ms = masterTime % 1000;
 
-		// ±£´æÊµ¼ÊTCPÎ»ÖÃ
+		// ä¿å­˜å®é™…TCPä½ç½®
 		tcpBuffer[i].tcp_pos.x = retValue[80 * (readIdx - 1) + 8 * i + 5];
 		tcpBuffer[i].tcp_pos.y = retValue[80 * (readIdx - 1) + 8 * i + 6];
 		tcpBuffer[i].tcp_pos.z = retValue[80 * (readIdx - 1) + 8 * i + 7];
@@ -101,7 +101,7 @@ int ScannerTracker::read_tcp_buffer(std::vector<motion::Time_Pos>& tcpBuffer) {
 		tcpBuffer[i].tcp_pos.b = retValue[80 * (readIdx - 1) + 8 * i + 9];
 		tcpBuffer[i].tcp_pos.c = retValue[80 * (readIdx - 1) + 8 * i + 8];
 
-		// ¼ÆËãÖ÷ÔË¶¯Î»ÖÃ£ºÊµ¼ÊÎ»ÖÃ - Æ«Àë¾àÀë
+		// è®¡ç®—ä¸»è¿åŠ¨ä½ç½®ï¼šå®é™…ä½ç½® - åç¦»è·ç¦»
 	}
 
 	return 0;
@@ -110,7 +110,7 @@ int ScannerTracker::read_tcp_buffer(std::vector<motion::Time_Pos>& tcpBuffer) {
 
 int ScannerTracker::send_tracking_cmd(float dist, const std::vector<float>& err) {
 	
-	// ÏÂÎ»»ú×¼±¸¾ÍĞ÷
+	// ä¸‹ä½æœºå‡†å¤‡å°±ç»ª
 	if (slaveCmdReady == 0) {
 		std::vector<float> cmd = { static_cast<float>(cmdBuff.size() + 1) };
 		for (int i = 0; i < cmdBuff.size(); ++i) {
@@ -121,10 +121,10 @@ int ScannerTracker::send_tracking_cmd(float dist, const std::vector<float>& err)
 		cmd.push_back(dist);
 		cmd.insert(cmd.end(), err.begin(), err.end());
 
-		// ÏÂ·¢»º´æµÄ²¹³¥Ö¸Áî¶ÓÁĞ
+		// ä¸‹å‘ç¼“å­˜çš„è¡¥å¿æŒ‡ä»¤é˜Ÿåˆ—
 		ZController->set_register(100202, cmd);
 	}
-	// ÏÂÎ»»úÎ´¾ÍĞ÷£¬»º´æ²¹³¥Ö¸Áî
+	// ä¸‹ä½æœºæœªå°±ç»ªï¼Œç¼“å­˜è¡¥å¿æŒ‡ä»¤
 	else {
 		std::vector<float> cmd = { dist };
 		cmd.insert(cmd.end(), err.begin(), err.end());
@@ -152,7 +152,7 @@ int ScannerTracker::record_tcp_pos(long long time, const std::vector<float>& pos
 
 
 int ScannerTracker::record_seam_pos(long long time, const std::vector<float>& posInCam) {
-	// ÕÒµ½tcp»º´æÖĞ¾àÀëµ±Ç°µãÊ±¼ä×î½üµÄÁ½¸öµã
+	// æ‰¾åˆ°tcpç¼“å­˜ä¸­è·ç¦»å½“å‰ç‚¹æ—¶é—´æœ€è¿‘çš„ä¸¤ä¸ªç‚¹
 	int preIdx = 0;
 	for (int i = 0; i < tcpBuff.size(); ++i) {
 		if (tcpTimeBuff[i] > time) {
@@ -163,16 +163,16 @@ int ScannerTracker::record_seam_pos(long long time, const std::vector<float>& po
 		}
 	}
 
-	// ²åÖµ¼ÆËãtcpÎ»ÖÃ
+	// æ’å€¼è®¡ç®—tcpä½ç½®
 	std::vector<float> data(posInCam.size());
 	float lambda = (time - tcpTimeBuff[preIdx]) / (tcpTimeBuff[preIdx+1] - tcpTimeBuff[preIdx]);
 	for (int i = 0; i < posInCam.size(); ++i) {
 		data[i] = (1 - lambda) * tcpBuff[preIdx][i] + lambda * tcpBuff[preIdx + 1][i];
 	}
 
-	// ¼ÆËãÊÀ½ç×ø±êÏµÏÂµÄº¸·ìÎ»ÖÃ
+	// è®¡ç®—ä¸–ç•Œåæ ‡ç³»ä¸‹çš„ç„Šç¼ä½ç½®
 
-	// »º´æº¸·ìÎ»ÖÃ
+	// ç¼“å­˜ç„Šç¼ä½ç½®
 	seamTimeBuff.push_back(time);
 	seamBuff.push_back(data);
 
@@ -184,9 +184,9 @@ int ScannerTracker::find_cloest_seam_reference(const std::vector<float>& pos, st
 	int approach = 0, depart = 0;
 	double preDist = std::numeric_limits<double>::max();
 	for (int i = 0; i < seamBuff.size(); ++i) {
-		// »º´æµãµ½µ±Ç°µãµÄ¾àÀë
+		// ç¼“å­˜ç‚¹åˆ°å½“å‰ç‚¹çš„è·ç¦»
 		double dist = (pos[0] - seamBuff[i][0])*(pos[0] - seamBuff[i][0]) + (pos[1] - seamBuff[i][1])*(pos[1] - seamBuff[i][1]) + (pos[2] - seamBuff[i][2])*(pos[2] - seamBuff[i][2]);
-		// ½Ó½ü¸ø¶¨µã
+		// æ¥è¿‘ç»™å®šç‚¹
 		if (approach >= 0) {
 			if (preDist >= dist) {
 				approach++;
@@ -195,7 +195,7 @@ int ScannerTracker::find_cloest_seam_reference(const std::vector<float>& pos, st
 				approach = -approach;
 			}
 		}
-		// Ô¶Àë¸ø¶¨µã
+		// è¿œç¦»ç»™å®šç‚¹
 		else {
 			if (preDist <= dist) {
 				depart++;
@@ -210,12 +210,12 @@ int ScannerTracker::find_cloest_seam_reference(const std::vector<float>& pos, st
 		preDist = dist;
 	}
 
-	// Á¬Ğøµİ¼õ»òÁ¬ĞøµİÔöÊı¾İ¹ı¶Ì
+	// è¿ç»­é€’å‡æˆ–è¿ç»­é€’å¢æ•°æ®è¿‡çŸ­
 	if (std::abs(approach) < 5 || std::abs(depart) < 5) {
 		return -1;
 	}
 
-	// ¹À¼Æ²Î¿¼µã
+	// ä¼°è®¡å‚è€ƒç‚¹
 	ref = seamBuff[-approach];
 
 	return 0;
@@ -231,7 +231,7 @@ int ScannerTracker::evaluate_control_error(const std::vector<float>& pos, std::v
 		return find;
 	}
 
-	// ¼ÆËãÎ»ÖÃÆ«ÒÆ
+	// è®¡ç®—ä½ç½®åç§»
 	for (int i = 0; i < pos.size(); ++i) {
 		err[i] = ref[i] - pos[i];
 	}

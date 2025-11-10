@@ -1058,22 +1058,6 @@ void RobotGroupManager::processCommandThread() {
 				if (!robotList[i]->consistent_traj_ready(coopState[i]))
 					break;
 
-				// 需要等待同步和协同: 空闲 + 同步号相同
-				if (!robot_sync_ready(i)) {
-					if (get_bit(coopState[i], 3) == 0) {
-						LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " not synced: "
-							<< vector_to_string(serialize_Sync_Config(deserialize_Sync_Config(curTraj.appendix)).second));
-						set_bit(coopState[i], 3, true);
-					}
-					break;
-				}
-				else {
-					set_bit(coopState[i], 3, false);
-				}
-
-				// IO 同步标志复位
-				//reset_wait_state(i);
-
 				// 轨迹分割
 				if (curTraj.isCartesian()) {
 					// 拆分轨迹
@@ -1094,6 +1078,22 @@ void RobotGroupManager::processCommandThread() {
 				else {
 					set_bit(coopState[i], 2, false);
 				}
+
+				// 需要等待同步和协同: 空闲 + 同步号相同
+				if (!robot_sync_ready(i)) {
+					if (get_bit(coopState[i], 3) == 0) {
+						LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " not synced: "
+							<< vector_to_string(serialize_Sync_Config(deserialize_Sync_Config(curTraj.appendix)).second), 2);
+						set_bit(coopState[i], 3, true);
+					}
+					break;
+				}
+				else {
+					set_bit(coopState[i], 3, false);
+				}
+
+				// IO 同步标志复位
+				reset_wait_state(i);
 
 				// 检查地轨指令是否已经下发
 				if (robotList[i]->find_command_axis(curTraj, sharedAxisState.first) >= 0 && sharedAxisState.second >= 0 && sharedAxisState.second != i) {
@@ -1128,6 +1128,7 @@ void RobotGroupManager::processCommandThread() {
 
 				// 执行运动后动作
 				robotList[i]->execute_move_action(action.actionAfter, 1);
+
 
 				// 轨迹下发后的处理
 				robotList[i]->process_after_send_traj();
@@ -1289,13 +1290,13 @@ void RobotGroupManager::updateStatusThread() {
 			while (now > wakeUpTime)
 				wakeUpTime += std::chrono::milliseconds(duration);
 
-			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted: "
-				<< std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - tmpStart).count() << ". "
-				<< "start at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpStart - start).count() << ". "
-				<< "end at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - start).count() << ". "
-				<< "next: " << std::chrono::duration_cast<std::chrono::milliseconds>(wakeUpTime - start).count()
-				<< "\ndt: " << vector_to_string(dt)
-			);
+			//LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted: "
+			//	<< std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - tmpStart).count() << ". "
+			//	<< "start at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpStart - start).count() << ". "
+			//	<< "end at: " << std::chrono::duration_cast<std::chrono::milliseconds>(tmpEnd - start).count() << ". "
+			//	<< "next: " << std::chrono::duration_cast<std::chrono::milliseconds>(wakeUpTime - start).count()
+			//	<< "\ndt: " << vector_to_string(dt)
+			//);
 		}
 
 
@@ -1420,22 +1421,21 @@ void RobotGroupManager::set_group_sync_config(int robotIdx) {
 
 	// 当前机器人下发的运动未完成
 	if (statusList[robotIdx].lowerStatus != 0 || statusList[robotIdx].lineNum != robotList[robotIdx]->get_lineNum()) {
-		syncReadyState[robotIdx] = 0;
-		syncState[robotIdx].clear();
 		return;
 	}
-
-	// 正逆解切换未完成
-	//if (!kinematics_mached(robotIdx)) {
-	//	syncReadyState[robotIdx] = 0;
-	//	syncState[robotIdx].clear();
-	//	return;
-	//}
 
 	// 当前需要下发的轨迹的同步参数
 	auto curTraj = robotList[robotIdx]->trajectory.get_curTraj();
 	auto synCfg = deserialize_Sync_Config(curTraj.appendix);
+
+	// 当前协同配置无需等待
+	if (!synCfg.need_sync()) {
+		return;
+	}
+
+	// 设定当前协同配置
 	syncState[robotIdx] = synCfg;
+	syncReadyState[robotIdx] = 0;
 
 }
 
@@ -1452,6 +1452,13 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 
 		// 等待激活
 		if (type == 4) {
+			bool syncMatch = false;
+			for (auto& syncPair : ite->second) {
+				if (waitState[robotIdx].find(syncPair.second) == waitState[robotIdx].end()) {
+					syncReadyState[robotIdx] = 0;
+					return;
+				}
+			}
 		}
 		// 等待同步 / 协同
 		else if (type == 2 || type == 3) {
@@ -1468,24 +1475,24 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 				// 匹配机器人状态
 				auto oppositeSync = syncState[idx];
 
-				// 未匹配到相同的同步类型
+				// 找到匹配的同步类型
 				auto findSyncType = oppositeSync.map.find(type);
-				if (findSyncType == oppositeSync.map.end()) {
-					syncReadyState[robotIdx] = 0;
-				}
-				else {
-					bool syncMatch = false;
+				// 找到匹配的同步号
+				bool syncMatch = false;
+				if (findSyncType != oppositeSync.map.end()) {
 					for (auto& oppositePair : findSyncType->second) {
 						if (oppositePair.first == robotIdx && oppositePair.second == num) {
 							syncMatch = true;
 							break;
 						}
 					}
-
-					// 等待的机器人同步号不匹配
-					if (!syncMatch)
-						syncReadyState[robotIdx] = 0;
 				}
+				// 等待的机器人同步号不匹配
+				if (!syncMatch) {
+					syncReadyState[robotIdx] = 0;
+					return;
+				}
+
 			}
 
 		}
@@ -1503,17 +1510,15 @@ bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 	auto curTraj = robotList[robotIdx]->trajectory.get_curTraj();
 	auto synCfg = deserialize_Sync_Config(curTraj.appendix);
 
-	// 无同步号
-	if (synCfg.map.empty()) {
+	// 同步配置无需等待
+	if (!synCfg.need_sync()) {
 		return true;
 	}
 
 	// 新的轨迹同步有变化
-	auto curSyncSerial = serialize_Sync_Config(curSync);
-	auto synCfgSerial = serialize_Sync_Config(synCfg);
-	if (curSync.different_from(synCfg))
+	if (curSync.different_from(synCfg)) {
 		return false;
-
+	}
 
 	// 协同机器人已就绪
 	for (auto& ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
@@ -1522,10 +1527,8 @@ bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 
 		// 等待激活
 		if (type == 4) {
-			for (auto& syncPair : ite->second) {
-				if (waitState[robotIdx].find(syncPair.second) == waitState[robotIdx].end())
-					return false;
-			}
+			if (syncReadyState[robotIdx] == 0)
+				return false;
 		}
 		// 等待同步 / 协同
 		else if (type == 2 || type == 3) {
@@ -1534,36 +1537,9 @@ bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 				int idx = syncPair.first;
 				int num = syncPair.second;
 
-				// 协同的中间轨迹无需等待
-				if (type == 3 && num <= 0) {
-					return true;
-				}
-
-				// 匹配机器人状态
-				auto oppositeSync = syncState[idx];
-
-				// 未匹配到相同的同步类型
-				auto findSyncType = oppositeSync.map.find(type);
-				if (findSyncType == oppositeSync.map.end()) {
+				// 等待同步的机器人还未就绪
+				if (syncReadyState[idx] == 0)
 					return false;
-				}
-				else {
-					bool syncMatch = false;
-					for (auto& oppositePair : findSyncType->second) {
-						if (oppositePair.first == robotIdx && oppositePair.second == num) {
-							syncMatch = true;
-							break;
-						}
-					}
-
-					// 机器人同步号不匹配
-					if (!syncMatch)
-						return false;
-
-					// 等待同步的机器人还在等待其他机器人
-					if (syncReadyState[idx] == 0)
-						return false;
-				}
 			}
 
 		}
@@ -1667,12 +1643,15 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " run traj " << curTraj.lineNum << ", save seq: " << curTraj.saveSeq);
 
 		// 触发机器人等待
-		auto syncMap = deserialize_Sync_Config(curTraj.get_appendix()).map;
+		auto synCfg = deserialize_Sync_Config(curTraj.get_appendix());
+		auto syncMap = synCfg.map;
 		if (syncMap.find(5) != syncMap.end()) {
 			for (const auto& notifyItem : syncMap[5]) {
 				//set_bit(waitState[notifyItem.first], notifyItem.second, 1);
 				waitState[notifyItem.first].insert(notifyItem.second);
 			}
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " active: "
+				<< vector_to_string(serialize_Sync_Config(synCfg).second, 2));
 		}
 
 		// 清空到位前运动
@@ -1902,6 +1881,9 @@ int RobotGroupManager::robot_group_clear_task(int idx) {
 	// 暂停触发标志复位
 	set_bit(coopState[idx], 8, false);
 
+	// 已下发轨迹清空
+	trajHistory[idx].clear();
+
 	robotList[idx]->task_stop();
 
 	return 0;
@@ -1926,9 +1908,11 @@ void RobotGroupManager::reset_wait_state(int robotIdx) {
 	// IO等待标志复位
 	if (synCfg.map.find(4) != synCfg.map.end()) {
 
-		for (auto& syncPair : synCfg.map[4]) {
-			waitState[robotIdx].erase(syncPair.second);
-		}
+		//for (auto& syncPair : synCfg.map[4]) {
+		//	// 删除所有激活信号
+		//	std::remove(waitState[robotIdx].begin(), waitState[robotIdx].end(), syncPair.second);
+		//}
+		waitState[robotIdx] = {};
 
 	}
 

@@ -1,4 +1,4 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include<iostream>
 #include <algorithm>
 #include <eigen3/Eigen/Dense>
@@ -7,12 +7,12 @@
 #include "RobotLogger.h"
 
 
-// ¿ØÖÆ¿¨
+// æ§åˆ¶å¡
 std::shared_ptr<FSAIRobotInterface::Controller> ZController(new FSAIRobotInterface::Controller);
-// »úÆ÷ÈË
+// æœºå™¨äºº
 std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::FSAIRobot), robot2(new FSAIRobotInterface::FSAIRobot);
 FSAIRobotInterface::RobotGroupManager group;
-// ¹ì¼£
+// è½¨è¿¹
 DiscreteTrajectory trajList, trajList2;
 TrajectoryConfig trajCfg, trajCfg2;
 FSAIRobotInterface::Sync_Config synCfg, synCfg2;
@@ -45,11 +45,11 @@ int main() {
 	//ZController->sendCmd(cmdbuff, cmdbuffAck, 1);
 	//return 0;
 
-	//// ÏÂÔØ ZAR
+	//// ä¸‹è½½ ZAR
 	//ZController->load_basic_project("D:\\CIMC\\FSAI_Teaching_Free_Weld_System\\zmotion_basic\\main.zar", 0);
-	// µ¼³öÅäÖÃÎÄ¼ş
+	// å¯¼å‡ºé…ç½®æ–‡ä»¶
 	//ZController->export_config("config.txt");
-	// ¼ÓÔØÅäÖÃÎÄ¼ş
+	// åŠ è½½é…ç½®æ–‡ä»¶
 	//ZController->load_config("config.txt");
 
 	robot->set_ZController(ZController);
@@ -63,7 +63,7 @@ int main() {
 	//group.set_shared_axis(6, { 0,1,2,3 });
 	//group.disableGroup = { { 0, 1 } };
 	
-	// ¿ªÆôÈÎÎñÏß³Ì
+	// å¼€å¯ä»»åŠ¡çº¿ç¨‹
 	group.start_thread();
 	shawn_test::run_task();
 
@@ -90,23 +90,23 @@ void shawn_test::set_task() {
 }
 
 void shawn_test::run_task() {
-	// ¿ªÆô¼à¿ØÏß³Ì
+	// å¼€å¯ç›‘æ§çº¿ç¨‹
 	auto monitor = std::thread(&monitor_robot_status);
 	monitor.detach();
 
-	// ÇĞ»»×Ô¶¯Ä£Ê½
+	// åˆ‡æ¢è‡ªåŠ¨æ¨¡å¼
 	robot->switch_auto(true);
 	//robot2->switch_auto(true);
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-	// Ñ¹Èë¹ì¼£
+	// å‹å…¥è½¨è¿¹
 	//sync_test();
 	task_test();
 
-	// ¿ªÆô¼à¿ØÏß³Ì
+	// å¼€å¯ç›‘æ§çº¿ç¨‹
 	auto cmdThread1 = std::thread(&send_command_1);
 	cmdThread1.detach();
-	// ¿ªÆô¼à¿ØÏß³Ì
+	// å¼€å¯ç›‘æ§çº¿ç¨‹
 	//auto cmdThread2 = std::thread(&send_command_2);
 	//cmdThread2.detach();
 
@@ -122,11 +122,11 @@ void shawn_test::send_command_1() {
 
 		int state = robot->wait_auto_task_stop();
 		if (state == 0) {
-			std::cout << "»úÆ÷ÈË¿ÕÏĞ 1" << std::endl;
+			std::cout << "æœºå™¨äººç©ºé—² 1" << std::endl;
 			if (trajIdx == 0) {
-				// ¹ì¼£Ö¸ÁîÑ¹Õ»
+				// è½¨è¿¹æŒ‡ä»¤å‹æ ˆ
 				robot->push_new_trajectory(trajList);
-				std::cout << "·¢ËÍ¹ì¼£ 1" << std::endl;
+				std::cout << "å‘é€è½¨è¿¹ 1" << std::endl;
 				trajIdx++;
 			}
 			else {
@@ -134,7 +134,7 @@ void shawn_test::send_command_1() {
 			}
 		}
 		else {
-			std::cout << "Òì³£»½ĞÑ 1" << i++ << std::endl;
+			std::cout << "å¼‚å¸¸å”¤é†’ 1" << i++ << std::endl;
 		}
 	}
 
@@ -149,11 +149,11 @@ void shawn_test::send_command_2() {
 
 		int state = robot2->wait_auto_task_stop();
 		if (state == 0) {
-			std::cout << "»úÆ÷ÈË¿ÕÏĞ 2" << std::endl;
+			std::cout << "æœºå™¨äººç©ºé—² 2" << std::endl;
 			if (trajIdx == 0) {
-				// ¹ì¼£Ö¸ÁîÑ¹Õ»
+				// è½¨è¿¹æŒ‡ä»¤å‹æ ˆ
 				robot2->push_new_trajectory(trajList2);
-				std::cout << "·¢ËÍ¹ì¼£ 2" << std::endl;
+				std::cout << "å‘é€è½¨è¿¹ 2" << std::endl;
 				trajIdx++;
 			}
 			else {
@@ -161,7 +161,7 @@ void shawn_test::send_command_2() {
 			}
 		}
 		else {
-			std::cout << "Òì³£»½ĞÑ 2" << i++ << std::endl;
+			std::cout << "å¼‚å¸¸å”¤é†’ 2" << i++ << std::endl;
 		}
 	}
 
@@ -184,32 +184,32 @@ void shawn_test::monitor_robot_status() {
 			auto robot = group.robotList[i];
 
 			//if (!robot->get_enableRefresh()) {
-			//	std::cout << "Ïß³Ì½áÊø: " << robot->get_aliasId() << std::endl;
+			//	std::cout << "çº¿ç¨‹ç»“æŸ: " << robot->get_aliasId() << std::endl;
 			//	//return;
 			//}
 
 			FSAIRobotInterface::RobotStatus curStatus;
 			robot->get_rt_robot_status(curStatus);
 
-			// Ìø¹ıÖØ¸´±¨´í
+			// è·³è¿‡é‡å¤æŠ¥é”™
 			if (preStatus[i].lowerStatus != curStatus.lowerStatus || preStatus[i].upperStatus != curStatus.upperStatus) {
 				if ((curStatus.lowerStatus & 0x02) == 2) {
-					std::cout << "»úÆ÷ÈËÔİÍ£" << i << std::endl;
+					std::cout << "æœºå™¨äººæš‚åœ" << i << std::endl;
 				}
 				else if ((curStatus.lowerStatus & 0x04) == 4) {
-					std::cout << "»úÆ÷ÈËÍ£Ö¹" << i << std::endl;
+					std::cout << "æœºå™¨äººåœæ­¢" << i << std::endl;
 				}
 
 				if ((curStatus.lowerStatus & 0x10) != 0) {
-					std::cout << "Öá×´Ì¬Òì³£" << i << std::endl;
+					std::cout << "è½´çŠ¶æ€å¼‚å¸¸" << i << std::endl;
 				}
 
 				if ((curStatus.upperStatus & 0x01) != 0) {
-					std::cout << "Ïß³Ì½áÊø" << i << std::endl;
+					std::cout << "çº¿ç¨‹ç»“æŸ" << i << std::endl;
 					return;
 				}
 				if ((curStatus.upperStatus & 0x10) != 0) {
-					std::cout << "ÊÖ¶¯×Ô¶¯Ä£Ê½²»Æ¥Åä" << i << std::endl;
+					std::cout << "æ‰‹åŠ¨è‡ªåŠ¨æ¨¡å¼ä¸åŒ¹é…" << i << std::endl;
 					return;
 				}
 			}
@@ -223,7 +223,7 @@ void shawn_test::monitor_robot_status() {
 
 void shawn_test::sync_test() {
 
-	// »úÆ÷ÈË1
+	// æœºå™¨äºº1
 	trajCfg.set_speed(50);
 	trajCfg.set_smooth(5);
 
@@ -248,7 +248,7 @@ void shawn_test::sync_test() {
 	trajList.moveLABS({ 1565.883057, -39.332199, 996.359070, 20, -160, 0 }, trajCfg);
 
 
-	// »úÆ÷ÈË2
+	// æœºå™¨äºº2
 	trajCfg2.set_speed(80);
 	trajCfg2.set_smooth(5);
 
@@ -268,7 +268,7 @@ void shawn_test::sync_test() {
 
 void shawn_test::task_test() {
 	
-	// »úÆ÷ÈË1
+	// æœºå™¨äºº1
 	trajCfg.set_speed(80);
 	trajCfg.set_smooth(0);
 
@@ -301,13 +301,13 @@ void shawn_test::task_test() {
 
 
 	FSAIRobotInterface::Move_Action action;
-	// µÈ´ı
+	// ç­‰å¾…
 	//action.actionAfter.push_back({ 1, { -1, 0, 100 } });
-	// Æğ»¡
+	// èµ·å¼§
 	//action.actionBefore.push_back({ 2, FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg).second });
-	// Ï¢»¡
+	// æ¯å¼§
 	//action.actionAfter.push_back({ 3, {} });
-	// Ñ°Î»
+	// å¯»ä½
 	action.actionAfter.push_back({ 5, {869.5140, 255.3090, 659.0740, 10, 879.5140, 255.3090, 659.0740, 10} });
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
 

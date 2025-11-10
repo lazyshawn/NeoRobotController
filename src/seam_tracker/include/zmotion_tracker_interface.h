@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,21 +16,21 @@ const int filterNum = 2;
 typedef double TYPE_TABLE;
 
 struct MW_Filter {
-	// ´°¿Ú¿í¶È
+	// çª—å£å®½åº¦
 	int windowLen[filterNum];
-	// ´°¿ÚÊı¾İ×ÜºÍ
+	// çª—å£æ•°æ®æ€»å’Œ
 	double windowSum[filterNum];
-	// ÒÑÍê³ÉµÄÂË²¨´ÎÊı
+	// å·²å®Œæˆçš„æ»¤æ³¢æ¬¡æ•°
 	long num[filterNum];
-	// ×î´ó´¢´æ³¤¶È
+	// æœ€å¤§å‚¨å­˜é•¿åº¦
 	int saveLen[filterNum];
-	// Ô­Ê¼Êı¾İ±£´æÎ»ÖÃ
+	// åŸå§‹æ•°æ®ä¿å­˜ä½ç½®
 	double* table[filterNum];
 };
 
-// ÖØÖÃ»¬¶¯Æ½¾ùÂË²¨Æ÷
+// é‡ç½®æ»‘åŠ¨å¹³å‡æ»¤æ³¢å™¨
 int reset_mw_filter(int idx, TYPE_TABLE* addr);
-// »¬¶¯Æ½¾ùÂË²¨
+// æ»‘åŠ¨å¹³å‡æ»¤æ³¢
 double moving_window_filter(int idx, double sample);
 
 
@@ -41,24 +41,24 @@ int reset_butter_worf_filter();
 int butter_worf_filter(double sample);
 
 
-// ¸ú×Ù²ÎÊı
+// è·Ÿè¸ªå‚æ•°
 struct TrackerInfo {
-	// ×óÓÒ¸ú×Ù
+	// å·¦å³è·Ÿè¸ª
 	double rlKp[filterNum];
 	double rlKi[filterNum];
 	double rlKd[filterNum];
 
-	// ÉÏÏÂ¸ú×Ù
+	// ä¸Šä¸‹è·Ÿè¸ª
 	double udKp[filterNum];
 	double udKi[filterNum];
 	double udKd[filterNum];
 };
 
-// ¼ÆËãÆ«ÒÆÁ¿
+// è®¡ç®—åç§»é‡
 int calc_compensate(int idx, double dArl, double dAud, TYPE_TABLE* output);
 
 
-// ¶ÁÈ¡ÂË²¨Æ÷ºÍ¸ú×ÙµÄÅäÖÃ²ÎÊı
+// è¯»å–æ»¤æ³¢å™¨å’Œè·Ÿè¸ªçš„é…ç½®å‚æ•°
 int init_filter_tracker(int idx, TYPE_TABLE *config, TYPE_TABLE *data);
 
 #ifdef __cplusplus
