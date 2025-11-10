@@ -19,6 +19,7 @@ struct Sync_Unit {
 	Sync_Unit(int syncType, int robotId, int num);
 };
 
+// 一条轨迹只能使用一种协同类型
 struct Sync_Config {
 
 	//! 启用同步
@@ -39,6 +40,10 @@ struct Sync_Config {
 	int add_sync_item(const Sync_Unit item);
 	// 同步参数是否相同
 	bool different_from(Sync_Config& next);
+	// 删除规则
+	int clear_item(const std::vector<int>& syncType);
+	// 需要等待
+	int need_sync();
 };
 
 

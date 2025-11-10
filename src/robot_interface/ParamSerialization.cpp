@@ -410,53 +410,53 @@ void Sync_Config::sort() {
 
 bool Sync_Config::different_from(Sync_Config& next) {
 
-	// 同步类型变化
-	//if (map.size() != next.map.size())
-	//	return true;
+	// 需要等待的同步类型
+	std::vector<int> syncType = { 2,3,4 };
 
-	for (size_t i = 0; i < 5; ++i) {
-		// 激活无需等待
-		if (i == 5)
-			continue;
-
+	for (auto& i : syncType) {
+		
 		// 同步类型变化
 		if (map.count(i) != next.map.count(i))
 			return true;
 
-		if (map.count(i) == 0)
-			continue;
 
 		// 同步组变化
-		if (i == 3) {
+		for (size_t j = 0; j < map[i].size(); ++j) {
 			// 等待机器ID变化
-			if (map[i].front().first != next.map[i].front().first)
+			if (map[i][j].first != next.map[i][j].first)
 				return true;
+			// 同步号变化
+			if (map[i][j].second != next.map[i][j].second) {
+				if (i != 3 || next.map[i][j].second >= 0) {
+					return true;
+				}
+			}
+		}
 
-			// 当前协同号为0，下条协同号为-1
-			if (map[i].front().second == 0 || next.map[i].front().second == 0 || next.map[i].front().second == -1) {
-			}
-			else {
-				// 同步号变化
-				if (map[i].front().second != next.map[i].front().second)
-					return true;
-			}
-		}
-		else {
-			for (size_t j = 0; j < map[i].size(); ++j) {
-				// 等待机器ID变化
-				if (map[i][j].first != next.map[i][j].first)
-					return true;
-				// 同步号变化
-				if (map[i][j].second != next.map[i][j].second)
-					return true;
-			}
-		}
 	}
 
 
 	return false;
 }
 
+// 删除规则
+int Sync_Config::clear_item(const std::vector<int>& syncType) {
+	for (auto& item : syncType) {
+		map.erase(item);
+	}
+	return 0;
+}
+
+// 需要等待
+int Sync_Config::need_sync() {
+	std::vector<int> syncType = { 2,3,4 };
+	for (auto& type : syncType) {
+		if (map.count(type) > 0) {
+			return type;
+		}
+	}
+	return false;
+}
 
 // ------- 运动参数 -------
 

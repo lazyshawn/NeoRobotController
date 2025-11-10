@@ -1066,6 +1066,7 @@ int ZMotionRobot::separate_trajectory() {
 
 	// 备份需要修改的运动参数
 	Move_Action moveCfgBk = deserialize_Move_Action(curTraj.get_appendix());
+	Sync_Config synCfgBk = deserialize_Sync_Config(curTraj.get_appendix());
 
 	// 旋转角度小，用直线近似
 	Eigen::Vector3f dir = Eigen::Vector3f(trajectory.get_dir().data());
@@ -1116,9 +1117,14 @@ int ZMotionRobot::separate_trajectory() {
 		auto moveCfg = moveCfgBk;
 		moveCfg.actionBefore.clear();
 		traj.add_appendix(serialize_Move_Action(moveCfg));
-		// 修改当前轨迹(最后一段)
+		// 清空协同
+		auto synCfg = synCfgBk;
+		synCfg.clear_item({ 2,3,4 });
+		traj.add_appendix(serialize_Sync_Config(synCfg));
+		// 修改当前轨迹为最后一段(至少两段)
 		*ite = traj;
 
+		// 从第一段开始插入
 		begPartial = 0.0, endPartial = 0.0;
 		for (size_t i = 0; i < trajSize - 1; ++i) {
 
@@ -1133,17 +1139,23 @@ int ZMotionRobot::separate_trajectory() {
 			traj.auxPoint = segment.auxPoint;
 
 			auto moveCfg = moveCfgBk;
+			auto synCfg = synCfgBk;
 			// 第一条轨迹
 			if (i == 0) {
 				// 清空轨迹后动作
 				moveCfg.actionAfter.clear();
 				traj.add_appendix(serialize_Move_Action(moveCfg));
+				// 保留协同参数
+				traj.add_appendix(serialize_Sync_Config(synCfg));
 			}
 			else {
 				// 清空轨迹动作
 				moveCfg.actionBefore.clear();
 				moveCfg.actionAfter.clear();
 				traj.add_appendix(serialize_Move_Action(moveCfg));
+				// 清空协同
+				synCfg.clear_item({ 2,3,4 });
+				traj.add_appendix(serialize_Sync_Config(synCfg));
 			}
 
 			// 插入新轨迹

@@ -547,7 +547,8 @@ void FSAIApp::connect_slot() {
 
 		// 清除任务
 		for (auto& idx : idxList) {
-			group.robotList[idx]->task_stop();
+			//group.robotList[idx]->task_stop();
+			group.robot_group_clear_task(idx);
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		// 使能
