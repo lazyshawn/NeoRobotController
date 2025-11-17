@@ -64,28 +64,49 @@ std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_Weldi
 	std::pair<int, std::vector<float>> ans;
 	std::vector<float> param;
 
+	// 麦格米特一元模式使用电压修正
+	bool useVtgCorrection = weldCfg.Id == 1 && ((weldCfg.WeldingWorkMode >> 4) % 2 == 0);
+
+	int mode;
+	float current, voltage, inductance;
+	float arcTime, blowTime;
+
 	// 焊接参数 0
-	param.push_back(weldCfg.Id);                  // 0 起弧标志
-	param.push_back(weldCfg.WeldingCrt_Spd);      // 1 焊接电流
-	param.push_back(weldCfg.WeldingVtg_Strth);    // 2 焊接电压: 下发电压/修正，往同一个地址下发的，不区分两个变量
-	param.push_back(weldCfg.WeldingWorkMode);     // 3 焊接工作模式
-	param.push_back(weldCfg.VtgUniCorrection);    // 4 焊接电压修正值 -> 电感
+	mode = weldCfg.WeldingWorkMode;
+	current = weldCfg.WeldingCrt_Spd;
+	voltage = useVtgCorrection ? weldCfg.VtgUniCorrection + 30 : weldCfg.WeldingVtg_Strth;
+	inductance = weldCfg.Inductance;
+	param.push_back(weldCfg.Id);                   // 0 起弧标志
+	param.push_back(current);                      // 1 焊接电流
+	param.push_back(voltage);                      // 2 焊接电压: 下发电压/修正，往同一个地址下发的，不区分两个变量
+	param.push_back(mode);                         // 3 焊接工作模式
+	param.push_back(inductance);                   // 4 焊接电压修正值 -> 电感
 
 	// 起弧参数 5
-	param.push_back(weldCfg.ArcOnWorkMode);        // 0 起弧模式
-	param.push_back(weldCfg.ArcOnCrt_Spd);         // 1 起弧电流
-	param.push_back(weldCfg.ArcOnVtg_Strth);       // 2 起弧电压
-	param.push_back(weldCfg.ArcOnTime);            // 3 起弧时间
-	param.push_back(weldCfg.ArcOnVtg_Correction);  // 4 起弧电压修正值
-	param.push_back(weldCfg.ArcOnBlowTime);        // 5 引气时间
+	mode = weldCfg.ArcOnWorkMode;
+	current = weldCfg.ArcOnCrt_Spd;
+	voltage = useVtgCorrection ? weldCfg.ArcOnVtg_Correction + 30 : weldCfg.ArcOnVtg_Strth;
+	arcTime = weldCfg.ArcOnTime;
+	blowTime = weldCfg.ArcOnBlowTime;
+	param.push_back(mode);                         // 0 起弧模式
+	param.push_back(current);                      // 1 起弧电流
+	param.push_back(voltage);                      // 2 起弧电压(修正)
+	param.push_back(arcTime);                      // 3 起弧时间
+	param.push_back(inductance);                   // 4 起弧电感
+	param.push_back(blowTime);                     // 5 引气时间
 
 	// 收弧参数 11
-	param.push_back(weldCfg.ArcOffWorkMode);	   // 0 收弧模式
-	param.push_back(weldCfg.ArcOffCrt_Spd);		   // 1 收弧电流
-	param.push_back(weldCfg.ArcOffVtg_Strth); 	   // 2 收弧电压
-	param.push_back(weldCfg.ArcOffTime); 		   // 3 收弧时间
-	param.push_back(weldCfg.ArcOffVtg_Correction); // 4 收弧电压修正值
-	param.push_back(weldCfg.ArcOffBlowTime);       // 5 收气时间
+	mode = weldCfg.ArcOffWorkMode;
+	current = weldCfg.ArcOffCrt_Spd;
+	voltage = useVtgCorrection ? weldCfg.ArcOffVtg_Correction + 30 : weldCfg.ArcOffVtg_Strth;
+	arcTime = weldCfg.ArcOffTime;
+	blowTime = weldCfg.ArcOffBlowTime;
+	param.push_back(mode);	                      // 0 收弧模式
+	param.push_back(current);		              // 1 收弧电流
+	param.push_back(voltage); 	                  // 2 收弧电压(修正)
+	param.push_back(arcTime); 		              // 3 收弧时间
+	param.push_back(inductance);                  // 4 收弧电感
+	param.push_back(blowTime);                    // 5 收气时间
 
 	ans.first = static_cast<int>(AppendixType::WELD_CFG);
 	ans.second = param;
@@ -102,28 +123,32 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	std::vector<float> param = ite->second;
 	int num = 0;
 
+
 	// 焊接参数 0
-	cfg.Id               = param[num++];  // 0 起弧标志
-	cfg.WeldingCrt_Spd   = param[num++];  // 1 焊接电流
-	cfg.WeldingVtg_Strth = param[num++];  // 2 焊接电压
-	cfg.WeldingWorkMode  = param[num++];  // 3 焊接工作模式
-	cfg.VtgUniCorrection = param[num++];  // 4 焊接电压修正值
+	cfg.Id = param[num++];                     // 0 起弧标志
+	cfg.WeldingCrt_Spd   = param[num++];       // 1 焊接电流
+	cfg.WeldingVtg_Strth = param[num++];       // 2 焊接电压
+	cfg.VtgUniCorrection = param[num] - 30;    // 2 焊接电压修正值
+	cfg.WeldingWorkMode  = param[num++];       // 3 焊接工作模式
+	cfg.Inductance       = param[num++];       // 4 焊接电感
 
 	// 起弧参数 5
-	cfg.ArcOnWorkMode       = param[num++];  // 0 起弧模式
-	cfg.ArcOnCrt_Spd        = param[num++];	 // 1 起弧电流
-	cfg.ArcOnVtg_Strth      = param[num++];	 // 2 起弧电压
-	cfg.ArcOnTime           = param[num++];	 // 3 起弧时间
-	cfg.ArcOnVtg_Correction = param[num++];	 // 4 起弧电压修正值
-	cfg.ArcOnBlowTime       = param[num++];	 // 5 引气时间
+	cfg.ArcOnWorkMode       = param[num++];      // 0 起弧模式
+	cfg.ArcOnCrt_Spd        = param[num++];	     // 1 起弧电流
+	cfg.ArcOnVtg_Strth      = param[num++];	     // 2 起弧电压
+	cfg.ArcOnVtg_Correction = param[num] - 30;	 // 2 起弧电压修正值
+	cfg.ArcOnTime           = param[num++];	     // 3 起弧时间
+	cfg.Inductance          = param[num++];	     // 4 起弧电感
+	cfg.ArcOnBlowTime       = param[num++];	     // 5 引气时间
 
 	// 收弧参数 11
-	cfg.ArcOffWorkMode       = param[num++];  // 0 收弧模式
-	cfg.ArcOffCrt_Spd        = param[num++];  // 1 收弧电流
-	cfg.ArcOffVtg_Strth      = param[num++];  // 2 收弧电压
-	cfg.ArcOffTime           = param[num++];  // 3 收弧时间
-	cfg.ArcOffVtg_Correction = param[num++];  // 4 收弧电压修正值
-	cfg.ArcOffBlowTime       = param[num++];  // 5 收气时间
+	cfg.ArcOffWorkMode       = param[num++];       // 0 收弧模式
+	cfg.ArcOffCrt_Spd        = param[num++];       // 1 收弧电流
+	cfg.ArcOffVtg_Strth      = param[num++];       // 2 收弧电压
+	cfg.ArcOffVtg_Correction = param[num] - 30;    // 2 收弧电压修正值
+	cfg.ArcOffTime           = param[num++];       // 3 收弧时间
+	cfg.Inductance           = param[num++];       // 4 收弧电感
+	cfg.ArcOffBlowTime       = param[num++];       // 5 收气时间
 
 	return cfg;
 }

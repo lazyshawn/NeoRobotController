@@ -354,27 +354,39 @@ int ZMotionRobot::update_welder_config() {
 		return 1;
 	}
 
-	float current, voltage;
+	// 焊接模式
+	uint8_t modeCmd = 0;
+	// 电流、电压、电感
+	float current = 0.0, voltage = 0.0, inductance = 0.0;
+
+	// 焊接模式
+	modeCmd += weldCfg.WeldingWorkMode;
 	// 电流
 	current = weldCfg.WeldingCrt_Spd;
-	// 电压分别模式
-	//if (weldCfg.WeldingWorkMode == 4) {
-	if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1) {
-		voltage = weldCfg.WeldingVtg_Strth;
+	// 电压
+	voltage = weldCfg.WeldingVtg_Strth;
+	// 电感
+	inductance = weldCfg.Inductance;
+
+	// 麦格米特
+	if (weldCfg.Id == 1) {
+		// 一元模式
+		if ((weldCfg.WeldingWorkMode >> 4) % 2 == 0) {
+			voltage = weldCfg.VtgUniCorrection + 30;
+		}
+
+		//modeCmd += (1 << 1);
+		//modeCmd += (weldCfg.WeldingWorkMode == 1) << 2;
+		modeCmd += (weldCfg.Id >= 0);
 	}
-	// 一元模式
-	else {
-		voltage = weldCfg.VtgUniCorrection + 30;
+	// 克鲁斯焊机
+	else if (weldCfg.Id == 2) {
 	}
 
-	uint8_t modeCmd = 0;
-	//modeCmd += (1 << 1);
-	//modeCmd += (weldCfg.WeldingWorkMode == 1) << 2;
-	modeCmd += weldCfg.WeldingWorkMode;
-	modeCmd += (weldCfg.Id >= 0);
 
-	int stateBase = get_state_idx_base();
-	std::vector<int> tableList(3, stateBase + 171);
+	// 写入变工艺参数
+	int dataBase = get_state_idx_base() + 170;
+	std::vector<int> tableList(4, dataBase + 1);
 	for (size_t i = 0; i < tableList.size(); ++i) {
 		tableList[i] += i;
 	}
@@ -383,11 +395,12 @@ int ZMotionRobot::update_welder_config() {
 	data.push_back(modeCmd);
 	data.push_back(current);
 	data.push_back(voltage);
+	data.push_back(inductance);
 
-	// 写入变工艺参数
 	ZController->set_axis_param(tableList, "TABLE", data, get_execute_axis()[0]);
+
 	// 变工艺使能
-	ZController->set_axis_param(stateBase + 170, "TABLE", 1, get_execute_axis()[0]);
+	ZController->set_axis_param(dataBase, "TABLE", weldCfg.Id, get_execute_axis()[0]);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId <<
 		" Update welder config: " << vector_to_string(serialize_Arc_WeldingParaItem(weldCfg).second, 2)
