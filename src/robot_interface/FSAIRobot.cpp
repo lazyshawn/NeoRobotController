@@ -322,6 +322,7 @@ namespace FSAIRobotInterface {
 		//ZController->set_axis_param(stateIdxBase + 24123, "TABLE", 0);
 		// 下位机复位
 		ZController->set_axis_param(stateIdxBase + 23999, "TABLE", 1);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		// 清空恢复
 		ZController->set_axis_param(stateIdxBase + 23995, "TABLE", 1);
 
@@ -777,11 +778,12 @@ namespace FSAIRobotInterface {
 
 	int FSAIRobot::remain_buffer_free() {
 		int idx = get_cmd_idx_base() + 29990;
-		float value;
+		std::vector<float> value;
 
-		ZController->get_axis_param(idx, "TABLE", value);
+		ZController->get_register(idx, 2, value, 0);
+		//ZController->get_axis_param(idx, "TABLE", value);
 
-		return value < 1e-2 ? 1 : 0;
+		return (std::fabs(value[0]) + std::fabs(value[1]) < 1e-2) ? 1 : 0;
 	}
 
 	int FSAIRobot::separate_trajectory() {
