@@ -474,6 +474,9 @@ int Sync_Config::clear_item(const std::vector<int>& syncType) {
 
 // 需要等待
 int Sync_Config::need_sync() {
+	if (Id <= 0)
+		return false;
+
 	std::vector<int> syncType = { 2,3,4 };
 	for (auto& type : syncType) {
 		if (map.count(type) > 0) {

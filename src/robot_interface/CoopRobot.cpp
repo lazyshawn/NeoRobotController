@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.3.5.1\n"
-		<< "Release Date:    251112");
+		<< "Version:         0.3.5.2\n"
+		<< "Release Date:    251117");
 }
 
 
@@ -1424,6 +1424,10 @@ void RobotGroupManager::set_group_sync_config(int robotIdx) {
 		return;
 	}
 
+	// 准备下发任务, 轨迹一致性不满足
+	if (!robotList[robotIdx]->consistent_traj_ready(coopState[robotIdx]))
+		return;
+	
 	// 当前需要下发的轨迹的同步参数
 	auto curTraj = robotList[robotIdx]->trajectory.get_curTraj();
 	auto synCfg = deserialize_Sync_Config(curTraj.appendix);
@@ -1444,6 +1448,12 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 
 	// 等待机器人是否已就绪
 	auto curSync = syncState[robotIdx];
+	// 当前协同配置无需等待
+	if (!curSync.need_sync()) {
+		syncReadyState[robotIdx] = 0;
+		return;
+	}
+
 	syncReadyState[robotIdx] = 1;
 	
 	for (auto& ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
