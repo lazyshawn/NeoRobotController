@@ -127,16 +127,16 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	// 焊接参数 0
 	cfg.Id = param[num++];                     // 0 起弧标志
 	cfg.WeldingCrt_Spd   = param[num++];       // 1 焊接电流
-	cfg.WeldingVtg_Strth = param[num++];       // 2 焊接电压
-	cfg.VtgUniCorrection = param[num] - 30;    // 2 焊接电压修正值
+	cfg.WeldingVtg_Strth = param[num];         // 2 焊接电压
+	cfg.VtgUniCorrection = param[num++] - 30;    // 2 焊接电压修正值
 	cfg.WeldingWorkMode  = param[num++];       // 3 焊接工作模式
 	cfg.Inductance       = param[num++];       // 4 焊接电感
 
 	// 起弧参数 5
 	cfg.ArcOnWorkMode       = param[num++];      // 0 起弧模式
 	cfg.ArcOnCrt_Spd        = param[num++];	     // 1 起弧电流
-	cfg.ArcOnVtg_Strth      = param[num++];	     // 2 起弧电压
-	cfg.ArcOnVtg_Correction = param[num] - 30;	 // 2 起弧电压修正值
+	cfg.ArcOnVtg_Strth      = param[num];	     // 2 起弧电压
+	cfg.ArcOnVtg_Correction = param[num++] - 30; // 2 起弧电压修正值
 	cfg.ArcOnTime           = param[num++];	     // 3 起弧时间
 	cfg.Inductance          = param[num++];	     // 4 起弧电感
 	cfg.ArcOnBlowTime       = param[num++];	     // 5 引气时间
@@ -144,8 +144,8 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	// 收弧参数 11
 	cfg.ArcOffWorkMode       = param[num++];       // 0 收弧模式
 	cfg.ArcOffCrt_Spd        = param[num++];       // 1 收弧电流
-	cfg.ArcOffVtg_Strth      = param[num++];       // 2 收弧电压
-	cfg.ArcOffVtg_Correction = param[num] - 30;    // 2 收弧电压修正值
+	cfg.ArcOffVtg_Strth      = param[num];       // 2 收弧电压
+	cfg.ArcOffVtg_Correction = param[num++] - 30;    // 2 收弧电压修正值
 	cfg.ArcOffTime           = param[num++];       // 3 收弧时间
 	cfg.Inductance           = param[num++];       // 4 收弧电感
 	cfg.ArcOffBlowTime       = param[num++];       // 5 收气时间

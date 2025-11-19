@@ -13,10 +13,13 @@ struct InterpBoundary {
 	double qk, vk, ak, jk;
 
 	// 减速阶段开始周期
-	double kd;
+	int kd = -1;
 
 	// 插补阶段标志位
-	int state;
+	int state = 0;
+
+	InterpBoundary() {};
+	InterpBoundary(double q0_, double q1_, double v0_, double v1_, double a0_, double a1_);
 };
 
 
@@ -25,6 +28,13 @@ struct InterpConstraint {
 	double vmax, vmin;
 	double amax, amin;
 	double jmax, jmin;
+
+	//! 插补结果采样周期
+	double Ts = 1e-3;
+	//! 数值计算深度: 提升插补精度
+	int N = 1;
+	//! 数值计算周期
+	double dt = Ts / N;
 
 	InterpConstraint() {};
 	InterpConstraint(double vmax_, double vmin_, double amax_, double amin_, double jmax_, double jmin_);
