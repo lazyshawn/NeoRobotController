@@ -311,7 +311,7 @@ public:
 	/**
 	* @brief 捕获Rtsys日志
 	*/
-	int read_message();
+	int read_message(std::string& msg);
 };
 
 } // namespace ZMotionRobot

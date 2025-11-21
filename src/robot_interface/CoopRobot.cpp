@@ -462,7 +462,8 @@ int RobotBase::write_register_config(const RobotConfig& config) {
 }
 
 int RobotBase::capture_controller_log() {
-	ZController->read_message();
+	std::string msg;
+	ZController->read_message(msg);
 	return 0;
 }
 
