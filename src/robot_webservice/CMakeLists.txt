@@ -5,6 +5,7 @@ add_library(robot_webservice
 )
 target_include_directories(robot_webservice PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/include>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/openssl-3/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )

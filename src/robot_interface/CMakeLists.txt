@@ -16,6 +16,7 @@ add_library(FSAIRobotInterface
 #target_link_libraries(FSAIRobotInterface debug ${Debug_Path}/LibName release ${Release_Path}/LibName)
 target_include_directories(FSAIRobotInterface PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/include>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/clogger>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/zmotion>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/openssl-3/include>
