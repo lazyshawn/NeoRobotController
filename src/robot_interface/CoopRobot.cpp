@@ -1709,7 +1709,7 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 		
 		while (lineNum > curTraj.lineNum) {
 			// 历史轨迹弹出
-			if (trajHistory[robotIdx].size() > 0) {
+			if (trajHistory[robotIdx].size() > 1) {
 				trajHistory[robotIdx].pop_front();
 				curTraj = trajHistory[robotIdx].front();
 			}

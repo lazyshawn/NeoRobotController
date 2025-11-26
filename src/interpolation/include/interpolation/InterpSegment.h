@@ -94,3 +94,23 @@ public:
 	*********************************************************** */
 	int get_interp_result(std::vector<double>& result);
 };
+
+
+
+// 轨迹类
+class InterpTrajectory {
+	// 轨迹段
+
+	// 插补段
+	InterpSegment segment;
+
+public:
+	//! 轨迹预处理
+	// 轨迹平滑
+
+	// 速度规划
+
+	// 轨迹插补
+};
+
+

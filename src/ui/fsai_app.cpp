@@ -550,11 +550,11 @@ void FSAIApp::connect_slot() {
 			//group.robotList[idx]->task_stop();
 			group.robot_group_clear_task(idx);
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		// 使能
 		for (auto& idx : idxList) {
-			group.robotList[idx]->switch_enable(true);
 			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			group.robotList[idx]->switch_enable(true);
 		}
 	});
 

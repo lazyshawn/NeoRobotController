@@ -117,7 +117,6 @@ int InterpSegment::get_interp_result(std::vector<double>& result) {
 			// 进入减速阶段
 			if (qk + hk >= q1) {
 				kb = k;
-				printf("decel at: %d. %f, %f, %f\n", k, qk, hk, q1);
 			}
 
 		}
@@ -141,9 +140,9 @@ int InterpSegment::get_interp_result(std::vector<double>& result) {
 			else if (k >= Td / dt + kb) {
 				jk1 = jk;
 				// 减速阶段结束(位置偏差)
-				if (k > 0 && k % constraint.N == 0) {
+				//if (k > 0 && k % constraint.N == 0) {
 					interpFinish = true;
-				}
+				//}
 			}
 
 			// 所有插补轨迹结束,输出目标点

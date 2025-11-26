@@ -90,7 +90,7 @@ namespace FSAIRobotInterface {
 	/* *************************** 底层接口实现 *************************** */
 	int FSAIRobot::update_rt_robot_status() {
 
-		int stateIdxBase = get_cmd_idx_base();
+		int stateIdxBase = get_state_idx_base();
 		RobotStatus tmp;
 		// !减少读取次数，优化读取速度
 		std::vector<float> value;
@@ -119,11 +119,12 @@ namespace FSAIRobotInterface {
 		ZController->get_axis_param({ 50,51,52,53,54,55,6,7,8 }, "DPOS", tmp.cPosR);
 		cpos_base_to_world(tmp.cPosR);
 
-		idx = std::vector<int>(50, get_state_idx_base());
-		for (size_t i = 0; i < idx.size(); ++i) {
-			idx[i] += i;
-		}
-		ZController->get_axis_param(idx, "TABLE", value);
+		//idx = std::vector<int>(50, get_state_idx_base());
+		//for (size_t i = 0; i < idx.size(); ++i) {
+		//	idx[i] += i;
+		//}
+		//ZController->get_axis_param(idx, "TABLE", value);
+		ZController->get_register(stateIdxBase, 50, value, 0);
 
 		// 机器人状态
 		tmp.lowerStatus = static_cast<int>(value[0]);
@@ -152,6 +153,13 @@ namespace FSAIRobotInterface {
 		// 
 		//ZController->get_axis_param({ stateIdxBase + 24117 }, "TABLE", value);
 		//tmp.lineNum = static_cast<int>(value[0]);
+
+		// 异常码
+		ZController->get_register(stateIdxBase + 250, 20, value, 0);
+		tmp.subErrorCode = std::vector<int>(value.size(), 0);
+		for (size_t i = 0; i < value.size(); ++i) {
+			tmp.subErrorCode[i] = static_cast<int>(value[i]);
+		}
 
 		// 加锁
 		std::lock_guard<std::mutex> lock(mtx);
@@ -320,11 +328,11 @@ namespace FSAIRobotInterface {
 		int stateIdxBase = get_cmd_idx_base();
 		cmdNum = 0;
 		//ZController->set_axis_param(stateIdxBase + 24123, "TABLE", 0);
-		// 下位机复位
-		ZController->set_axis_param(stateIdxBase + 23999, "TABLE", 1);
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		// 清空恢复
-		ZController->set_axis_param(stateIdxBase + 23995, "TABLE", 1);
+		//// 下位机复位
+		//ZController->set_axis_param(stateIdxBase + 23999, "TABLE", 1);
+		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//// 清空恢复
+		//ZController->set_axis_param(stateIdxBase + 23995, "TABLE", 1);
 
 
 		// 将上一条轨迹类型置空，防止切换正逆解时判断轨迹未走完
@@ -887,7 +895,8 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::task_pause() {
 
 		int stateIdxBase = get_state_idx_base();
-		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 2 });
+		//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 2 });
+		ZController->set_axis_param({ stateIdxBase + 61 }, "TABLE", { 1 });
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task pause.");
 		return 0;
@@ -902,7 +911,8 @@ namespace FSAIRobotInterface {
 			return 1;
 
 		int stateIdxBase = get_state_idx_base();
-		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 1 });
+		//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 1 });
+		ZController->set_axis_param({ stateIdxBase + 62 }, "TABLE", { 1 });
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task resume.");
 		return 0;
@@ -912,22 +922,26 @@ namespace FSAIRobotInterface {
 
 	int FSAIRobot::task_stop() {
 
+		int stateIdxBase = get_state_idx_base();
+
 		// 轨迹清空
 		trajectory.clear();
 
-		// 停止记录位置
-		save_task_status(false, -1);
+		//// 停止记录位置
+		//save_task_status(false, -1);
 
-		// 清除上位机异常码
-		reset_upperStatus(-1);
+		//// 清除上位机异常码
+		//reset_upperStatus(-1);
 
-		int stateIdxBase = get_cmd_idx_base();
-		// 暂停
-		ZController->set_axis_param({ stateIdxBase + 23997 }, "TABLE", { 1 });
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//int stateIdxBase = get_cmd_idx_base();
+		//// 暂停
+		//ZController->set_axis_param({ stateIdxBase + 23997 }, "TABLE", { 1 });
+		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		// 轨迹序号复位
 		reset_line_num();
+
+		ZController->set_axis_param({ stateIdxBase + 63 }, "TABLE", { 1 });
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
 
