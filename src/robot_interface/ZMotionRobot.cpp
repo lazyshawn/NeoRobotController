@@ -957,7 +957,7 @@ int ZMotionRobot::remain_buffer_free() {
 	// 获取缓存长度
 	int remainBuffer = get_remain_buffer();
 
-	return remainBuffer > 1000;
+	return remainBuffer > 3000;
 }
 
 // 一致性轨迹预处理，可以连续下发的轨迹
@@ -1102,7 +1102,7 @@ int ZMotionRobot::separate_trajectory() {
 	}
 
 	// 轨迹分段
-	float maxBuffSize = 1000.0;
+	float maxBuffSize = 2000.0;
 	if (bufferSize > maxBuffSize) {
 
 		// 轨迹段数，向上取整
@@ -1297,17 +1297,24 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 		return 2;
 	}
 
-	// 切换正逆解
-	if (type < 1) {
-		ret = switch_kinematics(1);
+	// 报错不检测正逆解
+	if ((robotStatus.lowerStatus >> 2) == 0) {
+		// 切换正逆解
+		if (type < 1) {
+			ret = switch_kinematics(1);
+		}
+		else {
+			ret = switch_kinematics(-1);
+		}
+		// 正逆解切换失败
+		if (ret != 0) {
+			return -2;
+		}
 	}
-	else {
-		ret = switch_kinematics(-1);
-	}
-	// 正逆解切换失败
-	if (ret != 0) {
-		return -2;
-	}
+	// 异常情况仅可正解点动
+	//else if (type < 1) {
+	//	return -2;
+	//}
 
 	// VMOVE 点动
 	if (type < 2) {
@@ -1445,7 +1452,7 @@ int ZMotionRobot::emergency_stop() {
 	int stateIdxBase = get_state_idx_base();
 	trajectory.clear();
 	// 保留旧版本急停按钮，后续版本将取消
-	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 	ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
 
 	// 上位机下发停止

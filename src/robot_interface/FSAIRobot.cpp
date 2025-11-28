@@ -954,7 +954,8 @@ namespace FSAIRobotInterface {
 
 		int stateIdxBase = get_state_idx_base();
 		trajectory.clear();
-		ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+		//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+		ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
 
 		// 上位机下发停止
 		set_upperStatus(0x08);
