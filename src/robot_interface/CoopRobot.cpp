@@ -1151,6 +1151,7 @@ void RobotGroupManager::processCommandThread() {
 			}
 		}
 		if (taskFinish) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "Process Command Thread Terminated.");
 			cmdThreadDone.store(true);
 			return;
 		}
@@ -1172,9 +1173,6 @@ void RobotGroupManager::processCommandThread() {
 			std::this_thread::sleep_until(wakeUpTime);
 		}
 	}
-
-
-	LOG4CPLUS_INFO(RobotLog::getLogger(), "Process Command Thread Terminated.");
 
 }
 

@@ -1443,6 +1443,9 @@ int ZMotionRobot::task_stop() {
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
 
+	// 延时，保证下位机清空任务成功
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 	return 0;
 
 }
