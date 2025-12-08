@@ -598,6 +598,11 @@ namespace FSAIRobotInterface {
 		}
 		ZController->set_axis_param(idxList, "TABLE", pnt);
 
+		// 起点为基坐标系运动
+		if (preTraj.isBaseMotion()) {
+			ZController->set_axis_param(idx + 64, "TABLE", 1);
+		}
+
 		// 起点类型
 		if (preTraj.isJoint()) {
 			ZController->set_axis_param(idx + 22 + 36 + 0, "TABLE", 0);
@@ -722,6 +727,12 @@ namespace FSAIRobotInterface {
 		trajectory.trajList.front().lineNum = ++cmdNum;
 		// 下发轨迹序号
 		send_line_num(axis[0], trajectory.get_curTraj());
+
+		// 本体坐标系运动
+		if (curTraj.isBaseMotion()) {
+			ZController->set_axis_param(160000 + 65, "TABLE", 1);
+			ZController->set_axis_param(160000 + 66, "TABLE", 1);
+		}
 
 		// 下发轨迹
 		if (curTraj.isArc()) {
