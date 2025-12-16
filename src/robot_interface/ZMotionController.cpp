@@ -867,7 +867,7 @@ int Controller::sendCmd(const char* pszCommand, char* psResponse, int cmdType) {
 }
 
 
-int Controller::read_message() {
+int Controller::read_message(std::string& msg) {
 
 	// 读取缓冲
 	char psResponse[2048];
@@ -881,6 +881,8 @@ int Controller::read_message() {
 		char res[2048];
 		sprintf(res, "%.*s", puiread, psResponse);
 		LOG4CPLUS_INFO(ControllerLog::getLogger(), cardName << ": " << res);
+
+		msg = res;
 	}
 
 	return 0;

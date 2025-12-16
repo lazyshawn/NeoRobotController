@@ -58,5 +58,7 @@ public:
 	// 按下位机时间查询下位机数据
 	int query_slave_buffer(int idx, float value, std::vector<float>& data, float maxDist) const;
 
+	// 弹出最新数据
+	int pop_new_buffer(int num, bool popFlag);
 
 };

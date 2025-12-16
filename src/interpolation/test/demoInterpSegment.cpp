@@ -1,40 +1,51 @@
 ﻿
 #include <iostream>
+#include <fstream>
+#include <chrono>
 
 #include "interpolation/InterpSegment.h"
 
 int main() {
 	std::cout << "hello world" << std::endl;
+	std::string fileName = "interpolation.txt";
 
-	// 插补结果采样周期
-	double Ts = 1e-3;
-	// 采样细化倍率
-	int N = 10;
-	// 插补计算周期
-	double dt = Ts / N;
-
+	// 约束条件
 	InterpConstraint constraint(5,-5, 10,-8, 30,-40);
+	// 边界条件
+	InterpBoundary boundary(0,10, 1,0, 1,0);
 
+	// 插补轨迹队列
 	InterpSegment seg0;
-	seg0.set_constraint(constraint);
+	seg0.set_kinematic_constraint(constraint);
+	seg0.add_segment(boundary);
+	boundary = InterpBoundary(10,0, 0,2, 0,0);
+	seg0.add_segment(boundary);
 
-	// 当前插补轨迹
-	InterpBoundary boundary;
-	std::queue<InterpBoundary> boundaryQueue;
-	// 插补轨迹序号
-	// 轨迹开始插补周期数, 结束周期数, 开始减速周期数
-	int k0 = -1, k1 = 0, kd = 0;
-	for (size_t i = 0; i < 1e3; ++i) {
-		// 更新插补轨迹
-		if (k0 < 0) {
-			boundary = boundaryQueue.front();
-			boundaryQueue.pop();
-			k0 = i;
+	// 插补结果
+	std::vector<double> q, dq, d2q, d3q, t;
+	double dt = seg0.constraint.dt;
+
+	for (size_t i = 0; i < 9e3; ++i) {
+		std::vector<double> ans;
+
+		auto t0 = std::chrono::steady_clock::now();
+		if (seg0.get_interp_result(ans)) {
+			break;
 		}
-
-		// 开始插补
+		auto t1 = std::chrono::steady_clock::now();
 
 		// 输出插补结果
+		q.push_back(ans[0]);
+		dq.push_back(ans[1]);
+		d2q.push_back(ans[2]);
+		d3q.push_back(ans[3]);
+		t.push_back((i + 1)*dt);
+	}
+
+	// 插补结果保存到文件
+	std::ofstream out(fileName, std::ios::trunc);
+	for (size_t i = 0; i < t.size(); ++i) {
+		out << t[i] << ", " << q[i] << ", " << dq[i] << ", " << d2q[i] << ", " << d3q[i] << std::endl;
 	}
 
 	return 0;

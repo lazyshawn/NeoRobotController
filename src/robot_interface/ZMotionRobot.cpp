@@ -75,7 +75,7 @@ int ZMotionRobot::update_rt_robot_status() {
 
 	{
 		// 加锁
-		std::lock_guard<std::mutex> lock(mtx);
+		std::lock_guard<std::mutex> lock(mtxMotion);
 		// 需要保持的状态
 		tmp.upperStatus = robotStatus.upperStatus; 
 	}
@@ -88,7 +88,7 @@ int ZMotionRobot::update_rt_robot_status() {
 int ZMotionRobot::get_all_robot_status(RobotStatus& status) {
 	{
 		// 加锁
-		std::lock_guard<std::mutex> lock(mtx);
+		std::lock_guard<std::mutex> lock(mtxMotion);
 
 		// 更新机器人状态
 		status = robotStatus;
@@ -354,27 +354,39 @@ int ZMotionRobot::update_welder_config() {
 		return 1;
 	}
 
-	float current, voltage;
+	// 焊接模式
+	uint8_t modeCmd = 0;
+	// 电流、电压、电感
+	float current = 0.0, voltage = 0.0, inductance = 0.0;
+
+	// 焊接模式
+	modeCmd += weldCfg.WeldingWorkMode;
 	// 电流
 	current = weldCfg.WeldingCrt_Spd;
-	// 电压分别模式
-	//if (weldCfg.WeldingWorkMode == 4) {
-	if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1) {
-		voltage = weldCfg.WeldingVtg_Strth;
+	// 电压
+	voltage = weldCfg.WeldingVtg_Strth;
+	// 电感
+	inductance = weldCfg.Inductance;
+
+	// 麦格米特
+	if (weldCfg.Id == 1) {
+		// 一元模式
+		if ((weldCfg.WeldingWorkMode >> 4) % 2 == 0) {
+			voltage = weldCfg.VtgUniCorrection + 30;
+		}
+
+		//modeCmd += (1 << 1);
+		//modeCmd += (weldCfg.WeldingWorkMode == 1) << 2;
+		modeCmd += (weldCfg.Id >= 0);
 	}
-	// 一元模式
-	else {
-		voltage = weldCfg.VtgUniCorrection + 30;
+	// 克鲁斯焊机
+	else if (weldCfg.Id == 2) {
 	}
 
-	uint8_t modeCmd = 0;
-	//modeCmd += (1 << 1);
-	//modeCmd += (weldCfg.WeldingWorkMode == 1) << 2;
-	modeCmd += weldCfg.WeldingWorkMode;
-	modeCmd += (weldCfg.Id >= 0);
 
-	int stateBase = get_state_idx_base();
-	std::vector<int> tableList(3, stateBase + 171);
+	// 写入变工艺参数
+	int dataBase = get_state_idx_base() + 170;
+	std::vector<int> tableList(4, dataBase + 1);
 	for (size_t i = 0; i < tableList.size(); ++i) {
 		tableList[i] += i;
 	}
@@ -383,11 +395,12 @@ int ZMotionRobot::update_welder_config() {
 	data.push_back(modeCmd);
 	data.push_back(current);
 	data.push_back(voltage);
+	data.push_back(inductance);
 
-	// 写入变工艺参数
 	ZController->set_axis_param(tableList, "TABLE", data, get_execute_axis()[0]);
+
 	// 变工艺使能
-	ZController->set_axis_param(stateBase + 170, "TABLE", 1, get_execute_axis()[0]);
+	ZController->set_axis_param(dataBase, "TABLE", weldCfg.Id, get_execute_axis()[0]);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId <<
 		" Update welder config: " << vector_to_string(serialize_Arc_WeldingParaItem(weldCfg).second, 2)
@@ -423,7 +436,7 @@ int ZMotionRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 	auto rotMat = robotConfig.get_slave_calibratino_mat().inverse();
 	trajList.apply_rotate(rotMat);
 
-	std::unique_lock<std::mutex> lock(mtx);
+	std::unique_lock<std::mutex> lock(mtxMotion);
 	// 等待条件置反
 	motionDone = false;
 
@@ -944,7 +957,7 @@ int ZMotionRobot::remain_buffer_free() {
 	// 获取缓存长度
 	int remainBuffer = get_remain_buffer();
 
-	return remainBuffer > 1000;
+	return remainBuffer > 3000;
 }
 
 // 一致性轨迹预处理，可以连续下发的轨迹
@@ -1089,7 +1102,7 @@ int ZMotionRobot::separate_trajectory() {
 	}
 
 	// 轨迹分段
-	float maxBuffSize = 1000.0;
+	float maxBuffSize = 2000.0;
 	if (bufferSize > maxBuffSize) {
 
 		// 轨迹段数，向上取整
@@ -1235,8 +1248,8 @@ int ZMotionRobot::switch_enable(bool enable) {
 int ZMotionRobot::reset_line_num() {
 	int stateIdxBase = get_state_idx_base();
 	cmdNum = 0;
-	ZController->set_axis_param(stateIdxBase + 3, "TABLE", 0);
-	ZController->set_axis_param(stateIdxBase + 7, "TABLE", -1);
+	//ZController->set_axis_param(stateIdxBase + 3, "TABLE", 0);
+	//ZController->set_axis_param(stateIdxBase + 7, "TABLE", -1);
 
 	// 将上一条轨迹类型置空，防止切换正逆解时判断轨迹未走完
 	auto preTraj = trajectory.get_preTraj();
@@ -1284,17 +1297,24 @@ int ZMotionRobot::jog_moving(int type, int idx, int dir, int move) {
 		return 2;
 	}
 
-	// 切换正逆解
-	if (type < 1) {
-		ret = switch_kinematics(1);
+	// 报错不检测正逆解
+	if ((robotStatus.lowerStatus >> 2) == 0) {
+		// 切换正逆解
+		if (type < 1) {
+			ret = switch_kinematics(1);
+		}
+		else {
+			ret = switch_kinematics(-1);
+		}
+		// 正逆解切换失败
+		if (ret != 0) {
+			return -2;
+		}
 	}
-	else {
-		ret = switch_kinematics(-1);
-	}
-	// 正逆解切换失败
-	if (ret != 0) {
-		return -2;
-	}
+	// 异常情况仅可正解点动
+	//else if (type < 1) {
+	//	return -2;
+	//}
 
 	// VMOVE 点动
 	if (type < 2) {
@@ -1423,6 +1443,9 @@ int ZMotionRobot::task_stop() {
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
 
+	// 延时，保证下位机清空任务成功
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 	return 0;
 
 }
@@ -1432,7 +1455,7 @@ int ZMotionRobot::emergency_stop() {
 	int stateIdxBase = get_state_idx_base();
 	trajectory.clear();
 	// 保留旧版本急停按钮，后续版本将取消
-	ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
+	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 	ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
 
 	// 上位机下发停止
@@ -1780,6 +1803,8 @@ int ZMotionRobot::read_saved_status(RobotStatus& status) {
 	// 局部坐标系转世界坐标系
 	status.cPos = status.cPosRaw;
 	cpos_base_to_world(status.cPos);
+
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " saved status: " << status.cmdNum);
 
 	return 0;
 }

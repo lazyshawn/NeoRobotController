@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.3.4.2\n"
-		<< "Release Date:    251028");
+		<< "Version:         0.3.6\n"
+		<< "Release Date:    251216");
 }
 
 
@@ -42,7 +42,7 @@ RobotBase::~RobotBase() {
 }
 
 int RobotBase::wait_auto_task_stop() {
-	std::unique_lock<std::mutex> lock(mtx);
+	std::unique_lock<std::mutex> lock(mtxMotion);
 
 	cvMotion.wait(lock, [&]() { return motionDone; });
 
@@ -63,7 +63,7 @@ int RobotBase::wait_auto_task_stop() {
 int RobotBase::notify_waiting_robot() {
 
 	// 防止虚假唤醒
-	std::lock_guard<std::mutex> lock(mtx);
+	std::lock_guard<std::mutex> lock(mtxMotion);
 	motionDone = true;
 
 	// 清空轨迹
@@ -138,7 +138,7 @@ int RobotBase::get_rt_robot_status(RobotStatus& status) {
 
 	{
 		// 加锁
-		std::lock_guard<std::mutex> lock(mtx);
+		std::lock_guard<std::mutex> lock(mtxMotion);
 
 		status = robotStatus;
 	}
@@ -149,7 +149,7 @@ int RobotBase::get_rt_robot_status(RobotStatus& status) {
 
 int RobotBase::set_upperStatus(int code) {
 	// 加锁
-	std::lock_guard<std::mutex> lock(mtx);
+	std::lock_guard<std::mutex> lock(mtxMotion);
 
 	robotStatus.upperStatus |= code;
 
@@ -161,7 +161,7 @@ int RobotBase::reset_upperStatus(int idx) {
 	// 上位机状态位全部复位
 	if (idx < 0) {
 		{
-			std::lock_guard<std::mutex> lock(mtx);
+			std::lock_guard<std::mutex> lock(mtxMotion);
 			robotStatus.upperStatus = 0;
 		}
 
@@ -462,7 +462,8 @@ int RobotBase::write_register_config(const RobotConfig& config) {
 }
 
 int RobotBase::capture_controller_log() {
-	ZController->read_message();
+	std::string msg;
+	ZController->read_message(msg);
 	return 0;
 }
 
@@ -1150,6 +1151,7 @@ void RobotGroupManager::processCommandThread() {
 			}
 		}
 		if (taskFinish) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "Process Command Thread Terminated.");
 			cmdThreadDone.store(true);
 			return;
 		}
@@ -1171,9 +1173,6 @@ void RobotGroupManager::processCommandThread() {
 			std::this_thread::sleep_until(wakeUpTime);
 		}
 	}
-
-
-	LOG4CPLUS_INFO(RobotLog::getLogger(), "Process Command Thread Terminated.");
 
 }
 
@@ -1424,6 +1423,10 @@ void RobotGroupManager::set_group_sync_config(int robotIdx) {
 		return;
 	}
 
+	// 准备下发任务, 轨迹一致性不满足
+	if (!robotList[robotIdx]->consistent_traj_ready(coopState[robotIdx]))
+		return;
+	
 	// 当前需要下发的轨迹的同步参数
 	auto curTraj = robotList[robotIdx]->trajectory.get_curTraj();
 	auto synCfg = deserialize_Sync_Config(curTraj.appendix);
@@ -1444,6 +1447,12 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 
 	// 等待机器人是否已就绪
 	auto curSync = syncState[robotIdx];
+	// 当前协同配置无需等待
+	if (!curSync.need_sync()) {
+		syncReadyState[robotIdx] = 0;
+		return;
+	}
+
 	syncReadyState[robotIdx] = 1;
 	
 	for (auto& ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
@@ -1698,7 +1707,7 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 		
 		while (lineNum > curTraj.lineNum) {
 			// 历史轨迹弹出
-			if (trajHistory[robotIdx].size() > 0) {
+			if (trajHistory[robotIdx].size() > 1) {
 				trajHistory[robotIdx].pop_front();
 				curTraj = trajHistory[robotIdx].front();
 			}
