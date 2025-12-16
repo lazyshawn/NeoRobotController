@@ -162,7 +162,7 @@ namespace FSAIRobotInterface {
 		}
 
 		// 加锁
-		std::lock_guard<std::mutex> lock(mtx);
+		std::lock_guard<std::mutex> lock(mtxMotion);
 		robotStatus = tmp;
 
 		return 0;
@@ -172,7 +172,7 @@ namespace FSAIRobotInterface {
 
 		{
 			// 加锁
-			std::lock_guard<std::mutex> lock(mtx);
+			std::lock_guard<std::mutex> lock(mtxMotion);
 
 			// 更新机器人状态
 			status = robotStatus;
@@ -377,7 +377,7 @@ namespace FSAIRobotInterface {
 			}
 		}
 
-		std::unique_lock<std::mutex> lock(mtx);
+		std::unique_lock<std::mutex> lock(mtxMotion);
 		// 等待条件置反
 		motionDone = false;
 

@@ -72,7 +72,7 @@ namespace FSAIRobotInterface {
 
 		{
 			// 加锁
-			std::lock_guard<std::mutex> lock(mtx);
+			std::lock_guard<std::mutex> lock(mtxMotion);
 			// 需要保持的状态
 			tmp.upperStatus = robotStatus.upperStatus;
 		}
@@ -85,7 +85,7 @@ namespace FSAIRobotInterface {
 	int ZRVRobot::get_all_robot_status(RobotStatus& status) {
 		{
 			// 加锁
-			std::lock_guard<std::mutex> lock(mtx);
+			std::lock_guard<std::mutex> lock(mtxMotion);
 
 			// 更新机器人状态
 			status = robotStatus;
@@ -402,7 +402,7 @@ namespace FSAIRobotInterface {
 		//auto rotMat = robotConfig.get_slave_calibratino_mat().inverse();
 		//trajList.apply_rotate(rotMat);
 
-		std::unique_lock<std::mutex> lock(mtx);
+		std::unique_lock<std::mutex> lock(mtxMotion);
 		// 等待条件置反
 		motionDone = false;
 

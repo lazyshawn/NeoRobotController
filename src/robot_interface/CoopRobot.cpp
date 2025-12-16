@@ -42,7 +42,7 @@ RobotBase::~RobotBase() {
 }
 
 int RobotBase::wait_auto_task_stop() {
-	std::unique_lock<std::mutex> lock(mtx);
+	std::unique_lock<std::mutex> lock(mtxMotion);
 
 	cvMotion.wait(lock, [&]() { return motionDone; });
 
@@ -63,7 +63,7 @@ int RobotBase::wait_auto_task_stop() {
 int RobotBase::notify_waiting_robot() {
 
 	// 防止虚假唤醒
-	std::lock_guard<std::mutex> lock(mtx);
+	std::lock_guard<std::mutex> lock(mtxMotion);
 	motionDone = true;
 
 	// 清空轨迹
@@ -138,7 +138,7 @@ int RobotBase::get_rt_robot_status(RobotStatus& status) {
 
 	{
 		// 加锁
-		std::lock_guard<std::mutex> lock(mtx);
+		std::lock_guard<std::mutex> lock(mtxMotion);
 
 		status = robotStatus;
 	}
@@ -149,7 +149,7 @@ int RobotBase::get_rt_robot_status(RobotStatus& status) {
 
 int RobotBase::set_upperStatus(int code) {
 	// 加锁
-	std::lock_guard<std::mutex> lock(mtx);
+	std::lock_guard<std::mutex> lock(mtxMotion);
 
 	robotStatus.upperStatus |= code;
 
@@ -161,7 +161,7 @@ int RobotBase::reset_upperStatus(int idx) {
 	// 上位机状态位全部复位
 	if (idx < 0) {
 		{
-			std::lock_guard<std::mutex> lock(mtx);
+			std::lock_guard<std::mutex> lock(mtxMotion);
 			robotStatus.upperStatus = 0;
 		}
 

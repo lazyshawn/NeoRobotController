@@ -187,7 +187,7 @@ protected:
 	std::unordered_set<int> axisMask;
 
 	// 互斥锁与条件变量 
-	std::mutex mtx;
+	std::mutex mtxMotion, mtxBuffer;
 	std::condition_variable cvMotion;
 	bool motionDone = false;
 
@@ -319,6 +319,8 @@ public:
 	int read_action_result(std::vector<float>& result);
 	int get_multilayer_pos(std::vector<float>& pos);
 
+	// 开启缓存读取线程
+	int slave_buffer_stream(bool enable);
 	// 获取自定义的下位机缓存数据: 如电弧跟踪、激光跟踪数据
 	int get_slave_buffer();
 

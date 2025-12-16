@@ -75,7 +75,7 @@ int ZMotionRobot::update_rt_robot_status() {
 
 	{
 		// 加锁
-		std::lock_guard<std::mutex> lock(mtx);
+		std::lock_guard<std::mutex> lock(mtxMotion);
 		// 需要保持的状态
 		tmp.upperStatus = robotStatus.upperStatus; 
 	}
@@ -88,7 +88,7 @@ int ZMotionRobot::update_rt_robot_status() {
 int ZMotionRobot::get_all_robot_status(RobotStatus& status) {
 	{
 		// 加锁
-		std::lock_guard<std::mutex> lock(mtx);
+		std::lock_guard<std::mutex> lock(mtxMotion);
 
 		// 更新机器人状态
 		status = robotStatus;
@@ -436,7 +436,7 @@ int ZMotionRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 	auto rotMat = robotConfig.get_slave_calibratino_mat().inverse();
 	trajList.apply_rotate(rotMat);
 
-	std::unique_lock<std::mutex> lock(mtx);
+	std::unique_lock<std::mutex> lock(mtxMotion);
 	// 等待条件置反
 	motionDone = false;
 
@@ -1248,8 +1248,8 @@ int ZMotionRobot::switch_enable(bool enable) {
 int ZMotionRobot::reset_line_num() {
 	int stateIdxBase = get_state_idx_base();
 	cmdNum = 0;
-	ZController->set_axis_param(stateIdxBase + 3, "TABLE", 0);
-	ZController->set_axis_param(stateIdxBase + 7, "TABLE", -1);
+	//ZController->set_axis_param(stateIdxBase + 3, "TABLE", 0);
+	//ZController->set_axis_param(stateIdxBase + 7, "TABLE", -1);
 
 	// 将上一条轨迹类型置空，防止切换正逆解时判断轨迹未走完
 	auto preTraj = trajectory.get_preTraj();
@@ -1803,6 +1803,8 @@ int ZMotionRobot::read_saved_status(RobotStatus& status) {
 	// 局部坐标系转世界坐标系
 	status.cPos = status.cPosRaw;
 	cpos_base_to_world(status.cPos);
+
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " saved status: " << status.cmdNum);
 
 	return 0;
 }
