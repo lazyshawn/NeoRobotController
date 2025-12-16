@@ -1,17 +1,23 @@
 ﻿#pragma once
 
+#include <algorithm>
+#include <chrono>
 #include <deque>
+#include <mutex>
 #include <vector>
 
 // 缓存区数据格式
-class BufferUnit {
+struct BufferUnit {
 	long long timeStamp;
+
+	// 运动标志
+	int runState;
 
 	// 位置
 	std::vector<float> dpos;
 
 public:
-	BufferUnit(long long stamp, const std::vector<float>& data);
+	BufferUnit(long long stamp, int flag, const std::vector<float>& data);
 };
 
 /* **********************************************************
@@ -27,10 +33,14 @@ class BufferSynchronizer {
 	int maxBuffLen = 100;
 	// ! 最大插补间隙
 	long long maxDetT;
-	//! 上位机时间参考基准(任意毫秒为单位的longlong类型)
-	long long masterTimeBase;
-	//! 下位机时间参考基准
+	//! 下位机时间参考基准(任意毫秒为单位的longlong类型)
 	long long slaveTimeBase;
+	//! 上位机时间参考基准
+	std::chrono::time_point<std::chrono::steady_clock> materTimeBase;
+
+	// 互斥锁与条件变量 
+	std::mutex mtxBuffer;
+	std::condition_variable cvBuffer;
 
 	//! 下位机缓冲区数据
 	std::deque<BufferUnit> slaveBuffer;
@@ -38,8 +48,10 @@ class BufferSynchronizer {
 	std::deque<BufferUnit> masterBuffer;
 
 public:
+	int set_maxBuffLen(int len);
+
 	// 时间戳同步
-	int stamp_synchronize(long long masterStamp, long long slaveStamp);
+	int stamp_synchronize(std::chrono::time_point<std::chrono::steady_clock> masterStamp, long long slaveStamp);
 
 	// 上位机时间戳转化为下位机时间戳
 	long long to_slave_time(long long masterStamp) const;
@@ -48,7 +60,7 @@ public:
 	long long to_master_time(long long slaveStamp) const;
 
 	// 新增下位机数据
-	int push_slave_buffer(long long slaveStamp, const std::vector<float>& data);
+	int push_slave_buffer(long long slaveStamp, int flag, const std::vector<float>& data);
 
 	// 新增上位机数据
 	int push_master_buffer(long long masterStamp, const std::vector<float>& data);
@@ -59,6 +71,6 @@ public:
 	int query_slave_buffer(int idx, float value, std::vector<float>& data, float maxDist) const;
 
 	// 弹出最新数据
-	int pop_new_buffer(int num, bool popFlag);
+	int pop_new_buffer(int num, bool popFlag, std::vector<BufferUnit>& buffer);
 
 };

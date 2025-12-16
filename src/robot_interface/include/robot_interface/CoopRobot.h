@@ -319,8 +319,6 @@ public:
 	int read_action_result(std::vector<float>& result);
 	int get_multilayer_pos(std::vector<float>& pos);
 
-	// 开启缓存读取线程
-	int slave_buffer_stream(bool enable);
 	// 获取自定义的下位机缓存数据: 如电弧跟踪、激光跟踪数据
 	int get_slave_buffer();
 
@@ -334,13 +332,18 @@ public:
 
 	/**
 	* @brief  上位机与下位机缓冲数据同步
+	* @param  masterStamp    上位机时间戳
+	* @return 同步时刻的下位机时间戳
 	*/
-	int synchronize_slave_buffer(long long masterStamp);
+	long long synchronize_slave_buffer(std::chrono::time_point<std::chrono::steady_clock> masterStamp);
 
 	/**
 	* @brief  查询下位机缓冲数据
+	* @param         num      查询个数
+	* @param         popFlag  清空已查询数据
+	* @param  [out]  buffer   查询结果
 	*/
-	int query_slave_buffer(long long stamp, std::vector<float>& data);
+	int pop_slave_buffer(int num, bool popFlag, std::vector<BufferUnit>& buffer);
 
 	/* *************************** 底层可修改接口 *************************** */
 	/**
@@ -490,10 +493,10 @@ class RobotGroupManager {
 
 	//! 线程终止条件
 	bool workerHealthy = true;
-	//! 指令处理线程, 状态更新线程
-	std::thread cmdThreadWorker, updateThreadWorker;
+	//! 指令处理线程, 状态更新线程, 下位机缓存读取线程
+	std::thread cmdThreadWorker, updateThreadWorker, bufferThreadWorker;
 	//! 指令线程状态
-	std::atomic<bool> cmdThreadDone;
+	std::atomic<bool> cmdThreadDone, bufferThreadDone;
 	//! 保存机器人状态
 	std::vector<RobotStatus> statusList;
 	//! RobotGroupManager 状态
@@ -514,6 +517,10 @@ class RobotGroupManager {
 	* @brief  状态更新线程
 	*/
 	void updateStatusThread();
+	/**
+	* @brief  下位机缓存读取线程
+	*/
+	void readSlaveBufferThread();
 
 	void set_group_sync_config(int robotIdx);
 
@@ -549,6 +556,7 @@ class RobotGroupManager {
 
 	// IO 等待标志复位
 	void reset_wait_state(int robotIdx);
+
 
 public:
 	//! 机器人队列
@@ -617,6 +625,9 @@ public:
 	* @brief  机器人组急停
 	*/
 	int robot_group_stop(int idx);
+
+	// 开启缓存读取线程
+	int slave_buffer_stream(bool enable);
 };
 
 /**

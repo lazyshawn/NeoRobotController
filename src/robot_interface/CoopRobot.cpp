@@ -842,31 +842,28 @@ int RobotBase::get_slave_buffer() {
 
 	int begIdx = get_data_idx_base();
 
-	std::vector<float> data;
-	int bufAddr0 = begIdx + 21000;
-	int bufAddr1 = begIdx + 21500;
-	int dataNum = 5, dataLen = 10;
+	std::vector<float> data, buf;
+	int dataNum = 10, dataLen = 9;
+	int bufAddrBase = begIdx + 21000;
+	int bufAddr0 = 0, bufAddr1 = dataNum * dataLen + 1;
 
-	// 读取标志位
-	ZController->get_axis_param({ bufAddr0, bufAddr0 }, "TABLE", data);
-
-	// 缓存区地址
-	int buffAddr = bufAddr0 + 1, buffLen = dataLen * dataNum;
-	if (int(data[0]) < int(data[1])) {
-		buffAddr = bufAddr1 + 1;
+	// 一次性读取缓存区
+	ZController->get_register(bufAddrBase, 2 * dataLen * dataNum + 2, data, 0);
+	
+	buf = std::vector<float>(data.begin() + 1, data.begin() + bufAddr1);
+	if (data[bufAddr0] < data[bufAddr1]) {
+		buf = std::vector<float>(data.begin() + bufAddr1 + 1, data.end());
 	}
-
-	// 读取有效缓存区
-	ZController->get_register(buffAddr, buffLen, data, 0);
 
 	// 保存下位机缓存数据
 	for (size_t i = 0; i < dataNum; ++i) {
-		long long stamp = static_cast<long long>(data[i * dataLen]);
-		std::vector<float> tmp = std::vector<float>(data.begin() + i * dataLen + 1, data.begin() + (i + 1)*dataLen);
-		bufferSync.push_slave_buffer(stamp, tmp);
+		long long stamp = static_cast<long long>(buf[i * dataLen]);
+		int isRun = static_cast<long long>(buf[i * dataLen + 1]);
+		std::vector<float> tmp = std::vector<float>(buf.begin() + i * dataLen + 2, buf.begin() + (i + 1)*dataLen);
+		// 姿态转换
+		cpos_base_to_world(tmp);
+		bufferSync.push_slave_buffer(stamp, isRun, tmp);
 	}
-
-	//int ret = ZController->get_register(begIdx + 21000, 500, statusBuffer.slaveBuffer, 0);
 
 	return 0;
 }
@@ -886,20 +883,24 @@ int RobotBase::single_axis_enable(bool enable, int axis) {
 
 }
 
-int RobotBase::synchronize_slave_buffer(long long masterStamp) {
+long long  RobotBase::synchronize_slave_buffer(std::chrono::time_point<std::chrono::steady_clock>  masterStamp) {
 
 	// 获取当前下位机时间戳
-	float slaveStamp;
-	ZController->get_axis_param(get_state_idx_base() + 28, "TABLE", slaveStamp);
+	float data;
+	ZController->get_axis_param(0, "TICKS", data);
+	long long slaveStamp = static_cast<long long>(-data);
+
+	// 上位机时间戳
+	auto start = std::chrono::steady_clock::now();
 
 	// 时间戳同步
-	//bufferSync.stamp_synchronize(masterStamp, static_cast<long long>(-slaveStamp));
+	bufferSync.stamp_synchronize(start, slaveStamp);
 
-	return -slaveStamp;
+	return slaveStamp;
 }
 
-int RobotBase::query_slave_buffer(long long stamp, std::vector<float>& data) {
-	return 0;
+int RobotBase::pop_slave_buffer(int num, bool popFlag, std::vector<BufferUnit>& buffer) {
+	return bufferSync.pop_new_buffer(num, popFlag, buffer);
 }
 
 /* *************************** RobotGroupManager *************************** */
@@ -958,8 +959,13 @@ int RobotGroupManager::start_thread() {
 	}
 
 	// 绑定成员函数和 this 指针
-	//cmdThreadWorker = std::thread(&RobotGroupManager::processCommandThread, this);
 	updateThreadWorker = std::thread(&RobotGroupManager::updateStatusThread, this);
+
+	//// 开启缓存读取线程
+	//slave_buffer_stream(true);
+	//// 下位机时间同步
+	//auto start = std::chrono::steady_clock::now();
+	//robotList[0]->synchronize_slave_buffer(start);
 
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "Process Command Thread Begin.");
 
@@ -1304,6 +1310,75 @@ void RobotGroupManager::updateStatusThread() {
 		std::this_thread::sleep_for(wakeUpTime - now);
 	}
 
+}
+
+
+void RobotGroupManager::readSlaveBufferThread() {
+	// 指令返回值
+	int ret = 0;
+	// 获取当前时间戳
+	auto start = std::chrono::steady_clock::now();
+	// 下次唤醒时间
+	auto wakeUpTime = start;
+	// 线程周期(ms)
+	long long duration = 20;
+
+
+	// 指令执行线程
+	while (workerHealthy) {
+
+		// 开始时间
+		auto tmpStart = std::chrono::steady_clock::now();
+		std::vector<int> dt(4, 0);
+
+		// 获取下位机缓冲数据
+		auto t0 = std::chrono::steady_clock::now();
+		for (size_t i = 0; i < robotList.size(); ++i) {
+			robotList[i]->get_slave_buffer();
+		}
+		auto t1 = std::chrono::steady_clock::now();
+		dt[1] = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+
+		if (bufferThreadDone) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread erminated.");
+			return;
+		}
+
+		// 设置下次唤醒时间
+		wakeUpTime += std::chrono::milliseconds(duration);
+		auto now = std::chrono::steady_clock::now();
+
+		// 周期时间耗尽
+		if (now > wakeUpTime) {
+			auto detTime = now - wakeUpTime;
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted:" << std::chrono::duration_cast<std::chrono::milliseconds>(detTime).count());
+			while (now > wakeUpTime)
+				wakeUpTime += std::chrono::milliseconds(duration);
+		}
+		// 休眠
+		else {
+			std::this_thread::sleep_until(wakeUpTime);
+		}
+	}
+}
+
+
+int RobotGroupManager::slave_buffer_stream(bool enable) {
+	if (enable) {
+		bufferThreadDone.store(false);
+
+		if (bufferThreadWorker.joinable())
+			bufferThreadWorker.join();
+		// 绑定成员函数和 this 指针
+		bufferThreadWorker = std::thread(&RobotGroupManager::readSlaveBufferThread, this);
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread Begin.");
+	}
+	else {
+		bufferThreadDone.store(true);
+	}
+	return 0;
 }
 
 
