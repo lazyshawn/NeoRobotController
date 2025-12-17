@@ -138,10 +138,11 @@ public:
 		return moveInBase;
 	}
 
+	// e.g. { 0, 1, 6，8 }
 	inline void set_axisMask(const std::vector<int>& mask) {
 		axisMask = mask;
 	}
-	inline std::vector<int> get_axisMask() {
+	inline std::vector<int> get_axisMask() const {
 		return axisMask;
 	}
 

@@ -483,8 +483,6 @@ namespace FSAIRobotInterface {
 
 		// 形态位
 		ZController->set_axis_param(idx + 1, "TABLE", -1);
-		//ZController->set_axis_param(idx + 2, "TABLE", 0);
-		//ZController->set_axis_param(idx + 3, "TABLE", 0);
 
 		// 终点
 		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
@@ -494,8 +492,11 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(idxList, "TABLE", end);
 		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 0);
 
-		// 点位插入完成
-		//ZController->set_axis_param(idx - 10, "TABLE", 1);
+		// 终点轴号屏蔽
+		for (size_t i = 0; i < mask.size(); ++i) {
+			if (mask[i] < 0)
+				ZController->set_axis_param(idx + 280 + i, "TABLE", 1);
+		}
 
 		return 0;
 	}
@@ -514,8 +515,6 @@ namespace FSAIRobotInterface {
 
 		// 形态位
 		ZController->set_axis_param(idx + 1, "TABLE", -1);
-		//ZController->set_axis_param(idx + 2, "TABLE", 0);
-		//ZController->set_axis_param(idx + 3, "TABLE", 0);
 
 		// 终点
 		idxList = std::vector<int>(12, idx + 22 + 12 + 12);
@@ -525,8 +524,12 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(idxList, "TABLE", end);
 		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 1);
 
-		// 点位插入完成
-		//ZController->set_axis_param(idx - 10, "TABLE", 1);
+		// 终点轴号屏蔽
+		for (size_t i = 0; i < mask.size(); ++i) {
+			if (mask[i] < 0)
+				ZController->set_axis_param(idx + 280 + i, "TABLE", 1);
+		}
+
 		return 0;
 	}
 	
@@ -543,8 +546,6 @@ namespace FSAIRobotInterface {
 
 		// 形态位
 		ZController->set_axis_param(idx + 1, "TABLE", -1);
-		//ZController->set_axis_param(idx + 2, "TABLE", 0);
-		//ZController->set_axis_param(idx + 3, "TABLE", 0);
 
 		// 中间点
 		idxList = std::vector<int>(12, idx + 22 + 12);
@@ -562,8 +563,12 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param(idxList, "TABLE", end);
 		ZController->set_axis_param(idx + 22 + 36 + 2, "TABLE", 1);
 
-		// 点位插入完成
-		//ZController->set_axis_param(idx - 10, "TABLE", 1);
+		// 终点轴号屏蔽
+		for (size_t i = 0; i < mask.size(); ++i) {
+			if (mask[i] < 0)
+				ZController->set_axis_param(idx + 280 + i, "TABLE", 1);
+		}
+
 		return 0;
 	}
 
@@ -602,6 +607,26 @@ namespace FSAIRobotInterface {
 		if (preTraj.isBaseMotion()) {
 			ZController->set_axis_param(idx + 64, "TABLE", 1);
 		}
+		else {
+			// 轴屏蔽
+			std::vector<int> mask(9, 1);
+			auto trajAxisMask = preTraj.get_axisMask();
+			for (size_t i = 0; i < mask.size(); ++i) {
+				// 机器人指定的屏蔽
+				if (axisMask.count(i) > 0)
+					mask[i] = -1;
+				// 轨迹指定的屏蔽
+				for (size_t j = 0; j < trajAxisMask.size(); ++j) {
+					if (i == trajAxisMask[j])
+						mask[i] = -1;
+				}
+			}
+			for (size_t i = 0; i < mask.size(); ++i) {
+				if (mask[i] < 0)
+					ZController->set_axis_param(idx + 268 + i, "TABLE", 1);
+			}
+		}
+
 
 		// 起点类型
 		if (preTraj.isJoint()) {
@@ -630,6 +655,25 @@ namespace FSAIRobotInterface {
 		// 获取节点目标位置
 		auto pnt = curTraj.mainPoint;
 
+		// 轴屏蔽
+		std::vector<int> mask(9, 1);
+		auto trajAxisMask = curTraj.get_axisMask();
+		for (size_t i = 0; i < mask.size(); ++i) {
+			// 机器人指定的屏蔽
+			if (axisMask.count(i) > 0)
+				mask[i] = -1;
+			// 轨迹指定的屏蔽
+			for (size_t j = 0; j < trajAxisMask.size(); ++j) {
+				if (i == trajAxisMask[j])
+					mask[i] = -1;
+			}
+		}
+		std::vector<float> maskF;
+		for (size_t i = 0; i < mask.size(); ++i) {
+			if (mask[i] < 0)
+				maskF.push_back(static_cast<float>(i));
+		}
+
 		// 设置速度
 		ZController->set_axis_param(160000 + 6, "TABLE", curTraj.get_speed());
 		// 加速度
@@ -639,7 +683,8 @@ namespace FSAIRobotInterface {
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveJABS: " << vector_to_string(pnt));
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
-			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth());
+			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
+			<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : ""));
 
 		// 开始记录位置
 		save_task_status(true, 1);
@@ -653,7 +698,7 @@ namespace FSAIRobotInterface {
 		send_line_num(axis[0], trajectory.get_curTraj());
 
 		// 下发轨迹
-		ret = moveJABS(axis, beg, pnt);
+		ret = moveJABS(axis, beg, pnt, mask);
 		if (ret != 0)
 			return ret;
 
@@ -687,6 +732,27 @@ namespace FSAIRobotInterface {
 		auto prePoint = preTraj.mainPoint;
 		auto midPoint = curTraj.auxPoint;
 
+		// 轴屏蔽
+		std::vector<int> mask(9, 1);
+		if (!curTraj.isBaseMotion()) {
+			auto trajAxisMask = curTraj.get_axisMask();
+			for (size_t i = 0; i < mask.size(); ++i) {
+				// 机器人指定的屏蔽
+				if (axisMask.count(i) > 0)
+					mask[i] = -1;
+				// 轨迹指定的屏蔽
+				for (size_t j = 0; j < trajAxisMask.size(); ++j) {
+					if (i == trajAxisMask[j])
+						mask[i] = -1;
+				}
+			}
+		}
+		std::vector<float> maskF;
+		for (size_t i = 0; i < mask.size(); ++i) {
+			if (mask[i] < 0)
+				maskF.push_back(static_cast<float>(i));
+		}
+
 		if (curTraj.isArc()) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveCABS: " << vector_to_string(curPoint)
 				<<";\nmid: " << vector_to_string(midPoint));
@@ -696,6 +762,7 @@ namespace FSAIRobotInterface {
 		}
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
+			<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // 轴掩码
 			<< ". traj dist: " << trajectory.get_dist()
 		);
 
@@ -736,10 +803,10 @@ namespace FSAIRobotInterface {
 
 		// 下发轨迹
 		if (curTraj.isArc()) {
-			moveCABS(axis, prePoint, midPoint, curPoint, 0);
+			moveCABS(axis, prePoint, midPoint, curPoint, 0, mask);
 		}
 		else if (curTraj.isLine()) {
-			moveLABS(axis, prePoint, curPoint);
+			moveLABS(axis, prePoint, curPoint, mask);
 		}
 
 		// 停止记录位置
