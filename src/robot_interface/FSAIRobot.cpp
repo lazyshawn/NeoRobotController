@@ -677,7 +677,7 @@ namespace FSAIRobotInterface {
 		// 设置速度
 		ZController->set_axis_param(160000 + 6, "TABLE", curTraj.get_speed());
 		// 加速度
-		ZController->set_axis_param(160000 + 8, "TABLE", 50);
+		ZController->set_axis_param(160000 + 8, "TABLE", 100);
 		// 设置平滑度
 		ZController->set_axis_param(160000 + 4, "TABLE", curTraj.get_smooth());
 
