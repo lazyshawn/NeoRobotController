@@ -332,18 +332,18 @@ public:
 
 	/**
 	* @brief  上位机与下位机缓冲数据同步
-	* @param  masterStamp    上位机时间戳
-	* @return 同步时刻的下位机时间戳
+	* @param  masterStamp    同步时刻上位机时间戳
+	* @param  slaveStamp     同步时刻下位机时间戳
 	*/
-	long long synchronize_slave_buffer(std::chrono::time_point<std::chrono::steady_clock> masterStamp);
+	int synchronize_slave_buffer(uint64_t& masterStamp, uint64_t& slaveStamp);
 
 	/**
 	* @brief  查询下位机缓冲数据
-	* @param         num      查询个数
-	* @param         popFlag  清空已查询数据
 	* @param  [out]  buffer   查询结果
+	* @param         popFlag  清空已查询数据
+	* @param         num      查询个数, <= 0: 全部读取
 	*/
-	int pop_slave_buffer(int num, bool popFlag, std::vector<BufferUnit>& buffer);
+	int pop_slave_buffer(std::vector<motion::BufferUnit>& buffer, bool popFlag, int num = -1);
 
 	/* *************************** 底层可修改接口 *************************** */
 	/**

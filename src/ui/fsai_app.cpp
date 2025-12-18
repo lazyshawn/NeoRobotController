@@ -348,21 +348,31 @@ void FSAIApp::connect_slot() {
 	});
 	// 测试按钮1
 	QObject::connect(advanceWindow->ui->pushButton_9, &QPushButton::released, this, [&]() {
+		static bool streamOn = false;
+		streamOn = !streamOn;
+
 		// 开启缓存读取线程
-		group.slave_buffer_stream(true);
+		group.slave_buffer_stream(streamOn);
+		QString log;
 
-		// 下位机时间同步
-		auto start = std::chrono::steady_clock::now();
-		group.robotList[0]->synchronize_slave_buffer(start);
+		if (streamOn) {
+			// 下位机时间同步
+			uint64_t masterStamp, slaveStamp;
+			group.robotList[0]->synchronize_slave_buffer(masterStamp, slaveStamp);
+			log = "Test 1: stream on " + QString::number(masterStamp) + ", " + QString::number(slaveStamp);
+		}
+		else {
+			auto now = std::chrono::steady_clock::now();
+			auto masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+			log = "Test 1: stream off " + QString::number(masterStamp);
+		}
 
-		auto masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
-
-		mainWindow->ui->textBrowser->append("Test 1: " + QString::number(masterStamp));
+		mainWindow->ui->textBrowser->append(log);
 	});
 	// 测试按钮2
 	QObject::connect(advanceWindow->ui->pushButton_10, &QPushButton::released, this, [&]() {
-		std::vector<BufferUnit> buffer;
-		group.robotList[0]->pop_slave_buffer(100, 1, buffer);
+		std::vector<motion::BufferUnit> buffer;
+		group.robotList[0]->pop_slave_buffer(buffer, 1);
 
 
 		for (size_t i = 0; i < buffer.size(); ++i) {
@@ -370,7 +380,7 @@ void FSAIApp::connect_slot() {
 			for (auto& val : buffer[i].dpos) {
 				dpos += QString::number(val) + ", ";
 			}
-			mainWindow->ui->textBrowser->append("Test 2: " + QString::number(buffer[i].timeStamp) + ": " + dpos);
+			mainWindow->ui->textBrowser->append("Test 2: num " + QString::number(i) + ", " + QString::number(buffer[i].timeStamp) + ": " + dpos);
 		}
 	});
 

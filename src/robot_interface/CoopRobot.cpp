@@ -883,15 +883,16 @@ int RobotBase::single_axis_enable(bool enable, int axis) {
 
 }
 
-long long  RobotBase::synchronize_slave_buffer(std::chrono::time_point<std::chrono::steady_clock>  masterStamp) {
+int RobotBase::synchronize_slave_buffer(uint64_t& masterStamp, uint64_t& slaveStamp) {
 
 	// 获取当前下位机时间戳
 	float data;
 	ZController->get_axis_param(0, "TICKS", data);
-	long long slaveStamp = static_cast<long long>(-data);
+	slaveStamp = static_cast<uint64_t>(-data);
 
 	// 上位机时间戳
 	auto start = std::chrono::steady_clock::now();
+	masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
 
 	// 时间戳同步
 	bufferSync.stamp_synchronize(start, slaveStamp);
@@ -899,8 +900,8 @@ long long  RobotBase::synchronize_slave_buffer(std::chrono::time_point<std::chro
 	return slaveStamp;
 }
 
-int RobotBase::pop_slave_buffer(int num, bool popFlag, std::vector<BufferUnit>& buffer) {
-	return bufferSync.pop_new_buffer(num, popFlag, buffer);
+int RobotBase::pop_slave_buffer(std::vector<motion::BufferUnit>& buffer, bool popFlag, int num) {
+	return bufferSync.pop_new_buffer(buffer, popFlag, num);
 }
 
 /* *************************** RobotGroupManager *************************** */
