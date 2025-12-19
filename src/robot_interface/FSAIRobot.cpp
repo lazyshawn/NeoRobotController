@@ -1004,6 +1004,8 @@ namespace FSAIRobotInterface {
 
 		// 轨迹清空
 		trajectory.clear();
+		// 已下发轨迹清空
+		trajHistory.clear();
 
 		//// 停止记录位置
 		//save_task_status(false, -1);
@@ -1031,7 +1033,10 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::emergency_stop() {
 
 		int stateIdxBase = get_state_idx_base();
+		// 轨迹清空
 		trajectory.clear();
+		// 已下发轨迹清空
+		trajHistory.clear();
 		//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 		ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
 

@@ -926,7 +926,6 @@ int RobotGroupManager::new_robot(std::shared_ptr<RobotBase> robot) {
 	syncReadyState.push_back(0);
 	waitState.push_back({});
 
-	trajHistory.push_back({});
 	coopState.push_back(0);
 	disableGroup.push_back({});
 
@@ -1143,7 +1142,7 @@ void RobotGroupManager::processCommandThread() {
 
 				// 记录当前轨迹编号，用于轨迹完成后的触发动作
 				curTraj.lineNum = robotList[i]->get_lineNum();
-				trajHistory[i].push_back(curTraj);
+				robotList[i]->trajHistory.push_back(curTraj);
 
 			}
 
@@ -1714,13 +1713,13 @@ void RobotGroupManager::correct_sync_speed() {
 void RobotGroupManager::robot_in_place_command(int robotIdx) {
 
 	// 无已下发轨迹
-	if (trajHistory[robotIdx].empty())
+	if (robotList[robotIdx]->trajHistory.empty())
 		return;
 
 	// 当前已完成轨迹编号
 	int lineNum = statusList[robotIdx].lineNum;
 	// 第一条历史轨迹
-	auto curTraj = trajHistory[robotIdx].front();
+	auto curTraj = robotList[robotIdx]->trajHistory.front();
 
 	// 开始执行
 	if (lineNum == curTraj.lineNum - 1 && !get_bit(coopState[robotIdx], 5)) {
@@ -1776,16 +1775,16 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 		// 轨迹完成
 		set_bit(coopState[robotIdx], 5, false);
 		// 历史轨迹弹出
-		trajHistory[robotIdx].pop_front();
+		robotList[robotIdx]->trajHistory.pop_front();
 	}
 	// 轨迹编号异常
 	else if (lineNum > curTraj.lineNum) {
 		
 		while (lineNum > curTraj.lineNum) {
 			// 历史轨迹弹出
-			if (trajHistory[robotIdx].size() > 1) {
-				trajHistory[robotIdx].pop_front();
-				curTraj = trajHistory[robotIdx].front();
+			if (robotList[robotIdx]->trajHistory.size() > 1) {
+				robotList[robotIdx]->trajHistory.pop_front();
+				curTraj = robotList[robotIdx]->trajHistory.front();
 			}
 			else {
 				return;
@@ -1965,9 +1964,6 @@ int RobotGroupManager::robot_group_update_saved_pos(const std::vector<int>& idxL
 int RobotGroupManager::robot_group_clear_task(int idx) {
 	// 暂停触发标志复位
 	set_bit(coopState[idx], 8, false);
-
-	// 已下发轨迹清空
-	trajHistory[idx].clear();
 
 	robotList[idx]->task_stop();
 

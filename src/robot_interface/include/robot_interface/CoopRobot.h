@@ -205,6 +205,8 @@ public:
 
 	// 机器人缓存轨迹
 	DiscreteTrajectory trajectory;
+	//! 已发送的轨迹，运动完成后的处理
+	std::list<SingleTrajectory> trajHistory;
 
 	/* *************************** 通用接口 *************************** */
 	//! 关节起始编号
@@ -502,7 +504,7 @@ class RobotGroupManager {
 	//! RobotGroupManager 状态
 	std::vector<int> coopState;
 	//! 已发送的轨迹，运动完成后的处理
-	std::vector<std::list<SingleTrajectory>> trajHistory;
+	//std::vector<std::list<SingleTrajectory>> trajHistory;
 	//! 机器人分组
 	std::vector<std::vector<int>> disableGroup;
 	//! 共用轴

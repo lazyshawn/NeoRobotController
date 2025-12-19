@@ -1431,6 +1431,8 @@ int ZMotionRobot::task_stop() {
 
 	// 轨迹清空
 	trajectory.clear();
+	// 已下发轨迹清空
+	trajHistory.clear();
 
 	// 清除上位机异常码
 	reset_upperStatus(-1);
@@ -1453,7 +1455,10 @@ int ZMotionRobot::task_stop() {
 int ZMotionRobot::emergency_stop() {
 
 	int stateIdxBase = get_state_idx_base();
+	// 轨迹清空
 	trajectory.clear();
+	// 已下发轨迹清空
+	trajHistory.clear();
 	// 保留旧版本急停按钮，后续版本将取消
 	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 	ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });
