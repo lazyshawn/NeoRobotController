@@ -5,6 +5,7 @@ add_subdirectory(ui)
 add_subdirectory(robot_webservice)
 
 add_subdirectory(interpolation)
+add_subdirectory(data_process)
 
 install(EXPORT ${PROJECT_NAME}Targets
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}/cmake

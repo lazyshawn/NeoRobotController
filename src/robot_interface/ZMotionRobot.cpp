@@ -248,6 +248,7 @@ int ZMotionRobot::update_swing_config() {
 
 	// 读取焊接参数
 	Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
+	Weave preWaveCfg = deserialize_Weave(preTraj.get_appendix());
 
 	bool sendPlainTraj = false;
 	// 摆焊开启
@@ -256,8 +257,10 @@ int ZMotionRobot::update_swing_config() {
 		if (waveCfg.Shape == 0) {
 			// 修改摆动参数
 			int numPeriod = get_swing_num();
-			// 停留1ms，减小抖动
-			ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 0.0 });
+			//if (preWaveCfg.Id != 3) {
+			//	// 停留1ms，减小抖动
+			//	ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 0.0 });
+			//}
 
 			// 摆焊周期数大于0
 			if (numPeriod > 0) {
@@ -280,6 +283,23 @@ int ZMotionRobot::update_swing_config() {
 				zDir[0] = sin(zEuler[2]) * sin(zEuler[0]) + cos(zEuler[2]) * cos(zEuler[0]) * sin(zEuler[1]);
 				zDir[1] = cos(zEuler[0]) * sin(zEuler[2]) * sin(zEuler[1]) - cos(zEuler[2]) * sin(zEuler[0]);
 				zDir[2] = cos(zEuler[0]) * cos(zEuler[1]);
+
+				// 运行方向
+				Eigen::Vector3f tanDir;
+				if (curTraj.isArc()) {
+					// 半径方向
+					Eigen::Vector3f radDir = { prePoint[0] - trajInfo[0], prePoint[1] - trajInfo[1], prePoint[2] - trajInfo[2] };
+					tanDir = Eigen::Vector3f{ nDir[0], nDir[1], nDir[2] }.cross(radDir);
+				}
+				else {
+					tanDir = { nDir[0], nDir[1], nDir[2] };
+				}
+				tanDir.normalize();
+
+				// 摆焊方向旋转
+				Eigen::Vector3f toolDir = Eigen::Vector3f{ zDir[0], zDir[1], zDir[2] };
+				toolDir = (Eigen::AngleAxisf(waveCfg.Angle_Ltype_btm * DT_PI / 180, tanDir) * toolDir).eval();
+				zDir = { toolDir[0], toolDir[1], toolDir[2] };
 
 				// 设置摆焊
 				update_swing_table(waveCfg);

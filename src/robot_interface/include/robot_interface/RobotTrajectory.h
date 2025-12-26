@@ -21,7 +21,15 @@ Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 
 // 计算两组 zyx 欧拉角之间的相对距离，经过中间点
 Eigen::Matrix<DT_scale, 3, 1> get_zyx_euler_distance(Eigen::Matrix<DT_scale, 3, 1>& begEuler, Eigen::Matrix<DT_scale, 3, 1>& midEuler, Eigen::Matrix<DT_scale, 3, 1>& endEuler);
 
-// 计算轨迹信息
+/**
+* @brief  计算轨迹信息
+* @param  begPnt    起点位置
+* @param  midPnt    中间点位置
+* @param  endPnt    终点位置
+* @param  mode      轨迹类型, 0 - 直线, 1 - 圆弧
+* @return 直线: 起点, 长度, 方向
+*         圆弧: 圆心, 半径, 法向
+*/
 std::vector<DT_scale> calc_traj_info(const std::vector<DT_scale>& begPnt, const std::vector<DT_scale>& midPnt, const std::vector<DT_scale>& endPnt, int mode);
 
 
