@@ -1,48 +1,48 @@
-#pragma once
+ï»¿#pragma once
 
 #include "fir_filter.h"
 #include "control_algo.h"
 
-// È«¾ÖÂË²¨Æ÷
+// å…¨å±€æ»¤æ³¢å™¨
 #define MaxFilterNum 4
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// ´òÓ¡°æ±¾ĞÅÏ¢
+// æ‰“å°ç‰ˆæœ¬ä¿¡æ¯
 void print_release_info();
 
-// ¹¹ÔìÂË²¨Æ÷
+// æ„é€ æ»¤æ³¢å™¨
 void filter_construct(int idx, double* param, int num);
 
-// Ïú»ÙÂË²¨Æ÷
+// é”€æ¯æ»¤æ³¢å™¨
 void filter_deconstruct(int idx);
 
-// ÖØÖÃÂË²¨Æ÷
+// é‡ç½®æ»¤æ³¢å™¨
 void filter_clear(int idx);
 
-// µ¥´ÎÂË²¨
+// å•æ¬¡æ»¤æ³¢
 double filter_process(int idx, double sample);
 
-// ¼ÆËãÑù±¾Çø¼ä²Î¿¼Öµ
+// è®¡ç®—æ ·æœ¬åŒºé—´å‚è€ƒå€¼
 double calc_interval_refrence(double *config, double *data);
 
-// ¼ÆËã²¹³¥Á¿, ¹À¼ÆÆ«ÒÆÁ¿/Îó²î
+// è®¡ç®—è¡¥å¿é‡, ä¼°è®¡åç§»é‡/è¯¯å·®
 int calc_compensate(int idx, double *config, double *data);
 
-// ¼ÆËã¿ØÖÆÁ¿
+// è®¡ç®—æ§åˆ¶é‡
 
-// ÏòÁ¿µ¥Î»»¯
+// å‘é‡å•ä½åŒ–
 int vector_norm(double *vec);
 
-// ÏòÁ¿²æ³Ë
+// å‘é‡å‰ä¹˜
 int vector_cross(double *va, double *vb, double *ans);
 
-// Å·À­½Ç×ªĞı×ª¾ØÕó
+// æ¬§æ‹‰è§’è½¬æ—‹è½¬çŸ©é˜µ
 int euler2mat(double *euler, double *seq, double *mat);
 
-// ¾ØÕó³Ë·¨
+// çŸ©é˜µä¹˜æ³•
 int matrix_multiply(double *matA, int row, int col, double *matB, int colB, double *ans);
 
 #ifdef __cplusplus

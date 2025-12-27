@@ -1,18 +1,18 @@
-
+ï»¿
 #ifdef _MSC_VER
 #include "data_process/arc_tracker.h"
 #else
 #include "arc_tracker.h"
 #endif
 
-// Îó²îÁÙ½çÖµ
+// è¯¯å·®ä¸´ç•Œå€¼
 const double eps = 1e-6;
 
 /***********************************************************************
  *                        Z M O T I O N                                *
  ***********************************************************************/
 #ifndef _MSC_VER
- // »ñÈ¡ÖáÂö³åÖµ
+ // è·å–è½´è„‰å†²å€¼
 int32 get_axis_pulse(int mode, uint32 iaxis) {
 	if (mode == 1) {
 		return motionrt_getpuldpos(iaxis);
@@ -33,12 +33,12 @@ void print_release_info() {
 /***********************************************************************
  *                        F I L T E R                                  *
  ***********************************************************************/
-// ¶¨ÒåÂË²¨Æ÷
+// å®šä¹‰æ»¤æ³¢å™¨
 void filter_construct(int idx, double* param, int num) {
 	if (idx >= MaxFilterNum || idx < 0)
 		return;
 
-	// ÂË²¨Æ÷³õÊ¼»¯
+	// æ»¤æ³¢å™¨åˆå§‹åŒ–
 	filter[idx] = firfilter_construct(param, num);
 	printf("%d\tnew filter(%d): ", idx, (int)param[0]);
 	for (int i = 1; i < num; ++i) {
@@ -46,11 +46,11 @@ void filter_construct(int idx, double* param, int num) {
 	}
 	printf("\n");
 
-	// ¿ØÖÆËã·¨³õÊ¼»¯
-	smc[idx] = smc_construct(1.0, 1.0, 0);
+	// æ§åˆ¶ç®—æ³•åˆå§‹åŒ–
+	smc[idx] = smc_construct(1.0, 0.1, 0);
 }
 
-// Ïú»ÙÂË²¨Æ÷
+// é”€æ¯æ»¤æ³¢å™¨
 void filter_deconstruct(int idx) {
 	if (idx >= MaxFilterNum || idx < 0)
 		return;
@@ -59,13 +59,13 @@ void filter_deconstruct(int idx) {
 	smc_deconstruct(smc[idx]);
 }
 
-// ÖØÖÃÂË²¨Æ÷
+// é‡ç½®æ»¤æ³¢å™¨
 void filter_clear(int idx) {
 	firfilter_clear(filter[idx]);
 	smc_clear(smc[idx]);
 }
 
-// µ¥´ÎÂË²¨
+// å•æ¬¡æ»¤æ³¢
 double filter_process(int idx, double sample) {
 	return firfilter_process(filter[idx], sample);
 }
@@ -75,26 +75,26 @@ double filter_process(int idx, double sample) {
  *                        T R A C K I N G                              *
  ***********************************************************************/
 /**
- * ¼ÆËãÑù±¾Çø¼ä²Î¿¼Öµ
- * @param  *config  ÅäÖÃµØÖ·
- * @param  *data    Êı¾İµØÖ·
+ * è®¡ç®—æ ·æœ¬åŒºé—´å‚è€ƒå€¼
+ * @param  *config  é…ç½®åœ°å€
+ * @param  *data    æ•°æ®åœ°å€
  */
 double calc_interval_refrence(double *config, double *data) {
-	// --- config Êı×é
-	// Êı¾İ³¤¶È
+	// --- config æ•°ç»„
+	// æ•°æ®é•¿åº¦
 	int maxSampleNum = (int)config[0];
-	// Ñù±¾Çø¼äÆğÖ¹Î»ÖÃ(±ÕÇø¼ä)
+	// æ ·æœ¬åŒºé—´èµ·æ­¢ä½ç½®(é—­åŒºé—´)
 	int begIdx = (int)config[1], endIdx = (int)config[2];
-	// ²Î¿¼Öµ¼ÆËã·½·¨ + Ëã·¨²ÎÊı
-	// ¼ÆËã½á¹û
+	// å‚è€ƒå€¼è®¡ç®—æ–¹æ³• + ç®—æ³•å‚æ•°
+	// è®¡ç®—ç»“æœ
 
-	// --- Òì³£Çé¿ö´¦Àí
+	// --- å¼‚å¸¸æƒ…å†µå¤„ç†
 	if (begIdx >= endIdx) {
 		return data[(begIdx) % maxSampleNum];
 	}
 
-	// --- ËÄ·ÖÎ»µã
-	// ¸´ÖÆÇø¼äÊı×é
+	// --- å››åˆ†ä½ç‚¹
+	// å¤åˆ¶åŒºé—´æ•°ç»„
 	int arrSize = endIdx - begIdx + 1;
 	double *arr = (double *)malloc(sizeof(double) * (arrSize));
 	for (int i = 0; i < arrSize; ++i) {
@@ -102,7 +102,7 @@ double calc_interval_refrence(double *config, double *data) {
 		//printf("%lf, %lf, %d\n", arr[i], data[(begIdx + i) % maxSampleNum], (begIdx + i) % maxSampleNum);
 	}
 
-	// Ã°ÅİÅÅĞò: ´ÓĞ¡µ½´ó [0,0.75]
+	// å†’æ³¡æ’åº: ä»å°åˆ°å¤§ [0,0.75]
 	int firIdx = arrSize * 0.25;
 	int ansIdx = arrSize * 0.75;
 	for (int i = 0; i < ansIdx + 1; ++i) {
@@ -117,7 +117,7 @@ double calc_interval_refrence(double *config, double *data) {
 	}
 	//printf("ans = %lf\n", arr[ansIdx]);
 
-	// Çó¾ùÖµ
+	// æ±‚å‡å€¼
 	//double sum = 0.0;
 	//for (int i = firIdx; i < ansIdx + 1; ++i) {
 	//	sum += arr[i];
@@ -127,45 +127,45 @@ double calc_interval_refrence(double *config, double *data) {
 }
 
 /**
- * ¼ÆËã²¹³¥Á¿
- * @param  *config  ÅäÖÃµØÖ·
- * @param  [out] *data    Êä³ö½á¹ûµØÖ·
+ * è®¡ç®—è¡¥å¿é‡
+ * @param  *config  é…ç½®åœ°å€
+ * @param  [out] *data    è¾“å‡ºç»“æœåœ°å€
  */
 int calc_compensate(int idx, double* config, double* data) {
-	// ÁÙÊ±Êı×é
+	// ä¸´æ—¶æ•°ç»„
 	double vec[3], mat[9];
 
-	// --- config Êı×é
-	// ¸ú×ÙÊ¹ÄÜ
+	// --- config æ•°ç»„
+	// è·Ÿè¸ªä½¿èƒ½
 	int enable = (int)config[7];
-	// ×óÓÒ¸ú×ÙÉèÖÃ
+	// å·¦å³è·Ÿè¸ªè®¾ç½®
 	int enableRL = (int)config[0];
 	double offsetRL = config[1];
 	double gainRL = config[2];
 	double maxSingleRL = fabs(config[5]);
-	// ÉÏÏÂ¸ú×ÙÉèÖÃ
+	// ä¸Šä¸‹è·Ÿè¸ªè®¾ç½®
 	int enableUD = (int)config[10];
 	double offsetUD = config[11];
 	double gainUD = config[12];
 	double goalUD = config[17];
 
-	// ²Î¿¼µçÁ÷
+	// å‚è€ƒç”µæµ
 	double AR = config[31];
 	double AL = config[32];
 	double ACref = config[46];
 	double AC = (AR + AL) / 2;
 
-	// ¹ì¼£ÇĞÏò
+	// è½¨è¿¹åˆ‡å‘
 	double tanDir[3] = { config[33], config[34], config[35] };
 	if (vector_norm(tanDir)) {
 		printf("tanDir error: %f, %f, %f\n", tanDir[0], tanDir[1], tanDir[2]);
 		return 0;
 	}
-	// º¸Ç¹·½Ïò
+	// ç„Šæªæ–¹å‘
 	double rx = config[36] * M_PI / 180, ry = config[37] * M_PI / 180, rz = config[38] * M_PI / 180;
 	euler2mat((double[]){ rx,ry,rz }, (double[]){ 0,1,2 }, mat);
 	double zDir[3] = { mat[2], mat[5], mat[8] };
-	// º¸Ç¹·½Ïò´Ó»ù×ø±êÏµ×ªµ½ÊÀ½ç×ø±êÏµ
+	// ç„Šæªæ–¹å‘ä»åŸºåæ ‡ç³»è½¬åˆ°ä¸–ç•Œåæ ‡ç³»
 	rx = config[40] * M_PI / 180;
 	ry = config[41] * M_PI / 180;
 	rz = config[42] * M_PI / 180;
@@ -173,32 +173,32 @@ int calc_compensate(int idx, double* config, double* data) {
 	matrix_multiply(mat, 3, 3, zDir, 1, vec);
 	memcpy(zDir, vec, 3 * sizeof(double));
 
-	// Ö÷ÔË¶¯¾àÀë
+	// ä¸»è¿åŠ¨è·ç¦»
 	double masterDist = config[48] - config[47];
-	// ÀÛ¼ÆÆ«ÒÆÁ¿
+	// ç´¯è®¡åç§»é‡
 	double sumCompRL = config[27], sumCompUD = config[28];
-	// ÀÛ¼ÆÔË¶¯¾àÀë
-	// ÀúÊ·Æ«ÒÆÁ¿
+	// ç´¯è®¡è¿åŠ¨è·ç¦»
+	// å†å²åç§»é‡
 	double lastCompRL = config[29];
 	printf("lastCompRL = %f\n", lastCompRL);
 
-	// --- Êä³ö½á¹û³õÊ¼»¯
-	// ¼¤»î¸ú×Ù
+	// --- è¾“å‡ºç»“æœåˆå§‹åŒ–
+	// æ¿€æ´»è·Ÿè¸ª
 	config[20] = 0;
-	// ¸ú×ÙĞŞÕıÁ¿(ÊÀ½ç×ø±êxyzĞŞÕı)
+	// è·Ÿè¸ªä¿®æ­£é‡(ä¸–ç•Œåæ ‡xyzä¿®æ­£)
 	config[21] = 0;
 	config[22] = 0;
 	config[23] = 0;
 
-	// --- Æ«ÒÆ·½Ïò¼ÆËã
-	// ×óÓÒ: °Ú¶¯·½Ïò, ÓÒÎªÕı, zDir X tanDir
+	// --- åç§»æ–¹å‘è®¡ç®—
+	// å·¦å³: æ‘†åŠ¨æ–¹å‘, å³ä¸ºæ­£, zDir X tanDir
 	double swingDir[3] = { 0,0,0 };
 	vector_cross(zDir, tanDir, swingDir);
 	if (vector_norm(swingDir)) {
 		printf("swingDir error: %f, %f, %f\n", swingDir[0], swingDir[1], swingDir[2]);
 		return 0;
 	}
-	// ÉÏÏÂ: Éî¶È·½Ïò, ÏÂÎªÕı, tanDir X zDir X tanDir = tanDir X swingDir
+	// ä¸Šä¸‹: æ·±åº¦æ–¹å‘, ä¸‹ä¸ºæ­£, tanDir X zDir X tanDir = tanDir X swingDir
 	double depthDir[3] = { 0,0,0 };
 	vector_cross(tanDir, swingDir, depthDir);
 	if (vector_norm(depthDir)) {
@@ -208,28 +208,28 @@ int calc_compensate(int idx, double* config, double* data) {
 	printf("tanDir: %f, %f, %f; zDir: %f, %f, %f, swingDir: %f, %f, %f; depthDir: %f, %f, %f\n",
 		tanDir[0], tanDir[1], tanDir[2],zDir[0], zDir[1], zDir[2],swingDir[0], swingDir[1], swingDir[2],depthDir[0], depthDir[1], depthDir[2]);
 
-	// --- Æ«ÒÆÁ¿¼ÆËã
-	// ×óÓÒ»ù×¼ĞŞÕı
+	// --- åç§»é‡è®¡ç®—
+	// å·¦å³åŸºå‡†ä¿®æ­£
 	if (fabs(tanDir[2]) < 0.2) {
-		// ÓÒ²àÏòÉÏ£¬ÕıÏòÆ«ÒÆ(ÏòÏÂ)×ó²àµçÁ÷´ó
+		// å³ä¾§å‘ä¸Šï¼Œæ­£å‘åç§»(å‘ä¸‹)å·¦ä¾§ç”µæµå¤§
 		if (swingDir[2] > 0.2)
 			AR += offsetRL;
-		// ×ó²àÏòÉÏ£¬ÕıÏòÆ«ÒÆ(ÏòÏÂ)ÓÒ²àµçÁ÷´ó
+		// å·¦ä¾§å‘ä¸Šï¼Œæ­£å‘åç§»(å‘ä¸‹)å³ä¾§ç”µæµå¤§
 		else if (swingDir[2] < -0.2)
 			AL += offsetRL;
-		// Æ½º¸
+		// å¹³ç„Š
 	}
-	// ÉÏÏÂ»ù×¼ĞŞÕı
+	// ä¸Šä¸‹åŸºå‡†ä¿®æ­£
 	AC += offsetUD;
 
-	// ×î´ó¾ÀÆ«¾àÀë
+	// æœ€å¤§çº åè·ç¦»
 	double maxShift = 0;
 	if (masterDist > 0) {
 		maxShift = fabs(masterDist * tan(6 * M_PI / 180));
 	}
 	printf("maxShift = %f, beg = %f, end = %f, dist = %f\n", maxShift, config[47], config[48], masterDist);
 
-	// ×óÓÒ¸ú×Ù
+	// å·¦å³è·Ÿè¸ª
 	double dArl = 0.0, compRL = 0.0;
 	if (enable == 1 && enableRL == 1) {
 		dArl = AR - AL;
@@ -239,16 +239,16 @@ int calc_compensate(int idx, double* config, double* data) {
 		printf("smc_u = %f, compRL = %f\n", dArl, compRL);
 	}
 
-	// ÉÏÏÂ¸ú×Ù: dAud > 0 ÏòÉÏ¸ú×Ù
+	// ä¸Šä¸‹è·Ÿè¸ª: dAud > 0 å‘ä¸Šè·Ÿè¸ª
 	double dAud = 0.0, compUD = 0.0;
 	if (enable == 1 && enableUD == 1 && ACref > 0) {
 		dAud = AC - ACref;
 		compUD = fabs(dAud * gainUD);
 	}
 
-	// ¾àÀëĞŞÕı
+	// è·ç¦»ä¿®æ­£
 	double sumDistSq = compRL * compRL + compUD * compUD;
-	// ×ÜĞŞÕı´óÓÚ×î´ó¾ÀÆ«£¬ĞŞÕı¾ÀÆ«Á¿
+	// æ€»ä¿®æ­£å¤§äºæœ€å¤§çº åï¼Œä¿®æ­£çº åé‡
 	printf("fabs(compRL) = %f\n", fabs(compRL));
 	if (fabs(compRL) > maxShift) {
 		//compRL = maxShift; 
@@ -273,31 +273,31 @@ int calc_compensate(int idx, double* config, double* data) {
 			printf("-> %f\n", compRL);
 		}
 
-		// ×óÓÒÀÛ¼ÆÆ«ÒÆ
+		// å·¦å³ç´¯è®¡åç§»
 		config[27] += compRL;
 		config[29] = compRL;
 		printf("dArl = %f. sumCompRL = %f\n", dArl, config[27]);
 
-		// Æ«ÒÆÁ¿
+		// åç§»é‡
 		config[20] = 1;
 		config[21] += compRL * swingDir[0];
 		config[22] += compRL * swingDir[1];
 		config[23] += compRL * swingDir[2];
 	}
 
-	// ÉÏÏÂ¸ú×Ù(×óÓÒ¸ú×Ù·ù¶ÈĞ¡Ê±ÉúĞ§)
+	// ä¸Šä¸‹è·Ÿè¸ª(å·¦å³è·Ÿè¸ªå¹…åº¦å°æ—¶ç”Ÿæ•ˆ)
 	if (enable == 1 && enableUD == 1 && ACref > 0 && fabs(dAud) > 5) {
 		//printf("Aud = %f, AudRef = %f\n", AC, ACref);
 
 		if (dAud > 0) {
 			compUD *= -1;
-			printf("¦« %f\n", compUD);
+			printf("Î› %f\n", compUD);
 		}
 		else if (dAud < 0) {
 			printf("V %f\n", compUD);
 		}
 
-		// ÉÏÏÂÀÛ¼ÆÆ«ÒÆ
+		// ä¸Šä¸‹ç´¯è®¡åç§»
 		config[28] += compUD;
 		printf("Aud = %f, AudRef = %f, sumCompUD = %f\n", AC, ACref, config[28]);
 
@@ -315,9 +315,9 @@ int calc_compensate(int idx, double* config, double* data) {
  *                        M A T H                                      *
  ***********************************************************************/
 /**
- * ÏòÁ¿µ¥Î»»¯
- * @param  [out] *vec  ´ı³õÊ¼»¯µÄÏòÁ¿
- * @return 0 - Õı³£·µ»Ø; 1 - Ä£³¤ÎªÁã
+ * å‘é‡å•ä½åŒ–
+ * @param  [out] *vec  å¾…åˆå§‹åŒ–çš„å‘é‡
+ * @return 0 - æ­£å¸¸è¿”å›; 1 - æ¨¡é•¿ä¸ºé›¶
  */
 int vector_norm(double *vec) {
 	double norm = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
@@ -333,11 +333,11 @@ int vector_norm(double *vec) {
 }
 
 /**
- * ÏòÁ¿²æ³Ë
- * @param  *va  ÏòÁ¿a
- * @param  *vb  ÏòÁ¿b
- * @param  [out] *ans  ²æ³Ë½á¹û
- * @return 0 - Õı³£·µ»Ø
+ * å‘é‡å‰ä¹˜
+ * @param  *va  å‘é‡a
+ * @param  *vb  å‘é‡b
+ * @param  [out] *ans  å‰ä¹˜ç»“æœ
+ * @return 0 - æ­£å¸¸è¿”å›
  */
 int vector_cross(double *va, double *vb, double *ans) {
 	ans[0] = va[1] * vb[2] - va[2] * vb[1];
@@ -347,14 +347,14 @@ int vector_cross(double *va, double *vb, double *ans) {
 }
 
 /**
- * Å·À­½Ç×ªĞı×ª¾ØÕó
- * @param  *euler  Å·À­½Ç
- * @param  *seq    Å·À­½ÇË³Ğò(0-x, 1-y, 2-z), e.g.{ 0,1,2 }
- * @param  [out] *mat    Ğı×ª¾ØÕó
- * @return 0 - Õı³£·µ»Ø
+ * æ¬§æ‹‰è§’è½¬æ—‹è½¬çŸ©é˜µ
+ * @param  *euler  æ¬§æ‹‰è§’
+ * @param  *seq    æ¬§æ‹‰è§’é¡ºåº(0-x, 1-y, 2-z), e.g.{ 0,1,2 }
+ * @param  [out] *mat    æ—‹è½¬çŸ©é˜µ
+ * @return 0 - æ­£å¸¸è¿”å›
  *
- * ÕıÔË¶¯Å·À­½Ç: (a,b,c) -> R = Rz(c)Ry(b)Rx(a)
- * FSAI Å·À­½Ç:  (a,b,c) -> R = Rz(a)Ry(b)Rx(c)
+ * æ­£è¿åŠ¨æ¬§æ‹‰è§’: (a,b,c) -> R = Rz(c)Ry(b)Rx(a)
+ * FSAI æ¬§æ‹‰è§’:  (a,b,c) -> R = Rz(a)Ry(b)Rx(c)
  */
 int euler2mat(double *euler, double *seq, double *mat) {
 	double rx = euler[0], ry = euler[1], rz = euler[2];
@@ -374,19 +374,19 @@ int euler2mat(double *euler, double *seq, double *mat) {
 }
 
 /**
- * ¾ØÕó³Ë·¨
- * @param  *matA  ×ó¾ØÕó
- * @param  row    ×ó¾ØÕóĞĞÊı
- * @param  col    ×ó¾ØÕóÁĞÊı
- * @param  *matB  ÓÒ¾ØÕó
- * @param  colB   ÓÒ¾ØÕóÁĞÊı
- * @param  [out] *ans    ½á¹û¾ØÕó
- * @return 0 - Õı³£·µ»Ø
+ * çŸ©é˜µä¹˜æ³•
+ * @param  *matA  å·¦çŸ©é˜µ
+ * @param  row    å·¦çŸ©é˜µè¡Œæ•°
+ * @param  col    å·¦çŸ©é˜µåˆ—æ•°
+ * @param  *matB  å³çŸ©é˜µ
+ * @param  colB   å³çŸ©é˜µåˆ—æ•°
+ * @param  [out] *ans    ç»“æœçŸ©é˜µ
+ * @return 0 - æ­£å¸¸è¿”å›
  */
 int matrix_multiply(double *matA, int row, int col, double *matB, int colB, double *ans) {
-	// ans µÄµÚ i ĞĞ
+	// ans çš„ç¬¬ i è¡Œ
 	for (int i = 0; i < row; ++i) {
-		// ans µÄµÚ j ÁĞ
+		// ans çš„ç¬¬ j åˆ—
 		for (int j = 0; j < colB; ++j) {
 			double tmp = 0.0;
 			for (int k = 0; k < col; ++k) {
