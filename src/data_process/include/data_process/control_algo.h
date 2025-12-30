@@ -12,13 +12,13 @@ typedef struct ControlSMC {
 	//! 历史误差
 	double error;
 	//! 滑模面参数
-	double lambda;
+	double lambda, ks;
 	//! 趋近律参数
 	double epsilon;
 }ControlSMC, *pControlSMC;
 
 // SMC 构造函数
-ControlSMC *smc_construct(double lamb, double eps, double err0);
+ControlSMC *smc_construct(double lamb, double eps, double err0, double ks);
 
 // SMC 析构函数
 void smc_deconstruct(ControlSMC *q);
@@ -32,7 +32,7 @@ void smc_clear(ControlSMC *q);
 	* @param  *err     当前误差
 	* @return 控制输出
 	*/
-double smc_process(ControlSMC* q, double err);
+double smc_process(ControlSMC* q, double err, double gain);
 
 #ifdef __cplusplus
 }

@@ -6,8 +6,8 @@
 
 int main() {
 	//double config[10] = { 0, 10.0 };
-	double firConfig[10] = { 1, 2, 3, 100 };
-	filter_construct(0, firConfig, 5);
+	double firConfig[10] = { 1, 2, 3, 100, 0, 0, 1.0, 0.1, 0.1 };
+	filter_construct(0, firConfig, 10);
 
 	std::vector<double> sample, ans;
 	sample = { 289.998, 293.004, 293.004, 288.991, 297.993, 301, 310.002, 316.991, 325.002, 334.997,

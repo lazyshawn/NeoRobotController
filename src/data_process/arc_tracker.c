@@ -40,14 +40,14 @@ void filter_construct(int idx, double* param, int num) {
 
 	// 滤波器初始化
 	filter[idx] = firfilter_construct(param, num);
-	printf("%d\tnew filter(%d): ", idx, (int)param[0]);
-	for (int i = 1; i < num; ++i) {
+	printf("%d\tfilter(%d) and control(%d): ", idx, (int)param[0], (int)param[5]);
+	for (int i = 0; i < num; ++i) {
 		printf("%f, ", param[i]);
 	}
 	printf("\n");
 
-	// 控制算法初始化
-	smc[idx] = smc_construct(1.0, 0.1, 0);
+	// SMC 控制算法初始化
+	smc[idx] = smc_construct(param[6], param[7], 0.0, param[8]);
 }
 
 // 销毁滤波器
@@ -180,7 +180,6 @@ int calc_compensate(int idx, double* config, double* data) {
 	// 累计运动距离
 	// 历史偏移量
 	double lastCompRL = config[29];
-	printf("lastCompRL = %f\n", lastCompRL);
 
 	// --- 输出结果初始化
 	// 激活跟踪
@@ -225,7 +224,7 @@ int calc_compensate(int idx, double* config, double* data) {
 	// 最大纠偏距离
 	double maxShift = 0;
 	if (masterDist > 0) {
-		maxShift = fabs(masterDist * tan(6 * M_PI / 180));
+		maxShift = fabs(masterDist * tan(36 * M_PI / 180));
 	}
 	printf("maxShift = %f, beg = %f, end = %f, dist = %f\n", maxShift, config[47], config[48], masterDist);
 
@@ -234,9 +233,13 @@ int calc_compensate(int idx, double* config, double* data) {
 	if (enable == 1 && enableRL == 1) {
 		dArl = AR - AL;
 		//compRL = fabs(dArl * gainRL);
-		double smc_u = smc_process(smc[idx], dArl);
+		double smc_u = smc_process(smc[idx], dArl, gainRL);
+		// 误差反向后补偿立即反向, 否则继续叠加
+		//if (smc_u * lastCompRL < 0) {
+		//	compRL = smc_u;
+		//}
 		compRL = lastCompRL + smc_u;
-		printf("smc_u = %f, compRL = %f\n", dArl, compRL);
+		printf("compRL = %f, lastCompRL = %f, smc_u = %f\n", compRL, lastCompRL, smc_u);
 	}
 
 	// 上下跟踪: dAud > 0 向上跟踪
@@ -249,7 +252,6 @@ int calc_compensate(int idx, double* config, double* data) {
 	// 距离修正
 	double sumDistSq = compRL * compRL + compUD * compUD;
 	// 总修正大于最大纠偏，修正纠偏量
-	printf("fabs(compRL) = %f\n", fabs(compRL));
 	if (fabs(compRL) > maxShift) {
 		//compRL = maxShift; 
 		compRL = compRL > 0 ? maxShift : -maxShift;

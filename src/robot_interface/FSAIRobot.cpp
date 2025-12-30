@@ -1068,7 +1068,7 @@ namespace FSAIRobotInterface {
 
 			// 仅延时
 			if (type == 1 && param[0] < 0) {
-				ZController->set_axis_param(get_point_idx_base() + 21, "TABLE", param[2]);
+				ZController->set_axis_param(flag == 0 ? (get_point_idx_base() + 21) : (get_point_idx_base() + 20), "TABLE", param[2]);
 				delayNum++;
 				continue;
 			}
