@@ -45,7 +45,7 @@ void filter_construct(int idx, double* param, int num) {
 		printf("%f, ", param[i]);
 	}
 	printf("\n");
-
+	
 	// SMC 控制算法初始化
 	smc[idx] = smc_construct(param[6], param[7], 0.0, param[8]);
 }
@@ -140,12 +140,12 @@ int calc_compensate(int idx, double* config, double* data) {
 	int enable = (int)config[7];
 	// 左右跟踪设置
 	int enableRL = (int)config[0];
-	double offsetRL = config[1];
+	double offsetRL = config[1] + config[9];
 	double gainRL = config[2];
 	double maxSingleRL = fabs(config[5]);
 	// 上下跟踪设置
 	int enableUD = (int)config[10];
-	double offsetUD = config[11];
+	double offsetUD = config[11] + config[19];
 	double gainUD = config[12];
 	double goalUD = config[17];
 
@@ -224,7 +224,7 @@ int calc_compensate(int idx, double* config, double* data) {
 	// 最大纠偏距离
 	double maxShift = 0;
 	if (masterDist > 0) {
-		maxShift = fabs(masterDist * tan(36 * M_PI / 180));
+		maxShift = fabs(masterDist * tan(10 * M_PI / 180));
 	}
 	printf("maxShift = %f, beg = %f, end = %f, dist = %f\n", maxShift, config[47], config[48], masterDist);
 
@@ -232,14 +232,14 @@ int calc_compensate(int idx, double* config, double* data) {
 	double dArl = 0.0, compRL = 0.0;
 	if (enable == 1 && enableRL == 1) {
 		dArl = AR - AL;
-		//compRL = fabs(dArl * gainRL);
-		double smc_u = smc_process(smc[idx], dArl, gainRL);
+		compRL = fabs(dArl * gainRL);
+		//double smc_u = smc_process(smc[idx], dArl * gainRL, gainRL);
 		// 误差反向后补偿立即反向, 否则继续叠加
 		//if (smc_u * lastCompRL < 0) {
 		//	compRL = smc_u;
 		//}
-		compRL = lastCompRL + smc_u;
-		printf("compRL = %f, lastCompRL = %f, smc_u = %f\n", compRL, lastCompRL, smc_u);
+		//compRL = lastCompRL + smc_u;
+		//printf("compRL = %f, lastCompRL = %f, smc_u = %f\n", compRL, lastCompRL, smc_u);
 	}
 
 	// 上下跟踪: dAud > 0 向上跟踪
@@ -261,19 +261,19 @@ int calc_compensate(int idx, double* config, double* data) {
 	}
 
 	if (enable == 1 && enableRL == 1) {
-		//if (dArl > 0) {
-		//	compRL *= -1.0;
-		//	printf("<- %f\n", compRL);
-		//}
-		//else if (dArl < 0) {
-		//	printf("-> %f\n", compRL);
-		//}
-		if (compRL < 0) {
+		if (dArl > 0) {
+			compRL *= -1.0;
 			printf("<- %f\n", compRL);
 		}
-		else if (compRL > 0) {
+		else if (dArl < 0) {
 			printf("-> %f\n", compRL);
 		}
+		//if (compRL < 0) {
+		//	printf("<- %f\n", compRL);
+		//}
+		//else if (compRL > 0) {
+		//	printf("-> %f\n", compRL);
+		//}
 
 		// 左右累计偏移
 		config[27] += compRL;

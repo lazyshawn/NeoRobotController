@@ -1,11 +1,11 @@
-
+ï»¿
 #ifdef _MSC_VER
 #include "data_process/control_algo.h"
 #else
 #include "control_algo.h"
 #endif
 
-// SMC ¹¹Ôìº¯Êı
+// SMC æ„é€ å‡½æ•°
 ControlSMC *smc_construct(double lamb, double eps, double ve0, double ks) {
 	ControlSMC *q = (ControlSMC *)malloc(sizeof(ControlSMC));
 	q->error = 0.0;
@@ -16,31 +16,32 @@ ControlSMC *smc_construct(double lamb, double eps, double ve0, double ks) {
 	return q;
 }
 
-// SMC Îö¹¹º¯Êı
+// SMC ææ„å‡½æ•°
 void smc_deconstruct(ControlSMC *q) {
 	free(q);
 }
 
-// SMC ÖØÖÃ
+// SMC é‡ç½®
 void smc_clear(ControlSMC *q) {
 	q->error = 0.0;
 }
 
-// ¸ù¾İµ±Ç°Îó²î¼ÆËã¿ØÖÆÊä³ö
+// æ ¹æ®å½“å‰è¯¯å·®è®¡ç®—æ§åˆ¶è¾“å‡º
 double smc_process(ControlSMC* q, double err, double gain) {
-	// Îó²îËÙÂÊ
+	// è¯¯å·®é€Ÿç‡
 	double ve = err - q->error;
-	// »¬Ä£Ãæ¼ÆËã: S = ve + lamb*e
+	// æ»‘æ¨¡é¢è®¡ç®—: S = ve + lamb*e
 	double S = ve + q->lambda * err;
-
-	// ¼ÆËã¿ØÖÆÊä³ö: u = -a*ve -b*S -c*sgn(S)
-	double ans = -q->lambda * ve * gain - q->ks*S;
-	if (fabs(S) > 1e-2) {
-		ans += (S > 0) ? -q->epsilon : q->epsilon;
-	}
+	
+	// è®¡ç®—æ§åˆ¶è¾“å‡º: u = -a*ve -b*S -c*sgn(S)
+	double ans = -q->lambda * ve - q->ks*S - (1 - exp(-S * 1.0)) /(1 + exp(-S * 1.0))*q->epsilon;
+	//double ans = -q->lambda * ve * gain - q->ks*S;
+	//if (fabs(S) > 1e-2) {
+	//	ans += (S > 0) ? -q->epsilon : q->epsilon;
+	//}
 	printf("smc: ve = %f, S = %f\n", ve, S);
 
-	// ¸üĞÂÀúÊ·Îó²î
+	// æ›´æ–°å†å²è¯¯å·®
 	q->error = err;
 	
 	return ans;

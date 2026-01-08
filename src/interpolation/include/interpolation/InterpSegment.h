@@ -96,7 +96,6 @@ public:
 };
 
 
-
 // 轨迹类
 class InterpTrajectory {
 	// 轨迹段
@@ -112,5 +111,4 @@ public:
 
 	// 轨迹插补
 };
-
 

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "controller_interface.h"
 
@@ -7,31 +7,31 @@
 extern "C" {
 #endif
 
-// SMC ¿ØÖÆËã·¨
+// SMC æ§åˆ¶ç®—æ³•
 typedef struct ControlSMC {
-	//! ÀúÊ·Îó²î
+	//! å†å²è¯¯å·®
 	double error;
-	//! »¬Ä£Ãæ²ÎÊı
+	//! æ»‘æ¨¡é¢å‚æ•°
 	double lambda, ks;
-	//! Ç÷½üÂÉ²ÎÊı
+	//! è¶‹è¿‘å¾‹å‚æ•°
 	double epsilon;
 }ControlSMC, *pControlSMC;
 
-// SMC ¹¹Ôìº¯Êı
+// SMC æ„é€ å‡½æ•°
 ControlSMC *smc_construct(double lamb, double eps, double err0, double ks);
 
-// SMC Îö¹¹º¯Êı
+// SMC ææ„å‡½æ•°
 void smc_deconstruct(ControlSMC *q);
 
-// SMC ÖØÖÃ
+// SMC é‡ç½®
 void smc_clear(ControlSMC *q);
 
 /**
-	* ¸ù¾İµ±Ç°Îó²î¼ÆËã¿ØÖÆÊä³ö
-	* @param  *q       SCM Ö¸Õë
-	* @param  *err     µ±Ç°Îó²î
-	* @return ¿ØÖÆÊä³ö
-	*/
+* æ ¹æ®å½“å‰è¯¯å·®è®¡ç®—æ§åˆ¶è¾“å‡º
+* @param  *q       SCM æŒ‡é’ˆ
+* @param  *err     å½“å‰è¯¯å·®
+* @return æ§åˆ¶è¾“å‡º
+*/
 double smc_process(ControlSMC* q, double err, double gain);
 
 #ifdef __cplusplus

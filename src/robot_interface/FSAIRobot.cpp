@@ -966,6 +966,8 @@ namespace FSAIRobotInterface {
 		//	status.cPos[3 + i] = afterEuler[2 - i] * 180 / DT_PI;
 		//}
 
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " saved status: " << status.cmdNum);
+
 		return 0;
 	}
 
@@ -1024,6 +1026,9 @@ namespace FSAIRobotInterface {
 		ZController->set_axis_param({ stateIdxBase + 63 }, "TABLE", { 1 });
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " task stop.");
+
+		// 延时，保证下位机清空任务成功
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		return 0;
 
