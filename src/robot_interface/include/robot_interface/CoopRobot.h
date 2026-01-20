@@ -205,6 +205,8 @@ public:
 
 	// 机器人缓存轨迹
 	DiscreteTrajectory trajectory;
+	//! 已发送的轨迹，运动完成后的处理
+	std::list<SingleTrajectory> trajHistory;
 
 	/* *************************** 通用接口 *************************** */
 	//! 关节起始编号
@@ -319,8 +321,6 @@ public:
 	int read_action_result(std::vector<float>& result);
 	int get_multilayer_pos(std::vector<float>& pos);
 
-	// 开启缓存读取线程
-	int slave_buffer_stream(bool enable);
 	// 获取自定义的下位机缓存数据: 如电弧跟踪、激光跟踪数据
 	int get_slave_buffer();
 
@@ -334,13 +334,18 @@ public:
 
 	/**
 	* @brief  上位机与下位机缓冲数据同步
+	* @param  masterStamp    同步时刻上位机时间戳
+	* @param  slaveStamp     同步时刻下位机时间戳
 	*/
-	int synchronize_slave_buffer(long long masterStamp);
+	int synchronize_slave_buffer(uint64_t& masterStamp, uint64_t& slaveStamp);
 
 	/**
 	* @brief  查询下位机缓冲数据
+	* @param  [out]  buffer   查询结果
+	* @param         popFlag  清空已查询数据
+	* @param         num      查询个数, <= 0: 全部读取
 	*/
-	int query_slave_buffer(long long stamp, std::vector<float>& data);
+	int pop_slave_buffer(std::vector<motion::BufferUnit>& buffer, bool popFlag, int num = -1);
 
 	/* *************************** 底层可修改接口 *************************** */
 	/**
@@ -490,16 +495,16 @@ class RobotGroupManager {
 
 	//! 线程终止条件
 	bool workerHealthy = true;
-	//! 指令处理线程, 状态更新线程
-	std::thread cmdThreadWorker, updateThreadWorker;
+	//! 指令处理线程, 状态更新线程, 下位机缓存读取线程
+	std::thread cmdThreadWorker, updateThreadWorker, bufferThreadWorker;
 	//! 指令线程状态
-	std::atomic<bool> cmdThreadDone;
+	std::atomic<bool> cmdThreadDone, bufferThreadDone;
 	//! 保存机器人状态
 	std::vector<RobotStatus> statusList;
 	//! RobotGroupManager 状态
 	std::vector<int> coopState;
 	//! 已发送的轨迹，运动完成后的处理
-	std::vector<std::list<SingleTrajectory>> trajHistory;
+	//std::vector<std::list<SingleTrajectory>> trajHistory;
 	//! 机器人分组
 	std::vector<std::vector<int>> disableGroup;
 	//! 共用轴
@@ -514,6 +519,10 @@ class RobotGroupManager {
 	* @brief  状态更新线程
 	*/
 	void updateStatusThread();
+	/**
+	* @brief  下位机缓存读取线程
+	*/
+	void readSlaveBufferThread();
 
 	void set_group_sync_config(int robotIdx);
 
@@ -549,6 +558,7 @@ class RobotGroupManager {
 
 	// IO 等待标志复位
 	void reset_wait_state(int robotIdx);
+
 
 public:
 	//! 机器人队列
@@ -617,6 +627,9 @@ public:
 	* @brief  机器人组急停
 	*/
 	int robot_group_stop(int idx);
+
+	// 开启缓存读取线程
+	int slave_buffer_stream(bool enable);
 };
 
 /**

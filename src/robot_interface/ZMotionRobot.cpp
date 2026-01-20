@@ -248,6 +248,7 @@ int ZMotionRobot::update_swing_config() {
 
 	// 读取焊接参数
 	Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
+	Weave preWaveCfg = deserialize_Weave(preTraj.get_appendix());
 
 	bool sendPlainTraj = false;
 	// 摆焊开启
@@ -256,8 +257,10 @@ int ZMotionRobot::update_swing_config() {
 		if (waveCfg.Shape == 0) {
 			// 修改摆动参数
 			int numPeriod = get_swing_num();
-			// 停留1ms，减小抖动
-			ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 0.0 });
+			//if (preWaveCfg.Id != 3) {
+			//	// 停留1ms，减小抖动
+			//	ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 0.0 });
+			//}
 
 			// 摆焊周期数大于0
 			if (numPeriod > 0) {
@@ -280,11 +283,48 @@ int ZMotionRobot::update_swing_config() {
 				zDir[0] = sin(zEuler[2]) * sin(zEuler[0]) + cos(zEuler[2]) * cos(zEuler[0]) * sin(zEuler[1]);
 				zDir[1] = cos(zEuler[0]) * sin(zEuler[2]) * sin(zEuler[1]) - cos(zEuler[2]) * sin(zEuler[0]);
 				zDir[2] = cos(zEuler[0]) * cos(zEuler[1]);
+				//LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Real tool dir: " << zDir[0] << ", " << zDir[1] << ", " << zDir[2]);
 
-				// 设置摆焊
+				// --- 焊丝摆角设置: 修正摆焊的焊枪方向toolDir, + 焊枪更贴近z方向, - 焊枪更平躺
+				// tanDir向纸外(o), zAxis为焊枪所在一侧的z方向, r为焊接方向右侧(tanDir X zAxis)
+				// a. 焊枪方向朝下:          b. 焊枪方向朝上:  
+				//         zAxis             -------o-------> r
+				//      -    |   +               ↗ | ↖       
+				//        ↘ | ↙              +    |   -      
+				// r <-------o-------             zAxis        
+				// 运行方向
+				Eigen::Vector3f tanDir;
+				if (curTraj.isArc()) {
+					// 半径方向
+					Eigen::Vector3f radDir = { prePoint[0] - trajInfo[0], prePoint[1] - trajInfo[1], prePoint[2] - trajInfo[2] };
+					tanDir = Eigen::Vector3f{ nDir[0], nDir[1], nDir[2] }.cross(radDir);
+				}
+				else {
+					tanDir = { nDir[0], nDir[1], nDir[2] };
+				}
+				tanDir.normalize();
+
+				Eigen::Vector3f toolDir = Eigen::Vector3f{ zDir[0], zDir[1], zDir[2] };
+				Eigen::Vector3f zAxis = (toolDir(2) > 0) ? Eigen::Vector3f{ 0, 0, -1.0 } : Eigen::Vector3f{ 0, 0, 1.0 };
+				Eigen::Vector3f tRight = (tanDir.cross(zAxis)).normalized();
+				// 横焊摆角修正
+				float swingAngle = 0.0;
+				if (std::fabs(tanDir(2)) < 0.5) {
+					swingAngle = (tRight.dot(toolDir) > 0) ? (waveCfg.Angle_Ltype_btm * DT_PI / 180) : -1*(waveCfg.Angle_Ltype_btm * DT_PI / 180);
+				}
+
+				// 摆焊方向旋转
+				toolDir = (Eigen::AngleAxisf(swingAngle, tanDir) * toolDir).eval();
+				zDir = { toolDir(0), toolDir(1), toolDir(2) };
+
+				//LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId <<
+				//	" swingAngle = " << swingAngle  << ", "<< "tanDir: " << tanDir(0) << ", " << tanDir(1) << ", " << tanDir(2) << "\n" <<
+				//	"zAxis: " << zAxis(0) << ", " << zAxis(1) << ", " << zAxis(2) << ". tRight: " << tRight(0) << ", " << tRight(1) << ", " << tRight(2) << "\n" <<
+				//	"toolDir: " << toolDir(0) << ", " << toolDir(1) << ", " << toolDir(2)
+				//);
+
+				// --- 设置摆焊
 				update_swing_table(waveCfg);
-
-				//ZController->set_base_param(get_execute_axis()[0], "MOVE_WA", { 1.0 });
 
 				int swingMode = curTraj.isLine() ? 3 : 5;
 				//ret = swing_on((trajectory.get_dist() - 0.02) / numPeriod, waveCfg, swingMode, zDir, nDir);
@@ -1431,6 +1471,8 @@ int ZMotionRobot::task_stop() {
 
 	// 轨迹清空
 	trajectory.clear();
+	// 已下发轨迹清空
+	trajHistory.clear();
 
 	// 清除上位机异常码
 	reset_upperStatus(-1);
@@ -1453,7 +1495,10 @@ int ZMotionRobot::task_stop() {
 int ZMotionRobot::emergency_stop() {
 
 	int stateIdxBase = get_state_idx_base();
+	// 轨迹清空
 	trajectory.clear();
+	// 已下发轨迹清空
+	trajHistory.clear();
 	// 保留旧版本急停按钮，后续版本将取消
 	//ZController->set_axis_param({ stateIdxBase + 52 }, "TABLE", { 3 });
 	ZController->set_axis_param({ stateIdxBase + 60 }, "TABLE", { 1 });

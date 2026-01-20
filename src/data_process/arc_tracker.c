@@ -1,0 +1,314 @@
+﻿
+#ifdef _MSC_VER
+#include "data_process/arc_tracker.h"
+#else
+#include "arc_tracker.h"
+#endif
+
+
+// 电流数据滤波器
+FIRFilter *filter[MaxFilterNum];
+// 补偿量修正算法
+//ControlSMC *smc[MaxFilterNum];
+FIRFilter *compFilter[MaxFilterNum];
+
+// 打印版本信息
+void print_release_info() {
+	static int printFlag = 0;
+	if (printFlag == 0) {
+		printf("=> <ArcTrackPackage> Data: 260119, Version: 0.0.1\n");
+		printFlag++;
+	}
+}
+
+/***********************************************************************
+ *                        F I L T E R                                  *
+ ***********************************************************************/
+// 定义滤波器
+void filter_construct(int idx, double* param, int num) {
+	if (idx >= MaxFilterNum || idx < 0)
+		return;
+
+	print_release_info();
+
+	// 滤波器初始化
+	filter[idx] = firfilter_construct(param, num);
+	printf("%d\tfilter(%d) and control(%d): ", idx, (int)param[0], (int)param[5]);
+	for (int i = 0; i < num; ++i) {
+		printf("%f, ", param[i]);
+	}
+	printf("\n");
+	
+	// 控制算法初始化
+	double config[10] = { 0, 3 };
+	compFilter[idx] = firfilter_construct(config, num);
+}
+
+// 销毁滤波器
+void filter_deconstruct(int idx) {
+	if (idx >= MaxFilterNum || idx < 0)
+		return;
+
+	firfilter_deconstruct(filter[idx]);
+	firfilter_deconstruct(compFilter[idx]);
+}
+
+// 重置滤波器
+void filter_clear(int idx) {
+	firfilter_clear(filter[idx]);
+	firfilter_clear(compFilter[idx]);
+}
+
+// 单次滤波
+double filter_process(int idx, double sample) {
+	return firfilter_process(filter[idx], sample);
+}
+
+
+/***********************************************************************
+ *                        T R A C K I N G                              *
+ ***********************************************************************/
+/**
+ * 计算样本区间参考值
+ * @param  *config  配置地址
+ * @param  *data    数据地址, 滤波后的数据数组
+ */
+double calc_interval_refrence(double *config, double *data) {
+	// --- config 数组
+	// 数据长度
+	int maxSampleNum = (int)config[0];
+	// 样本区间起止位置(闭区间)
+	int begIdx = (int)config[1], endIdx = (int)config[2];
+	// 参考值计算方法 + 算法参数
+	int type = 1;
+	// 计算结果
+	double ans = data[(begIdx) % maxSampleNum];
+
+	// --- 异常情况处理
+	if (begIdx >= endIdx) {
+		return ans;
+	}
+
+	// --- 1. 四分位点
+	if (type == 1) {
+		// 复制区间数组
+		int arrSize = endIdx - begIdx + 1;
+		double *arr = (double *)malloc(sizeof(double) * (arrSize));
+		for (int i = 0; i < arrSize; ++i) {
+			arr[i] = data[(begIdx + i) % maxSampleNum];
+		}
+
+		// 冒泡排序: 从小到大 [0,0.75]
+		int firIdx = arrSize * 0.25;
+		int ansIdx = arrSize * 0.75;
+		for (int i = 0; i < ansIdx + 1; ++i) {
+			for (int j = i; j < arrSize; ++j) {
+				if (arr[i] > arr[j]) {
+					double tmp = arr[j];
+					arr[j] = arr[i];
+					arr[i] = tmp;
+				}
+			}
+		}
+		ans = arr[ansIdx];
+	}
+	// --- 2. 求均值
+	else if (type == 2) {
+		double sum = 0.0;
+		for (int i = begIdx; i < endIdx + 1; ++i) {
+			sum += data[(i) % maxSampleNum];
+		}
+		ans = sum / (endIdx - begIdx + 1);
+	}
+
+
+	return ans;
+}
+
+/**
+ * 计算世界坐标系下的补偿量
+ * @param  idx        机器人编号
+ * @param  *config    配置地址
+ * @param  *data      数据地址
+ */
+int calc_compensate(int idx, double* config, double* data) {
+	// 临时数组
+	double vec[3], mat[9];
+
+	// --- config 数组
+	// 跟踪使能
+	int enable = (int)config[7];
+	// 左右跟踪设置
+	int enableRL = (int)config[0];
+	double offsetRL = config[1] + config[9];
+	double gainRL = config[2] + config[8];
+	double piceThread = config[3];
+	double piceGain = config[4] / 100;
+	//double maxSingleRL = fabs(config[5]);
+	// 上下跟踪设置
+	int enableUD = (int)config[10];
+	double offsetUD = config[11] + config[19];
+	double gainUD = config[12];
+
+	// 参考电流
+	double AR = config[31];
+	double AL = config[32];
+	double ACref = config[46];
+	double AC = (AR + AL) / 2;
+	// 异常电流参考阈值
+	double errThread = config[49] * 1e-2;
+
+	// --- 输出结果初始化
+	// 激活跟踪
+	config[20] = 0;
+	// 跟踪修正量(世界坐标xyz修正)
+	config[21] = 0;
+	config[22] = 0;
+	config[23] = 0;
+
+	// 异常电流检测
+	//if (errThread > 1e-3) {
+	//	if (fabs(AR - ACref) > ACref * errThread || fabs(AL - ACref) > ACref * errThread) {
+	//		printf("%d current error: %f\n", idx, ACref);
+	//		return 0;
+	//	}
+	//}
+
+	// 轨迹切向
+	double tanDir[3] = { config[33], config[34], config[35] };
+	if (vector_norm(tanDir)) {
+		printf("tanDir error: %f, %f, %f\n", tanDir[0], tanDir[1], tanDir[2]);
+		return 0;
+	}
+	// 焊枪方向
+	double rx = config[36] * M_PI / 180, ry = config[37] * M_PI / 180, rz = config[38] * M_PI / 180;
+	euler2mat((double[]){ rx,ry,rz }, (double[]){ 0,1,2 }, mat);
+	double zDir[3] = { mat[2], mat[5], mat[8] };
+	// 焊枪方向从基坐标系转到世界坐标系
+	rx = config[40] * M_PI / 180;
+	ry = config[41] * M_PI / 180;
+	rz = config[42] * M_PI / 180;
+	euler2mat((double[]) { rx, ry, rz }, (double[]) { 0, 1, 2 }, mat);
+	matrix_multiply_in_vector(mat, 3, 3, zDir, 1, vec);
+	memcpy(zDir, vec, 3 * sizeof(double));
+
+	// 主运动距离
+	double masterDist = config[48] - config[47];
+	// 累计偏移量
+	double sumCompRL = config[27], sumCompUD = config[28];
+	// 累计运动距离
+	// 历史偏移量
+	double lastCompRL = config[29];
+
+	// --- 偏移方向计算
+	// 左右: 摆动方向, 右为正, zDir X tanDir
+	double swingDir[3] = { 0,0,0 };
+	vector_cross(zDir, tanDir, swingDir);
+	if (vector_norm(swingDir)) {
+		printf("swingDir error: %f, %f, %f\n", swingDir[0], swingDir[1], swingDir[2]);
+		return 0;
+	}
+	// 上下: 深度方向, 下为正, tanDir X zDir X tanDir = tanDir X swingDir
+	double depthDir[3] = { 0,0,0 };
+	vector_cross(tanDir, swingDir, depthDir);
+	if (vector_norm(depthDir)) {
+		printf("depthDir error: %f, %f, %f\n", depthDir[0], depthDir[1], depthDir[2]);
+		return 0;
+	}
+	printf("tanDir: %f, %f, %f; zDir: %f, %f, %f, swingDir: %f, %f, %f; depthDir: %f, %f, %f\n",
+		tanDir[0], tanDir[1], tanDir[2],zDir[0], zDir[1], zDir[2],swingDir[0], swingDir[1], swingDir[2],depthDir[0], depthDir[1], depthDir[2]);
+
+	// --- 偏移量计算
+	// 左右基准修正
+	if (fabs(tanDir[2]) < 0.2) {
+		// 右侧向上，正向偏移(向下)左侧电流大
+		if (swingDir[2] > 0.2)
+			AR += offsetRL;
+		// 左侧向上，正向偏移(向下)右侧电流大
+		else if (swingDir[2] < -0.2)
+			AL += offsetRL;
+		// 平焊
+	}
+	// 上下基准修正
+	AC += offsetUD;
+
+	// 最大纠偏距离
+	double maxShift = 0;
+	if (masterDist > 0) {
+		maxShift = fabs(masterDist * tan(20 * M_PI / 180));
+	}
+	printf("maxShift = %f, beg = %f, end = %f, dist = %f\n", maxShift, config[47], config[48], masterDist);
+
+	// 左右跟踪
+	static int count = 0;
+	double dArl = 0.0, compRL = 0.0;
+	if (enable == 1 && enableRL == 1) {
+		dArl = AR - AL;
+		compRL = firfilter_process(compFilter[idx], (dArl * gainRL));
+		printf("filter comp: %f to %f\n", (dArl * gainRL), compRL);
+	}
+
+	// 上下跟踪: dAud > 0 向上跟踪
+	double dAud = 0.0, compUD = 0.0;
+	if (enable == 1 && enableUD == 1 && ACref > 0) {
+		dAud = AC - ACref;
+		compUD = fabs(dAud * gainUD);
+	}
+
+	// 距离修正
+	double sumDistSq = compRL * compRL + compUD * compUD;
+	// 总修正大于最大纠偏，修正纠偏量
+	if (fabs(compRL) > maxShift) {
+		//compRL = maxShift; 
+		compRL = compRL > 0 ? maxShift : -maxShift;
+	}
+	if (compUD > maxShift) {
+		compUD = maxShift;
+	}
+
+	if (enable == 1 && enableRL == 1) {
+		// 补偿方向，左为正
+		if (compRL > 0) {
+			printf("<- %f\n", compRL);
+		}
+		else if (compRL < 0) {
+			printf("-> %f\n", compRL);
+		}
+
+		// 左右累计偏移
+		config[27] += compRL;
+		config[29] = compRL;
+		printf("dArl = %f. sumCompRL = %f\n", dArl, config[27]);
+
+		// 偏移方向，右为正
+		config[20] = 1;
+		config[21] -= compRL * swingDir[0];
+		config[22] -= compRL * swingDir[1];
+		config[23] -= compRL * swingDir[2];
+	}
+
+	// 上下跟踪(左右跟踪幅度小时生效)
+	if (enable == 1 && enableUD == 1 && ACref > 0 && fabs(dAud) > 5) {
+		//printf("Aud = %f, AudRef = %f\n", AC, ACref);
+
+		if (dAud > 0) {
+			compUD *= -1;
+			printf("Λ %f\n", compUD);
+		}
+		else if (dAud < 0) {
+			printf("V %f\n", compUD);
+		}
+
+		// 上下累计偏移
+		config[28] += compUD;
+		printf("Aud = %f, AudRef = %f, sumCompUD = %f\n", AC, ACref, config[28]);
+
+		config[20] = 1;
+		config[21] += compUD * depthDir[0];
+		config[22] += compUD * depthDir[1];
+		config[23] += compUD * depthDir[2];
+	}
+
+	return 0;
+}
+

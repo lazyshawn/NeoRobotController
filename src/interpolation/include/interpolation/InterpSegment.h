@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <queue>
+#include <memory>
 
 
 // 边界条件(boundary)
@@ -19,7 +20,6 @@ struct InterpBoundary {
 	int state = 0;
 
 	InterpBoundary() {};
-	InterpBoundary(double q0_, double q1_, double v0_, double v1_, double a0_, double a1_);
 };
 
 
@@ -42,7 +42,6 @@ struct InterpConstraint {
 	double inPlaceAcc = 1e0;
 
 	InterpConstraint() {};
-	InterpConstraint(double vmax_, double vmin_, double amax_, double amin_, double jmax_, double jmin_);
 };
 
 
@@ -54,63 +53,86 @@ enum class InterpSegmentType {
 };
 
 
-// 插值轨迹基类
+// 速度曲线
+class SCurve {
+	//! 基本曲线参数
+
+public:
+	// 曲线初始化
+	int curve_init();
+	// 曲线同步
+	// 曲线规划
+	// 曲线求解
+	// 修改起始时间
+};
+
+// 插补器缓存数据
+class InterpBuffer {
+	//! 点位指令信息: 运动类型由上层指令重新指定
+	InterpSegmentType segmType;
+	//! 预处理信息
+
+	//! 插补结果
+public:
+	InterpSegmentType get_segment_type();
+};
+
+// 插补线段基类
 class InterpSegment {
-	//! 当前状态
-	double cur_q, cur_v, cur_a, cur_j;
-	//! 插补阶段标识符
-	int interpPhase;
-	//! 当前插补轨迹参数
-	double Td = 0.0, Tj2a = 0.0, Tj2b = 0.0;
-	//! 当前插补周期, 开始减速周期
-	int k, kb;
-
 
 public:
-	// 插值轨迹类型
-	InterpSegmentType type;
-
-	// 约束条件
-	InterpConstraint constraint;
-
-	// 边界条件
-	std::queue<InterpBoundary> boundaryQueue;
+	//! 插补器缓存数据, 所有类共用
+	static std::shared_ptr<InterpBuffer> interpBuf;
 
 
-	// 设置约束条件
-	int set_kinematic_constraint(const InterpConstraint& constraint_);
-
-	// 增加插补轨迹段
-	int add_segment(const InterpBoundary& boundary);
-	//int add_segment(const InterpBoundary, const InterpConstraint constraint_);
-
-	// 弹出队首轨迹
-	int pop_front_segment(InterpBoundary& boundary);
-
-	/* **********************************************************
-	* @brief  计算插补结果
-	* @param  result [out]  插补点所在位置、速度、加速度、Jerk
-	* @return 插补结果, 0 - 正常, other - 异常
-	*********************************************************** */
-	int get_interp_result(std::vector<double>& result);
+	// - 虚函数
+	// 预处理: 插入点位时执行
+	virtual int prehandle() = 0;
+	// 规划: 插补开始前执行，同时输出第一个插补点
+	virtual int plan() = 0;
+	// 插补: 插补点位
+	virtual int move() = 0;
+	// 停止规划: 修改插补规划
+	virtual int stop_plan() = 0;
+	// 重置
+	virtual int reset() = 0;
+	// 获取当前时间
+	virtual int get_current_time() = 0;
 };
 
 
-
-// 轨迹类
-class InterpTrajectory {
-	// 轨迹段
-
-	// 插补段
-	InterpSegment segment;
+// 关节空间插补线段
+class JointInterpSegment : public InterpSegment {
+	//! 各轴插补的 S 曲线
 
 public:
-	//! 轨迹预处理
-	// 轨迹平滑
-
-	// 速度规划
-
-	// 轨迹插补
+	// 预处理
+	virtual int prehandle() override;
+	// 规划
+	int plan() override;
+	// 插补
+	int move() override;
+	// 停止规划
+	int stop_plan() override;
+	// 重置
+	int reset() override;
+	// 获取当前时间
+	int get_current_time() override;
 };
 
-
+//// 笛卡尔空间插补线段
+//class CartesianInterpSegment : public InterpSegment {
+//	//! 点位坐标系
+//
+//public:
+//	// 规划
+//	int plan() override;
+//	// 插补
+//	int move() override;
+//	// 停止规划
+//	int stop_plan() override;
+//	// 重置
+//	int reset() override;
+//	// 获取当前时间
+//	int get_current_time() override;
+//};

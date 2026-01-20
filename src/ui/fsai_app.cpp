@@ -348,28 +348,40 @@ void FSAIApp::connect_slot() {
 	});
 	// 测试按钮1
 	QObject::connect(advanceWindow->ui->pushButton_9, &QPushButton::released, this, [&]() {
-		// 获取当前上位机时间戳
-		//auto start = std::chrono::steady_clock::now();
-		auto start = std::chrono::steady_clock::now();
-		auto masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
-		// 时间对齐
-		int slaveStamp = group.robotList[0]->synchronize_slave_buffer(masterStamp);
+		static bool streamOn = false;
+		streamOn = !streamOn;
 
-		mainWindow->ui->textBrowser->append("Test 1: " + QString::number(masterStamp) + ", " + QString::number(slaveStamp) + ", "
-		+ QString::number(masterStamp - slaveStamp));
+		// 开启缓存读取线程
+		group.slave_buffer_stream(streamOn);
+		QString log;
+
+		if (streamOn) {
+			// 下位机时间同步
+			uint64_t masterStamp, slaveStamp;
+			group.robotList[0]->synchronize_slave_buffer(masterStamp, slaveStamp);
+			log = "Test 1: stream on " + QString::number(masterStamp) + ", " + QString::number(slaveStamp);
+		}
+		else {
+			auto now = std::chrono::steady_clock::now();
+			auto masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+			log = "Test 1: stream off " + QString::number(masterStamp);
+		}
+
+		mainWindow->ui->textBrowser->append(log);
 	});
 	// 测试按钮2
 	QObject::connect(advanceWindow->ui->pushButton_10, &QPushButton::released, this, [&]() {
-		//// 获取地址
-		//auto cmd = mainWindow->ui->lineEdit->text();
+		std::vector<motion::BufferUnit> buffer;
+		group.robotList[0]->pop_slave_buffer(buffer, 1);
 
-		//// 发送请求
-		//WebService client;
-		//std::string ans;
-		//int ret = client.get_abb(cmd.toStdString(), ans);
 
-		//// 打印结果
-		//mainWindow->ui->textBrowser->append(QString::number(ret) + "\n" + QString::fromStdString(ans));
+		for (size_t i = 0; i < buffer.size(); ++i) {
+			QString dpos;
+			for (auto& val : buffer[i].dpos) {
+				dpos += QString::number(val) + ", ";
+			}
+			mainWindow->ui->textBrowser->append("Test 2: num " + QString::number(i) + ", " + QString::number(buffer[i].timeStamp) + ": " + dpos);
+		}
 	});
 
 	// 工艺窗口

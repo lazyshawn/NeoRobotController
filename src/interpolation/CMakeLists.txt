@@ -1,6 +1,7 @@
 ﻿
 add_library(interpolation
 	InterpSegment.cpp
+	InterpDispatch.cpp
 )
 #set_target_properties(zmotion_interface PROPERTIES
 #  LINK_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/zmotion;${CMAKE_SOURCE_DIR}/lib/clogger"

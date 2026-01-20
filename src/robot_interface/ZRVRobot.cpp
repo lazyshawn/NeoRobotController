@@ -1161,6 +1161,8 @@ namespace FSAIRobotInterface {
 	int ZRVRobot::task_stop() {
 		// 轨迹清空
 		trajectory.clear();
+		// 已下发轨迹清空
+		trajHistory.clear();
 
 		// 停止记录位置
 		save_task_status(false, -1);
