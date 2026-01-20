@@ -2,8 +2,9 @@
 
 add_library(data_process
   arc_tracker.c
-  fir_filter.c
   control_algo.c
+  fir_filter.c
+  track_utility.c
 )
 target_include_directories(data_process PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

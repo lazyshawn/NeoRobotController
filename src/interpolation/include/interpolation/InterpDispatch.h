@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "interpolation/InterpSegment.h"
 
 /**
 * @brief  插补输入信号
@@ -60,13 +61,21 @@ struct DispatcherState {
 class InterpDispatcher {
 	//! 调度器状态
 	DispatcherState dispatcherStatus;
+	//! 当前插补段
+	std::shared_ptr<InterpSegment> interpSegment;
 
 	/**
 	* @brief  切换插补状态
 	* @param  state     目标状态
-	* @return 执行异常码
+	* @return 异常码
 	*/
 	int switch_interp_state(int state);
+
+	/**
+	* @brief  执行规划, 更新插补段
+	* @return 异常码
+	*/
+	int interp_plan();
 
 public:
 	InterpDispatcher();
@@ -77,7 +86,7 @@ public:
 	* @param  signalIn     [out] 输入信号
 	* @param  signalOut    [out] 输出信号
 	* @param  state        [out] 输出更新后的调度器状态, 第一次调用时输入初始关节角
-	* @return 执行异常码
+	* @return 异常码
 	*
 	* 周期任务由逻辑层单独开线程循环调用并执行
 	*/

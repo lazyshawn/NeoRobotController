@@ -5,6 +5,10 @@
 #include "control_algo.h"
 #endif
 
+
+/***********************************************************************
+*                        Sliding Mode Control                          *
+* **********************************************************************/
 // SMC 构造函数
 ControlSMC *smc_construct(double lamb, double eps, double ve0, double ks) {
 	ControlSMC *q = (ControlSMC *)malloc(sizeof(ControlSMC));
@@ -45,4 +49,33 @@ double smc_process(ControlSMC* q, double err, double gain) {
 	q->error = err;
 	
 	return ans;
+}
+
+
+/***********************************************************************
+*                        Bias Estimator                                *
+* **********************************************************************/
+// BE 构造函数
+BiasEstimator *bias_estimator_construct(int order) {
+	BiasEstimator *q = (BiasEstimator *)malloc(sizeof(BiasEstimator));
+	return q;
+}
+
+// BE 析构函数
+void *bias_estimator_deconstruct(BiasEstimator *q) {
+}
+
+// BE 初始化
+int *bias_estimator_clear(BiasEstimator *q) {
+	return 0;
+}
+
+/**
+* 根据当前误差计算控制输出
+* @param  *q       WA 指针
+* @param  data     待处理数据
+* @return 控制输出
+*/
+double bias_estimator_process(BiasEstimator* q, double data) {
+	return 0;
 }

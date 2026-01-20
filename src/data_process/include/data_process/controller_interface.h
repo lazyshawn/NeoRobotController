@@ -15,6 +15,7 @@
 #include <stdio.h>
 #else
 #include "zmcbuildin.h"
+#define NULL ((void *)0)
 #endif
 
 #ifdef __cplusplus
@@ -22,7 +23,6 @@ extern "C" {
 #else
 typedef enum { false = 0, true = 1 } bool;
 #endif
-
 
 #ifdef __cplusplus
 }

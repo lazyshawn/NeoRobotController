@@ -11,6 +11,16 @@ int InterpDispatcher::switch_interp_state(int state) {
 	return 0;
 }
 
+int InterpDispatcher::interp_plan() {
+	// 从预处理缓存取出当前插补段
+	//auto moveType = InterpSegment::interpBuf->get_segment_type();
+	//if (moveType == InterpSegmentType::JOINT) {
+	//	interpSegment = std::make_shared<JointInterpSegment>();
+	//}
+
+	return 0;
+}
+
 int InterpDispatcher::run_cycle_task(InterpSignalIn& signalIn, InterpSignalOut& signalOut, DispatcherState& state) {
 	int interpStatus = dispatcherStatus.interpState;
 
@@ -49,7 +59,7 @@ int InterpDispatcher::run_cycle_task(InterpSignalIn& signalIn, InterpSignalOut& 
 
 		// 插补运动执行完成，依次执行缓冲动作：有缓冲等待则进入 <等待> 状态，有缓冲读写则立即执行
 
-		// 当前指令执行完成，保持 <插补> 状态，进行下一段轨迹插补
+		// 当前指令执行完成，保持 <插补> 状态，执行规划并进行下一段轨迹插补
 
 		// 轨迹指令执行完成，进入 <完成> 状态
 	}
