@@ -3,13 +3,14 @@
 * @brief 插补器调度层接口                                       *
 *															    *
 * 主要功能如下：											    *
-* 1. 插补状态切换，包括手自动模式							    *
-* 2. 根据插补状态执行不同的插补程序						        *
+* 1. 每个插补周期执行任务，根据插补状态执行不同的插补程序       *
+* 2. 插补状态切换，包括手自动模式							    *
+* 3. 管理与用户层的插补信号交互  							    *
 * ************************************************************* */
 
 #include <vector>
 
-#include "interpolation/InterpSegment.h"
+#include "interpolation/InterpSegmentBuffer.h"
 
 /**
 * @brief  插补输入信号
@@ -25,10 +26,12 @@
 * 4. 停止: 任务停止，清空任务，其他状态保留
 */
 struct InterpSignalIn {
+	//! 开始信号
+	bool interpEnable = false;
 	//! 模式切换: 手动，自动
-	int operateMode;
-	//! 状态切换: 开始/重置，暂停，继续，停止
-	int machineState;
+	int switchMode;
+	//! 状态切换: 重置，暂停，继续，停止
+	int switchState;
 };
 
 /**
@@ -37,7 +40,16 @@ struct InterpSignalIn {
 * 插补调度周期内返回的信号
 */
 struct InterpSignalOut {
-	//! 
+	//! 插补器状态
+	// 0      | 4    | 5    | 8        | 9      | 10
+	// 插补中 | 暂停 | 等待 | 正常插补 | 暂停中 | 断点继续
+	int interpState;
+	//! 警告码，触发暂停信号
+	int warnCode;
+	//! 异常码，触发急停信号
+	int errorCode;
+	//! 当前插补指令号
+	int cmdNum;
 };
 
 /**
@@ -46,6 +58,8 @@ struct InterpSignalOut {
 struct DispatcherState {
 	//! 周期任务执行次数
 	int CycleNum;
+	//! 当前插补行号
+	int cmdNum;
 	//! 当前插补状态: 插补，暂停中/已暂停，继续，等待，完成/空闲
 	int interpState;
 	//! 警告码，触发暂停信号
@@ -53,16 +67,16 @@ struct DispatcherState {
 	//! 异常码，触发急停信号
 	int errorCode;
 
-	//! 插补结果，规划电机角度
-	std::vector<double> dpos;
+	//! 插补结果，规划关节位置
+	PosData dpos;
 };
 
 // 插补调度
 class InterpDispatcher {
 	//! 调度器状态
 	DispatcherState dispatcherStatus;
-	//! 当前插补段
-	std::shared_ptr<InterpSegment> interpSegment;
+	//! 逻辑层输入信号，封装后由上层调用进行切换
+	InterpSignalIn signalIn;
 
 	/**
 	* @brief  切换插补状态
@@ -71,25 +85,24 @@ class InterpDispatcher {
 	*/
 	int switch_interp_state(int state);
 
-	/**
-	* @brief  执行规划, 更新插补段
-	* @return 异常码
-	*/
-	int interp_plan();
-
 public:
 	InterpDispatcher();
 	~InterpDispatcher() {};
+	
+	// 手自动切换信号
+	// 开始信号使能
+	int interp_enable(bool enable);
+	// 暂停信号使能
 
 	/**
 	* @brief  执行周期任务
-	* @param  signalIn     [out] 输入信号
+	* @param  cmdQueue     预处理后的指令缓冲
 	* @param  signalOut    [out] 输出信号
 	* @param  state        [out] 输出更新后的调度器状态, 第一次调用时输入初始关节角
 	* @return 异常码
 	*
 	* 周期任务由逻辑层单独开线程循环调用并执行
 	*/
-	int run_cycle_task(InterpSignalIn& signalIn, InterpSignalOut& signalOut, DispatcherState& state);
+	int run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut& signalOut, DispatcherState& state);
 
 };

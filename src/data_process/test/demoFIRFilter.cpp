@@ -10,8 +10,8 @@ int test_filter();
 int test_matrix_calc();
 
 int main() {
-	//test_filter();
-	test_matrix_calc();
+	test_filter();
+	//test_matrix_calc();
 	return 0;
 }
 
@@ -33,9 +33,10 @@ int test_filter() {
 		343.999, 336.004, 334.997, 332.998 };
 
 	//for (size_t i = 0; i < 84; ++i) {
-	//	ans.push_back(filter_process(0, sample[i]));
+	//	ans.push_back(filter_process(0, sample[i], 1));
 	//	std::cout << ans[i] << std::endl;
 	//}
+	//return 0;
 
 	//double config[10] = { 84, 75, 92 };
 	//double ref = calc_interval_refrence(config, sample.data());
@@ -46,12 +47,12 @@ int test_filter() {
 	config[0] = 1.0, config[2] = 0.280, config[3] = 3.000;
 	config[7] = 1.0;
 	config[29] = 0.0;
-	config[33] = 0, config[34] = 10, config[35] = 0;
-	config[36] = 10, config[37] = 50, config[38] = 20;
-	config[40] = 0, config[41] = 0, config[42] = 180;
+	config[33] = -0.0001, config[34] = -0.063, config[35] = 0.0001;
+	config[36] = 0.5106, config[37] = 41, config[38] = 359.264;
+	config[40] = 0, config[41] = 0, config[42] = 0;
 	config[47] = 62.832260, config[48] = 72.202260;
 
-	for (size_t i = 0; i < 3; ++i) {
+	for (size_t i = 0; i < 30; ++i) {
 		config[31] = 178.0, config[32] = 181.0;
 		calc_compensate(0, config, data);
 

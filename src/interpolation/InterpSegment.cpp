@@ -1,38 +1,19 @@
 ﻿
 #include "interpolation/InterpSegment.h"
 
-std::shared_ptr<InterpBuffer> InterpSegment::interpBuf = std::make_shared<InterpBuffer>();
 
+void PreProcessInfo::reset() {
+	lineNum = -1;
+	processed = false;
+}
 
 /***********************************************************************
- *                        JointInterpSegment                           *
+ *                        InterpSegment                                *
  ***********************************************************************/
-// 预处理
-int JointInterpSegment::prehandle() {
-	return 0;
-}
+int InterpSegment::set_data(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd) {
+	pointInfo = point;
+	motionCfg = cfg;
+	moveCmd = cmd;
 
-// 规划
-int JointInterpSegment::plan() {
-	return 0;
-}
-
-// 插补
-int JointInterpSegment::move() {
-	return 0;
-}
-
-// 停止规划
-int JointInterpSegment::stop_plan() {
-	return 0;
-}
-
-// 重置
-int JointInterpSegment::reset() {
-	return 0;
-}
-
-// 获取当前时间
-int JointInterpSegment::get_current_time() {
 	return 0;
 }

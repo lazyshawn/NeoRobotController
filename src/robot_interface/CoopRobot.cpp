@@ -862,6 +862,10 @@ int RobotBase::get_slave_buffer() {
 		std::vector<float> tmp = std::vector<float>(buf.begin() + i * dataLen + 2, buf.begin() + (i + 1)*dataLen);
 		// 姿态转换
 		cpos_base_to_world(tmp);
+		// 姿态分量角度转弧度
+		tmp[3] *= DT_PI / 180;
+		tmp[4] *= DT_PI / 180;
+		tmp[5] *= DT_PI / 180;
 		bufferSync.push_slave_buffer(stamp, isRun, tmp);
 	}
 
