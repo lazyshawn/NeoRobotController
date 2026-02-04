@@ -48,9 +48,8 @@ int InterpDispatcher::run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut
 		// 执行插补
 		PosData pos;
 		interpFinish = interpBuffer.move(pos);
-		//dispatcherStatus.dpos = pos.rbtPos;
 		interpBuffer.get_cur_dpos(dispatcherStatus.dpos);
-		std::cout << "dpos: " << pos.rbtPos[0] << std::endl;
+		std::cout << "dpos: " << pos.rbtPos[0] << ", " << pos.rbtPos[1] << ", " << pos.rbtPos[2] << std::endl;
 	}
 	// 插补动作停止，等待恢复插补的信号
 	else {

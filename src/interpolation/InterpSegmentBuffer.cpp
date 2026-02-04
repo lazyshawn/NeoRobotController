@@ -138,7 +138,7 @@ int InterpBuffer::move(PosData& pos) {
 
 	// - 插补结果处理
 	// 插补完成标识
-	bool finish = interpBuf[num]->interpInfo.schedule > 1.0;
+	bool finish = interpBuf[num]->interpInfo.finish;
 
 	return finish;
 }

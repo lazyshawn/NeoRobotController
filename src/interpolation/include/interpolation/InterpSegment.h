@@ -90,15 +90,29 @@ struct PreProcessInfo {
 	// 后平滑开始处比例
 	double postSmoothK;
 
+	// 前平滑控制点
+	double preCtrlPnt[3][3];
+	// 后平滑控制点
+	double postCtrlPnt[3][3];
+
 	void reset();
 };
 
 // 插补状态
 struct InterpInfo {
+	// --- 过程状态
+	//! 插补完成
+	bool finish = false;
 	//! 插补比列
 	double schedule = 0.0;
 	//! 当前周期目标位置
 	PosData dpos;
+
+	// --- 结束状态
+	//! 完成时间
+
+	//! 结束点速度
+
 };
 
 // 插补线段基类

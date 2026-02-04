@@ -842,31 +842,53 @@ int RobotBase::get_slave_buffer() {
 
 	int begIdx = get_data_idx_base();
 
-	std::vector<float> data, buf;
+	std::vector<double> data, buf;
 	int dataNum = 10, dataLen = 9;
 	int bufAddrBase = begIdx + 21000;
 	int bufAddr0 = 0, bufAddr1 = dataNum * dataLen + 1;
 
 	// 一次性读取缓存区
-	ZController->get_register(bufAddrBase, 2 * dataLen * dataNum + 2, data, 0);
+	ZController->get_register_double(bufAddrBase, 2 * dataLen * dataNum + 2, data);
 	
-	buf = std::vector<float>(data.begin() + 1, data.begin() + bufAddr1);
-	if (data[bufAddr0] < data[bufAddr1]) {
-		buf = std::vector<float>(data.begin() + bufAddr1 + 1, data.end());
+	// 两个缓存区的缓存数
+	int numBuf0 = static_cast<int>(data[bufAddr0]), numBuf1 = static_cast<int>(data[bufAddr1]);
+
+	// 缓存区0满 ,1正在写入, 读取缓存0
+	if (numBuf0 == dataNum - 1 && numBuf1 > numBuf0) {
+		buf = std::vector<double>(data.begin() + 1, data.begin() + bufAddr1);
+	}
+	// 缓存区1满, 0正在写入, 读取缓存1
+	else if (numBuf1 == 0 && numBuf0 > numBuf1) {
+		buf = std::vector<double>(data.begin() + bufAddr1 + 1, data.end());
+	}
+	// 两个缓存区均不满
+	else {
+		return 1;
 	}
 
 	// 保存下位机缓存数据
+	std::vector<motion::BufferUnit> buffer;
 	for (size_t i = 0; i < dataNum; ++i) {
-		long long stamp = static_cast<long long>(buf[i * dataLen]);
-		int isRun = static_cast<long long>(buf[i * dataLen + 1]);
-		std::vector<float> tmp = std::vector<float>(buf.begin() + i * dataLen + 2, buf.begin() + (i + 1)*dataLen);
+		// 时间戳(us)
+		uint64_t stamp = static_cast<uint64_t>(buf[i * dataLen]);
+		int isRun = static_cast<int>(buf[i * dataLen + 1]);
+		std::vector<float> tmp = std::vector<float>(buf.begin() + i * dataLen + 2, buf.begin() + (i + 1) * dataLen);
 		// 姿态转换
 		cpos_base_to_world(tmp);
-		// 姿态分量角度转弧度
-		tmp[3] *= DT_PI / 180;
+		// 姿态分量角度转弧度, AC互换
+		double swap = tmp[3];
+		tmp[3] = tmp[5] * DT_PI / 180;
 		tmp[4] *= DT_PI / 180;
-		tmp[5] *= DT_PI / 180;
-		bufferSync.push_slave_buffer(stamp, isRun, tmp);
+		tmp[5] = swap * DT_PI / 180;
+
+		//bufferSync.push_slave_buffer(stamp, isRun, tmp);
+		motion::BufferUnit tmpBuf(stamp, isRun, tmp);
+		buffer.push_back(tmpBuf);
+	}
+	int dropNum = bufferSync.push_slave_buffer(buffer);
+
+	if (dropNum) {
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "Drop buffer size: " << dropNum);
 	}
 
 	return 0;
@@ -889,14 +911,14 @@ int RobotBase::single_axis_enable(bool enable, int axis) {
 
 int RobotBase::synchronize_slave_buffer(uint64_t& masterStamp, uint64_t& slaveStamp) {
 
-	// 获取当前下位机时间戳
+	// 获取当前下位机时间戳(ms->us)
 	float data;
 	ZController->get_axis_param(0, "TICKS", data);
-	slaveStamp = static_cast<uint64_t>(-data);
+	slaveStamp = static_cast<uint64_t>(-data) * 1000;
 
-	// 上位机时间戳
+	// 上位机时间戳(us)
 	auto start = std::chrono::steady_clock::now();
-	masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count();
+	masterStamp = std::chrono::duration_cast<std::chrono::microseconds>(start.time_since_epoch()).count();
 
 	// 时间戳同步
 	bufferSync.stamp_synchronize(start, slaveStamp);
@@ -905,7 +927,17 @@ int RobotBase::synchronize_slave_buffer(uint64_t& masterStamp, uint64_t& slaveSt
 }
 
 int RobotBase::pop_slave_buffer(std::vector<motion::BufferUnit>& buffer, bool popFlag, int num) {
-	return bufferSync.pop_new_buffer(buffer, popFlag, num);
+
+	int ans = bufferSync.pop_new_buffer(buffer, popFlag, num);
+
+	if (buffer.size()) {
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "Pop Slave Buffer " << buffer.size() << ": " << buffer[0].timeStamp << ", " << vector_to_string(buffer[0].dpos));
+	}
+	else {
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "Slave Buffer Empty");
+	}
+
+	return ans;
 }
 
 /* *************************** RobotGroupManager *************************** */
@@ -1349,6 +1381,7 @@ void RobotGroupManager::readSlaveBufferThread() {
 			return;
 		}
 
+
 		// 设置下次唤醒时间
 		wakeUpTime += std::chrono::milliseconds(duration);
 		auto now = std::chrono::steady_clock::now();
@@ -1356,7 +1389,7 @@ void RobotGroupManager::readSlaveBufferThread() {
 		// 周期时间耗尽
 		if (now > wakeUpTime) {
 			auto detTime = now - wakeUpTime;
-			LOG4CPLUS_INFO(RobotLog::getLogger(), "Cycle time exausted:" << std::chrono::duration_cast<std::chrono::milliseconds>(detTime).count());
+			//LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread Cycle time exausted:" << std::chrono::duration_cast<std::chrono::milliseconds>(detTime).count());
 			while (now > wakeUpTime)
 				wakeUpTime += std::chrono::milliseconds(duration);
 		}
@@ -1381,6 +1414,8 @@ int RobotGroupManager::slave_buffer_stream(bool enable) {
 	}
 	else {
 		bufferThreadDone.store(true);
+
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread End.");
 	}
 	return 0;
 }

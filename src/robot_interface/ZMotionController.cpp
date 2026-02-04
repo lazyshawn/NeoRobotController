@@ -513,6 +513,14 @@ int Controller::get_register(int start, int numes, std::vector<float>& pfValue, 
 	return 0;
 }
 
+int Controller::get_register_double(int start, int numes, std::vector<double>& pfValue) {
+	pfValue = std::vector<double>(numes, 0);
+
+	int ret = ZAux_Direct_GetTableDouble(handle, start, numes, pfValue.data());
+
+	return ret;
+}
+
 int Controller::set_register(int start, const std::vector<float>& pfValue, int type) {
 	if (type == 0) {
 		ZAux_Direct_SetTable(handle, start, pfValue.size(), const_cast<float*>(pfValue.data()));

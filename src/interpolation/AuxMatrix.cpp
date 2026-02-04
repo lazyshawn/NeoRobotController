@@ -202,16 +202,16 @@ MatrixXd *matrix_from_array(int rows, int cols, const double *val, int num) {
 		return NULL;
 	}
 
+	// 实际使用元素个数
+	int replace = rows * cols;
+	if (num > 0 && num < replace)
+		replace = num;
+
 	int idx = 0;
 	for (int i = 0; i < q->rows; ++i) {
 		for (int j = 0; j < q->cols; ++j) {
-			if (num > 0 && idx < num) {
-				q->data[i*q->cols + j] = val[idx];
-			}
-			else {
-				// 剩余元素用0填充
-				q->data[i*q->cols + j] = 0.0;
-			}
+			// 剩余元素用0填充
+			q->data[i*q->cols + j] = (idx < replace) ? val[idx] : 0.0;
 			idx++;
 		}
 	}
@@ -322,6 +322,17 @@ int matrix_set_block(MatrixXd *matA, int row, int col, const MatrixXd *matB) {
 			matrix_set(matA, row + i, col + k, tmp);
 		}
 	}
+	return 0;
+}
+
+// 矩阵乘常量
+int matrix_scale(MatrixXd* q, double scale) {
+	for (int i = 0; i < q->rows; ++i) {
+		for (int j = 0; j < q->cols; ++j) {
+			q->data[i*q->cols + j] *= scale;
+		}
+	}
+
 	return 0;
 }
 

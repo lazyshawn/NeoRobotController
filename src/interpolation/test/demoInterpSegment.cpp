@@ -51,7 +51,7 @@ int main() {
 		dpos = dispatcherState.dpos;
 
 		if (dispatcherState.interpState % 2 == 1) {
-			file << dpos.rbtPos[0] << std::endl;
+			file << dpos.rbtPos[0] << ", " << dpos.rbtPos[1] << ", " << dpos.rbtPos[2] << std::endl;
 		}
 	}
 
@@ -69,21 +69,39 @@ int push_trajectory() {
 	pointInfo.endPos.rbtPos = std::vector<double>(6, 0.0);
 	motionCfg.moveType = 1;
 	motionCfg.speed = 5;
-	motionCfg.smooth = 100;
+	motionCfg.smooth = 0;
 
 	// 开始信号使能
 	dispatcher.interp_enable(true);
 
 	// 点位指令插入缓存区
-	for (int i = 0; i < 15; ++i) {
-		while (!interpBuffer.buffer_ready()) {
-			// 等待
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		}
-		pointInfo.begPos = pointInfo.endPos;
-		pointInfo.endPos.rbtPos[0] += 10/* * pow(-1, i)*/;
-		interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[0] += 10;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[1] += 10;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[0] -= 10;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[1] -= 10;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	return 0;
 }

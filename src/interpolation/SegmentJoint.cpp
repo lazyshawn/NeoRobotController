@@ -82,6 +82,7 @@ int JointInterpSegment::move(PosData& pos) {
 	}
 
 	// - 插补状态更新
+	// 运动比例
 	interpInfo.schedule = ratio;
 	// 当前目标位置
 	interpInfo.dpos = pos;

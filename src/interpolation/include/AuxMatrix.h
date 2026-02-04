@@ -44,7 +44,7 @@ extern "C" {
 	* @param  rows    矩阵行数
 	* @param  cols    矩阵列数
 	* @param  val     初始化数组
-	* @param  num     使用num个数组元素初始化，剩余的用0补全. -1: 全部使用数组元素初始化
+	* @param  num     使用num个数组元素初始化，不足的用0补全. -1: 全部使用数组元素初始化
 	* @return 矩阵指针
 	*/
 	MatrixXd *matrix_from_array(int rows, int cols, const double *val, int num);
@@ -73,6 +73,9 @@ extern "C" {
 	int matrix_set_block(MatrixXd *matA, int row, int col, const MatrixXd *matB);
 
 	// 矩阵行列式
+
+	// 矩阵乘常量
+	int matrix_scale(MatrixXd* q, double scale);
 
 	// 矩阵乘法
 	int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans);
