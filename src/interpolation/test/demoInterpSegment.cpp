@@ -69,10 +69,8 @@ int push_trajectory() {
 	pointInfo.endPos.rbtPos = std::vector<double>(6, 0.0);
 	motionCfg.moveType = 1;
 	motionCfg.speed = 5;
-	motionCfg.smooth = 0;
+	motionCfg.smooth = 50;
 
-	// 开始信号使能
-	dispatcher.interp_enable(true);
 
 	// 点位指令插入缓存区
 	while (!interpBuffer.buffer_ready()) {
@@ -103,6 +101,8 @@ int push_trajectory() {
 	pointInfo.endPos.rbtPos[1] -= 10;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
+	// 开始信号使能
+	dispatcher.interp_enable(true);
 	return 0;
 }
 

@@ -72,10 +72,18 @@ extern "C" {
 	// 设置矩阵块
 	int matrix_set_block(MatrixXd *matA, int row, int col, const MatrixXd *matB);
 
+	// --- 矩阵校验
+	// 矩阵大小校验
+	int matrix_same_size(MatrixXd *mat1, MatrixXd *mat2);
+
+	// --- 基础矩阵运算
 	// 矩阵行列式
 
 	// 矩阵乘常量
-	int matrix_scale(MatrixXd* q, double scale);
+	int matrix_scale(MatrixXd *q, double scale);
+	
+	// 矩阵加减法
+	int matrix_plus(double k1, MatrixXd *mat1, double k2, MatrixXd *mat2, MatrixXd *ans);
 
 	// 矩阵乘法
 	int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans);

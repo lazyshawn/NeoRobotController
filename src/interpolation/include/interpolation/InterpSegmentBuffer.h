@@ -14,12 +14,25 @@ class InterpBuffer {
 	std::vector<std::shared_ptr<InterpSegment>> interpBuf;
 	//! 缓冲容量(N)
 	int maxBufNum;
-	//! 缓存起点索引, 当前正在插补的轨迹编号, [0,N)
+	//! 缓存起点编号, 当前正在插补的轨迹编号, [0,...]
 	int bufBeg;
-	//! 缓存终点索引, 缓冲队尾的轨迹编号, [beg, beg+N)
+	//! 缓存终点编号, 下一条写入缓冲的轨迹编号, (beg, beg+N]
 	int bufEnd;
 	//! 队尾缓冲正在使用标识符
 	bool bufOccupied = false;
+
+	// 获取相邻的轨迹索引 [0,N)
+	int get_neighbor_index(int *pre, int *cur, int *next);
+
+	// 关节轨迹处理
+	int joint_prehandle();
+	int joint_plane();
+	int joint_move();
+
+	// 空间轨迹处理
+	int cartesian_prehandle();
+	int cartesian_plane();
+	int cartesian_move();
 
 public:
 	InterpBuffer();
@@ -53,6 +66,7 @@ public:
 
 	// 获取指定行号的轨迹类型
 	InterpSegmentType get_segment_type(int bufNum);
+
 
 	/**
 	* @brief  执行轨迹插补, 每段轨迹第一点自动规划并插补

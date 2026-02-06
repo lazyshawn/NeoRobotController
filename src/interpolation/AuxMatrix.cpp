@@ -281,6 +281,13 @@ int matrix_get(const MatrixXd *mat, int row, int col, double *ans) {
 
 	return 0;
 }
+double matrix_at(const MatrixXd *mat, int row, int col) {
+	// 索引越界
+	if (mat->rows - row < 0 || mat->cols - col < 0)
+		return 0.0;
+
+	return mat->data[row*mat->cols + col];
+}
 
 // 设置元素
 int matrix_set(MatrixXd *mat, int row, int col, double val) {
@@ -325,11 +332,49 @@ int matrix_set_block(MatrixXd *matA, int row, int col, const MatrixXd *matB) {
 	return 0;
 }
 
+
+// --- 矩阵校验
+// 矩阵大小校验
+int matrix_same_size(MatrixXd *mat1, MatrixXd *mat2) {
+	return (mat1->cols - mat2->cols == 0 && mat1->rows - mat2->rows == 0);
+}
+
+// --- 基础矩阵运算
 // 矩阵乘常量
 int matrix_scale(MatrixXd* q, double scale) {
 	for (int i = 0; i < q->rows; ++i) {
 		for (int j = 0; j < q->cols; ++j) {
 			q->data[i*q->cols + j] *= scale;
+		}
+	}
+
+	return 0;
+}
+
+// 矩阵加减法
+int matrix_plus(double k1, MatrixXd *mat1, double k2, MatrixXd *mat2, MatrixXd *ans) {
+	// 矩阵大小校验
+	if (!matrix_same_size(ans, mat1) || !matrix_same_size(ans, mat2))
+		return 1;
+
+	for (int i = 0; i < ans->rows; ++i) {
+		for (int j = 0; j < ans->cols; ++j) {
+			ans->data[i*ans->cols + j] = k1 * mat1->data[i*mat1->cols + j] + k2 * mat2->data[i*mat2->cols + j];
+		}
+	}
+
+	return 0;
+}
+
+// 矩阵减法
+int matrix_minus(MatrixXd *mat1, MatrixXd *mat2, MatrixXd *ans) {
+	// 矩阵大小校验
+	if (!matrix_same_size(ans, mat1) || !matrix_same_size(ans, mat2))
+		return 1;
+
+	for (int i = 0; i < ans->rows; ++i) {
+		for (int j = 0; j < ans->cols; ++j) {
+			ans->data[i*ans->cols + j] = mat1->data[i*mat1->cols + j] - mat2->data[i*mat2->cols + j];
 		}
 	}
 

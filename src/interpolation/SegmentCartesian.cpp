@@ -41,7 +41,7 @@ int CartesianInterpSegment::prehandle(InterpSegment& pre) {
 		procInfo.preSmooth = pre.motionCfg.smooth;
 	}
 
-	// --- 计算平滑控制点
+	// --- 计算当前段前平滑控制点，前一段后平滑控制点
 	if (procInfo.preSmooth > 0) {
 		double distPre = pre.procInfo.dist * 0.5;
 		double distCur = procInfo.dist * 0.5;
@@ -53,21 +53,40 @@ int CartesianInterpSegment::prehandle(InterpSegment& pre) {
 		// 前段后平滑
 		pre.procInfo.postSmoothK = 1.0 - smoothDist / pre.procInfo.dist;
 
-		//// 直线拐点位置
-		//MatrixXd *corner = matrix_from_array(3, 1, pointInfo.begPos.rbtPos.data, 3);
-		//// 始末点切线方向
-		//MatrixXd *preDir = matrix_from_array(3, 1, pre.procInfo.dir, 3);
-		//MatrixXd *postDir = matrix_from_array(3, 1, procInfo.dir, 3);
-		//// 计算当前段控制点
-		//MatrixXd *preDet = matrix_copy(preDir);
-		//MatrixXd *bezier5 = matrix_from_array(3, 1, pointInfo.endPos.rbtPos.data, 3);
+		// 直线拐点位置
+		MatrixXd *corner = matrix_from_array(3, 1, pointInfo.begPos.rbtPos.data(), 3);
+		// 始末点切线方向
+		MatrixXd *preDir = matrix_from_array(3, 1, pre.procInfo.dir, 3);
+		MatrixXd *curDir = matrix_from_array(3, 1, procInfo.dir, 3);
+		// 计算当前段前平滑控制点
+		MatrixXd *ctrl = matrix_copy(corner);
+		double detK = 1.0 / 3;
+		for (int i = 0; i < 3; ++i) {
+			// 前半段 (u: 0 -> 0.5)
+			matrix_plus(1, corner, -(1.0 - detK * i) * smoothDist, preDir, ctrl);
+			matrix_to_array(ctrl, procInfo.preCtrlPnt[i], 3);
+			// 后半段 (u: 1 -> 0.5)
+			matrix_plus(1, corner, (1.0 - detK * i) * smoothDist, curDir, ctrl);
+			matrix_to_array(ctrl, procInfo.preCtrlPnt[5 - i], 3);
+		}
+		// 前段后平滑控制点
+		memcpy(pre.procInfo.postCtrlPnt, procInfo.preCtrlPnt, 18 * sizeof(double));
+
+		matrix_delete(preDir);
+		matrix_delete(curDir);
+		matrix_delete(ctrl);
 	}
 
 	// --- 计算规划段长度
-	// 前平滑曲线长度
+	// 前平滑曲线长度 (前平滑曲线长度在前平滑曲线插补完后重新计算，因为会有一定的误差，影响过渡到直线的速度计算)
+	procInfo.preBlendDist = bezier_dist(5, procInfo.preCtrlPnt, 0.5, 1, 1000);
 	// 无平滑段长度
-	// 后平滑曲线长度
+	procInfo.mainDist = procInfo.dist * (1.0 - procInfo.preSmoothK);
+	procInfo.postBlendDist = 0.0;
 
+	// 后平滑曲线长度
+	pre.procInfo.postBlendDist = procInfo.preBlendDist;
+	pre.procInfo.mainDist = pre.procInfo.dist * (pre.procInfo.postSmoothK - pre.procInfo.preSmoothK);
 
 	// - 预处理完毕
 	procInfo.processed = true;
@@ -80,24 +99,11 @@ int CartesianInterpSegment::plan(InterpSegment& pre, InterpSegment& next) {
 
 	// - 插补曲线规划
 	// 当前段曲线规划
-	curve.set_condition(0, procInfo.dist, 0, 0);
+	curve.set_condition(0, procInfo.preBlendDist + procInfo.mainDist + procInfo.postBlendDist, 0, 0);
 	curve.plan();
 
 	double moveEndTime = 0.0;
-	// 有平滑，且下一段轨迹已插入
-	if (motionCfg.smooth > 0 && next.procInfo.processed) {
-		// 下一段曲线规划
-		DoubleSCurve nextCurve;
-		nextCurve.set_condition(next.pointInfo.begPos.rbtPos[0], next.pointInfo.endPos.rbtPos[0], 0, 0);
-		nextCurve.plan();
-
-		// 当前段结束时间即平滑开始时间
-		double smoothTime = std::min(nextCurve.get_Ta(), curve.get_Td()) * motionCfg.smooth / 100.0;
-		moveEndTime = curve.get_duration() - smoothTime;
-	}
-	else {
-		moveEndTime = curve.get_duration();
-	}
+	moveEndTime = curve.get_duration();
 
 	// 有前平滑，保存前段插补曲线
 	if (procInfo.preSmooth > 0) {
@@ -125,12 +131,42 @@ int CartesianInterpSegment::move(PosData& pos) {
 	// 当前时间位移
 	double curS = curve.get_pos(curTime);
 	// 当前插补比例
-	double ratio = curS / procInfo.dist;
+	double ratio = curS / (procInfo.preBlendDist + procInfo.mainDist + procInfo.postBlendDist);
 
+	// 当前曲线参数，离开平滑段后复位
+	double curU = 0.0;
 	// 计算当前位置
 	pos.rbtPos = pointInfo.begPos.rbtPos;
-	for (int i = 0; i < 3; ++i) {
-		pos.rbtPos[i] = pointInfo.begPos.rbtPos[i] * (1.0 - ratio) + pointInfo.endPos.rbtPos[i] * ratio;
+	// 前平滑段
+	if (procInfo.preSmooth > 0 && curS < procInfo.preBlendDist) {
+		double curPos[3];
+		curU = bezier_interp(5, procInfo.preCtrlPnt, interpInfo.curU, curS - interpInfo.curS);
+		bezier_positioin(5, procInfo.preCtrlPnt, curU, curPos);
+
+		for (int i = 0; i < 3; ++i) {
+			pos.rbtPos[i] = curPos[i];
+		}
+	}
+	// 后平滑段
+	else if (procInfo.postSmooth > 0 && curS > procInfo.preBlendDist + procInfo.mainDist) {
+		double dis = curS - procInfo.preBlendDist - procInfo.mainDist;
+
+		double curPos[3];
+		curU = bezier_interp(5, procInfo.postCtrlPnt, interpInfo.curU, curS - interpInfo.curS);
+		bezier_positioin(5, procInfo.postCtrlPnt, curU, curPos);
+
+		for (int i = 0; i < 3; ++i) {
+			pos.rbtPos[i] = curPos[i];
+		}
+	}
+	// 无平滑段
+	else {
+		//基于实际走的S和曲线计算的S偏差重新计算 `前平滑段长度`
+
+		double dis = curS - procInfo.preBlendDist + procInfo.preSmoothK * procInfo.dist;
+		for (int i = 0; i < 3; ++i) {
+			pos.rbtPos[i] = pointInfo.begPos.rbtPos[i] * (1.0 - dis / procInfo.dist) + pointInfo.endPos.rbtPos[i] * dis / procInfo.dist;
+		}
 	}
 
 	// - 插补状态更新
@@ -138,9 +174,15 @@ int CartesianInterpSegment::move(PosData& pos) {
 	interpInfo.schedule = ratio;
 	// 当前目标位置
 	interpInfo.dpos = pos;
+	interpInfo.curS = curS;
+	interpInfo.curU = curU;
 
 	// 插补完成
-	interpInfo.finish = (curTime > procInfo.maxTime);
+	if (curTime > procInfo.maxTime) {
+		interpInfo.finish = true;
+		// 下一段从当前距离开始
+	}
+	//interpInfo.finish = (curTime > procInfo.maxTime);
 
 	// 插补时间累加
 	curTime += cycleTime;

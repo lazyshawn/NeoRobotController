@@ -86,14 +86,22 @@ struct PreProcessInfo {
 	double dist;
 
 	// 前平滑开始处比例
-	double preSmoothK;
+	double preSmoothK = 0.0;
 	// 后平滑开始处比例
-	double postSmoothK;
+	double postSmoothK = 1.0;
+
+	// 控制点顺序与轨迹方向相同
+	// ... ---- *-*-*- ... + ... -*-*-* ---- ... ---- *-*-*- ... + ... -*-*-* ---- ...
+	//     post 0 1 2      |      0 1 2 pre      post 0 1 2      |      0 1 2 pre
+	// 前段轨迹            | 当前轨迹                            | 下段轨迹
+	// 后平滑3个点         | 前平滑的3个点       后平滑3个点     | 前平滑3个点
 
 	// 前平滑控制点
-	double preCtrlPnt[3][3];
+	double preCtrlPnt[6][3];
 	// 后平滑控制点
-	double postCtrlPnt[3][3];
+	double postCtrlPnt[6][3];
+	// 规划段长度
+	double mainDist, preBlendDist, postBlendDist;
 
 	void reset();
 };
@@ -105,6 +113,10 @@ struct InterpInfo {
 	bool finish = false;
 	//! 插补比列
 	double schedule = 0.0;
+	//! 当前参数(贝塞尔曲线)
+	double curU = 0.0;
+	//! 当前位移
+	double curS = 0.0;
 	//! 当前周期目标位置
 	PosData dpos;
 
@@ -153,3 +165,30 @@ public:
 	virtual double get_current_time() = 0;
 };
 
+
+
+/***********************************************************************
+ *                        B E Z I E R                                  *
+ * ------------------------------------------------------------------- *
+ * @brief 贝塞尔曲线辅助函数                                           *
+ * @param  m      曲线阶数                                             *
+ * @param  ctr    曲线控制点(m+1)                                      *
+ ***********************************************************************/
+
+ /******************************************
+ @brief  贝塞尔曲线插值
+ @param  u      待获取点位的参数值
+ @param  ans    [out] 目标点位
+ ******************************************/
+int bezier_positioin(int m, const double ctr[][3], double u, double ans[3]);
+
+double bezier_derivatives(int m, const double ctr[][3], double u, double ans[3]);
+
+double bezier_dist(int m, const double ctr[][3], double a, double b, int n);
+
+/******************************************
+@brief  贝塞尔曲线插值
+@param  curU   待获取点位的参数值
+@param  detS   步进距离，需要足够小(detS << dist)
+******************************************/
+double bezier_interp(int m, const double ctr[][3], double curU, double detS);

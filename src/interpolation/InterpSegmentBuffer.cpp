@@ -35,9 +35,8 @@ int InterpBuffer::add_move_point(const PointInfo& point, const MotionCfg& cfg, c
 	}
 
 	// 轨迹写入位置
-	int curBuf = bufEnd % maxBufNum;
-	int preBuf = (curBuf - 1) < 0 ? maxBufNum - 1 : curBuf - 1;
-	int nextBuf = (bufEnd + 1) % maxBufNum;
+	int curBuf = bufEnd, nextBuf, preBuf;
+	get_neighbor_index(&preBuf, &bufEnd, &nextBuf);
 
 	// 写入位置行号为非负，表示点位未执行完毕，不插入点位
 	if (interpBuf[curBuf]->procInfo.lineNum >= 0) {
@@ -122,11 +121,19 @@ InterpSegmentType InterpBuffer::get_segment_type(int bufNum) {
 	return type;
 }
 
+// 获取相邻的轨迹索引 [0,N)
+int InterpBuffer::get_neighbor_index(int *pre, int *cur, int *next) {
+	*next = (*cur + 1) % maxBufNum;
+	*pre = (*cur - 1) < 0 ? maxBufNum - 1 : *cur - 1;
+	*cur = *cur % maxBufNum;
+
+	return 0;
+}
+
 // 执行轨迹插补
 int InterpBuffer::move(PosData& pos) {
-	int num = bufBeg % maxBufNum;
-	int next = (bufBeg + 1) % maxBufNum;
-	int pre = (num - 1) < 0 ? maxBufNum - 1 : num - 1;
+	int num = bufBeg, next, pre;
+	get_neighbor_index(&pre, &num, &next);
 
 	// 如果是新轨迹则进行规划
 	if (interpBuf[num]->procInfo.processed && interpBuf[num]->procInfo.maxTime < dim_EPS) {
@@ -134,6 +141,10 @@ int InterpBuffer::move(PosData& pos) {
 	}
 
 	// - 执行插补
+	if (interpBuf[num]->motionCfg.moveType == 0) {
+	}
+	else if (interpBuf[num]->motionCfg.moveType == 0) {
+	}
 	interpBuf[num]->move(pos);
 
 	// - 插补结果处理
@@ -143,3 +154,24 @@ int InterpBuffer::move(PosData& pos) {
 	return finish;
 }
 
+
+
+int InterpBuffer::joint_prehandle() {
+	return 0;
+}
+int InterpBuffer::joint_plane() {
+	return 0;
+}
+int InterpBuffer::joint_move() {
+	return 0;
+}
+
+int InterpBuffer::cartesian_prehandle() {
+	return 0;
+}
+int InterpBuffer::cartesian_plane() {
+	return 0;
+}
+int InterpBuffer::cartesian_move() {
+	return 0;
+}
