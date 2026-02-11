@@ -9,23 +9,23 @@
 #include "interpolation/InterpSegment.h"
 
 // 关节空间插补线段
-class JointInterpSegment : public InterpSegment {
-
-public:
-	//! 各轴插补的 S 曲线
-	DoubleSCurve curve;
-	DoubleSCurve curvePre;
-
-	// 预处理
-	virtual int prehandle(InterpSegment& pre) override;
-	// 规划
-	int plan(InterpSegment& pre, InterpSegment& next) override;
-	// 插补
-	int move(PosData& pos) override;
-	// 停止规划
-	int stop_plan() override;
-	// 重置
-	int reset() override;
-	// 获取当前时间
-	double get_current_time() override;
-};
+//class JointInterpSegment : public InterpSegment {
+//
+//public:
+//	//! 各轴插补的 S 曲线
+//	DoubleSCurve curve;
+//	DoubleSCurve curvePre;
+//
+//	// 预处理
+//	virtual int prehandle(InterpSegment& pre) override;
+//	// 规划
+//	int plan(InterpSegment& pre, InterpSegment& next) override;
+//	// 插补
+//	int move(PosData& pos) override;
+//	// 停止规划
+//	int stop_plan() override;
+//	// 重置
+//	int reset() override;
+//	// 获取当前时间
+//	double get_current_time() override;
+//};

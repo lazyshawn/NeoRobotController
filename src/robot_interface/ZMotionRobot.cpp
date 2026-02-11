@@ -218,6 +218,22 @@ int ZMotionRobot::moveCABS(const std::vector<int>& axis, const std::vector<float
 	return ZController->sendCmd(cmdbuff, cmdbuffAck);
 }
 
+int ZMotionRobot::move_compensate(const std::vector<float>& det) {
+	// 轨迹点维度与驱动轴维度的较小值
+	size_t num = 3;
+
+	int base = robotId * 32;
+	std::vector<int> axis = { base + 15,base + 16,base + 17 };
+
+	// 计算相对值
+	std::vector<float> relEndMove(num, 0);
+	for (int i = 0; i < num; ++i) {
+		relEndMove[i] = det[i];
+	}
+
+	return ZController->move(axis, relEndMove, 1);
+}
+
 int ZMotionRobot::set_manual_speed(float ratio) {
 
 	int stateIdxBase = get_state_idx_base();
@@ -541,7 +557,8 @@ int ZMotionRobot::execute_single_joint() {
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveJABS: " << vector_to_string(pnt));
 	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 		<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
-		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : ""));
+		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")
+		<< ", notifyEnable: " << curTraj.notifyEnable);
 
 	// 开始记录位置
 	save_task_status(true, axis[0]);
@@ -637,7 +654,7 @@ int ZMotionRobot::execute_single_cartesian() {
 		<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
 		<< (correctSpeed > 0 ? ", correct: " + std::to_string(correctSpeed) : "")    // 速度修正
 		<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // 轴掩码
-		<< ". traj dist: " << trajectory.get_dist() << ", " << detOri
+		<< ". traj dist: " << trajectory.get_dist() << ", " << detOri << ", notifyEnable: " << curTraj.notifyEnable
 	);
 
 	// 轨迹点维度与驱动轴维度的较小值

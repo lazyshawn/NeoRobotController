@@ -62,7 +62,9 @@ struct MoveCmd {
 
 };
 
-// 预处理信息: 接收轨迹信息时，需要根据前置或后置轨迹获取的信息
+// 预处理信息
+// 1. 接收轨迹信息时，需要根据前置或后置轨迹获取的信息
+// 2. 规划时补充或修改的信息
 struct PreProcessInfo {
 	// 预处理完毕标志
 	bool processed = false;
@@ -90,32 +92,39 @@ struct PreProcessInfo {
 	// 后平滑开始处比例
 	double postSmoothK = 1.0;
 
-	// 控制点顺序与轨迹方向相同
-	// ... ---- *-*-*- ... + ... -*-*-* ---- ... ---- *-*-*- ... + ... -*-*-* ---- ...
-	//     post 0 1 2      |      0 1 2 pre      post 0 1 2      |      0 1 2 pre
-	// 前段轨迹            | 当前轨迹                            | 下段轨迹
-	// 后平滑3个点         | 前平滑的3个点       后平滑3个点     | 前平滑3个点
+	// 控制点顺序与轨迹方向相同: + 轨迹点, * 平滑曲线控制点
+	// + ... ---- *-*-*- ... + ... -*-*-* ---- ... ---- *-*-*- ... + ... -*-*-* ---- ... +
+	//     post 0 1 2        |      0 1 2 pre      post 0 1 2      |      0 1 2 pre
+	// 前段轨迹              | 当前轨迹                            | 下段轨迹
+	// 后平滑3个点           | 前平滑的3个点       后平滑3个点     | 前平滑3个点
 
-	// 前平滑控制点
+	//! 前平滑控制点
 	double preCtrlPnt[6][3];
-	// 后平滑控制点
+	//! 后平滑控制点
 	double postCtrlPnt[6][3];
-	// 规划段长度
+	//! 规划段长度
 	double mainDist, preBlendDist, postBlendDist;
+	//! 剩余距离
+	double remainS = 0.0;
+	//! 结束点速度
+	double constrainedVel;
+
+	//! 直线段始末位置
+	double segmBegDist, segmEndDist;
 
 	void reset();
 };
 
-// 插补状态
+// 插补状态(可能需要输出的状态)
 struct InterpInfo {
 	// --- 过程状态
-	//! 插补完成
-	bool finish = false;
+	//! 插补轨迹位置: 完成(-1), 未开始(0)，前平滑，无平滑，后平滑
+	int partId;
 	//! 插补比列
 	double schedule = 0.0;
 	//! 当前参数(贝塞尔曲线)
 	double curU = 0.0;
-	//! 当前位移
+	//! 当前速度曲线规划的位移
 	double curS = 0.0;
 	//! 当前周期目标位置
 	PosData dpos;
@@ -125,17 +134,26 @@ struct InterpInfo {
 
 	//! 结束点速度
 
+	//! 结束点位置
+	double doneU = 0.0;
+	double doneS = 0.0;
 };
 
 // 插补线段基类
 class InterpSegment {
 protected:
 	// 插补周期(s)
-	double cycleTime = 4e-3;
-	// 当前插补时间，同一次前瞻的轨迹中从零开始计数，插补一次叠加一次插补周期的时间
-	double curTime;
+	//double cycleTime = 4e-3;
 
 public:
+
+	// 当前插补时间，同一次前瞻的轨迹中从零开始计数，插补一次叠加一次插补周期的时间
+	double curTime = 0;
+
+	//! 各轴插补的 S 曲线
+	DoubleSCurve curve;
+	DoubleSCurve curvePre;
+
 	// 轨迹数据
 	PointInfo pointInfo;
 	MotionCfg motionCfg;
@@ -150,19 +168,19 @@ public:
 	// 设置轨迹数据
 	int set_data(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd);
 
-	// - 虚函数
-	// 预处理: 插入点位时执行
-	virtual int prehandle(InterpSegment& pre) = 0;
-	// 规划: 插补开始前执行，同时输出第一个插补点
-	virtual int plan(InterpSegment& pre, InterpSegment& next) = 0;
-	// 插补: 插补点位
-	virtual int move(PosData& pos) = 0;
-	// 停止规划: 修改插补规划
-	virtual int stop_plan() = 0;
-	// 重置
-	virtual int reset() = 0;
-	// 获取当前时间
-	virtual double get_current_time() = 0;
+	//// - 虚函数
+	//// 预处理: 插入点位时执行
+	//virtual int prehandle(InterpSegment& pre) = 0;
+	//// 规划: 插补开始前执行，同时输出第一个插补点
+	//virtual int plan(InterpSegment& pre, InterpSegment& next) = 0;
+	//// 插补: 插补点位
+	//virtual int move(PosData& pos) = 0;
+	//// 停止规划: 修改插补规划
+	//virtual int stop_plan() = 0;
+	//// 重置
+	//virtual int reset() = 0;
+	//// 获取当前时间
+	//virtual double get_current_time() = 0;
 };
 
 

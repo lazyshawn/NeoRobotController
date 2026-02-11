@@ -127,6 +127,6 @@ double bezier_interp(int m, const double ctr[][3], double curU, double detS) {
 		else
 			beg = U;
 	}
-	return 0;
+	return (beg + end) / 2;
 }
 

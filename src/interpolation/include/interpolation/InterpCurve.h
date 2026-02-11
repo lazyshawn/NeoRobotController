@@ -11,7 +11,7 @@
 //双S曲线插补, 七段规划
 class DoubleSCurve {
 	//! 运动学约束
-	double vmax = 10, amax = 10, jmax = 30;
+	double vmax = 2, amax = 5, jmax = 5;
 	double vmin, amin, jmin;
 
 	//! 曲线方向
@@ -23,16 +23,16 @@ class DoubleSCurve {
 	double q0, q1;
 	double v0, v1;
 	//! 不同阶段的时间
-	double Tj1, Tj2, Ta, Tv, Td, T;
+	double Tj1, Tj2, Ta, Tv, Td, T = 0;
 
 	//! 轨迹段最大速度、加速度
 	double alima, alimd, vlim;
 
 	// - 保持规划插补参数
-	//! 完成标识符，保存点位到达终点
-	bool done;
-	//! 当前保存点位
-	double qt;
+	//! 保留时间，剩余时间小于保留时间时视作插补完成
+	double reserveTime = 0.0;
+	//! 完成标识符，上次计算点位到达终点
+	bool doneFlag;
 
 public:
 	// 曲线初始化
@@ -41,6 +41,11 @@ public:
 	* @brief  设置曲线参数
 	*/
 	int set_condition(double begPos, double endPos, double begVel, double endVel);
+	/**
+	* @brief  设置保留时间
+	* @param  time    保留时间(s)
+	*/
+	int set_reserve_time(double time);
 	/**
 	* @brief  曲线规划
 	* @return 规划结果
@@ -60,6 +65,10 @@ public:
 	* 计算给定时间下的曲线位置
 	*/
 	double get_pos(double t);
+	bool done();
+	double get_offset();
+
+
 	/**
 	* @brief  曲线缩放与偏移
 	* @param  dt  时间偏移，正值曲线左移，负值曲线右移
@@ -68,6 +77,13 @@ public:
 	* tn = k*t + dt，先缩放再偏移
 	*/
 	int displacement(double dt, double k);
+	/**
+	* @brief  计算整数插补周期后的剩余距离
+	* @param  dt  单个插补周期的时间
+	*/
+	double get_remain_dist(double dt);
+
+
 	/**
 	* @brief  更新保存点位
 	* @param  t   目标时间

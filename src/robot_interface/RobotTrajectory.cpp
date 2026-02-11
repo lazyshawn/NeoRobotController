@@ -397,6 +397,7 @@ void SingleTrajectory::set_config(const TrajectoryConfig& cfg) {
 	smooth = cfg.smooth;
 	moveInBase = cfg.moveInBase;
 	axisMask = cfg.axisMask;
+	notifyEnable = cfg.notifyEnable;
 
 	appendix = cfg.appendix;
 }
@@ -407,6 +408,7 @@ TrajectoryConfig SingleTrajectory::get_config() {
 	cfg.smooth = smooth;
 	cfg.moveInBase = moveInBase;
 	cfg.axisMask = axisMask;
+	cfg.notifyEnable = notifyEnable;
 
 	cfg.appendix = appendix;
 

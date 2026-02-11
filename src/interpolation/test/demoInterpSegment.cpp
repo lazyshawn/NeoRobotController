@@ -30,16 +30,19 @@ int test_cuvre();
 int main() {
 	//return test_cuvre();
 
-	std::ofstream file;
-	file.open("interpolation.txt", std::ios::out);
+	std::ofstream file, velFile;
+	file.open("interp_pos.txt", std::ios::out);
+	velFile.open("interp_vel.txt", std::ios::out);
 
 	dpos.pointType = 0;
 	dpos.rbtPos = std::vector<double>(6, 0.0);
+	std::vector<double> dposPre = dpos.rbtPos;
 
 	// 开启插点线程
 	auto pointThreadWorker = std::thread(push_trajectory);
 
 	// 执行插补线程
+	bool interpBeg = false;
 	for (int i=0; ; ++i) {
 		// 传入当前角度
 		dispatcherState.dpos = dpos;
@@ -50,8 +53,22 @@ int main() {
 		// 更新当前角度
 		dpos = dispatcherState.dpos;
 
-		if (dispatcherState.interpState % 2 == 1) {
+		if (interpBeg) {
+			// 位置输出
 			file << dpos.rbtPos[0] << ", " << dpos.rbtPos[1] << ", " << dpos.rbtPos[2] << std::endl;
+			// 速度输出
+			for (int j = 0; j < 3; ++j) {
+				dposPre[j] -= dpos.rbtPos[j];
+			}
+			velFile << sqrt(dposPre[0] * dposPre[0] + dposPre[1] * dposPre[1] + dposPre[2] * dposPre[2]) / interpBuffer.get_cycleTime() << std::endl;
+			dposPre = dpos.rbtPos;
+		}
+
+		if (dispatcherState.interpState % 2 == 1) {
+			interpBeg = true;
+		}
+		else {
+			interpBeg = false;
 		}
 	}
 
@@ -68,7 +85,7 @@ int main() {
 int push_trajectory() {
 	pointInfo.endPos.rbtPos = std::vector<double>(6, 0.0);
 	motionCfg.moveType = 1;
-	motionCfg.speed = 5;
+	motionCfg.speed = 2;
 	motionCfg.smooth = 50;
 
 

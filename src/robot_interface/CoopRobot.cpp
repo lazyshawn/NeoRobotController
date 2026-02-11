@@ -49,6 +49,12 @@ int RobotBase::wait_auto_task_stop() {
 	// 等待条件置反
 	motionDone = false;
 
+	if (get_notifyType() > 0) {
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " notify type effect.");
+		set_notifyType(0);
+		return 1;
+	}
+
 	if (robotStatus.lowerStatus == 0 && trajectory.trajectory_loaded() && robotStatus.lineNum == get_lineNum()) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " wake up and task list empty.");
 	}
@@ -66,9 +72,11 @@ int RobotBase::notify_waiting_robot() {
 	std::lock_guard<std::mutex> lock(mtxMotion);
 	motionDone = true;
 
-	// 清空轨迹
-	//clear_trajectory();
-	trajectory.clear();
+	// 轨迹完成唤醒
+	if (notifyType == 0) {
+		// 清空轨迹
+		trajectory.clear();
+	}
 
 	// 唤醒线程
 	cvMotion.notify_one();
@@ -940,6 +948,37 @@ int RobotBase::pop_slave_buffer(std::vector<motion::BufferUnit>& buffer, bool po
 	return ans;
 }
 
+int RobotBase::modify_point_in_buffer(int id, const std::vector<float>& pos) {
+	// 在轨迹缓冲中查找对应id的轨迹
+	for (auto& traj : trajHistory) {
+		auto cfg = traj.get_config();
+		if (cfg.rewriteId == id) {
+			std::vector<float> planPos = traj.get_mainPoint();
+
+			// 计算偏移量
+			std::vector<float> comp(planPos.size(), 0);
+			for (int i = 0; i < 3; ++i) {
+				comp[i] = pos[i] - planPos[i];
+			}
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " modify point found: " << traj.saveSeq << ". " << vector_to_string(planPos) << ".\n"
+				<< "rewrite to: " << vector_to_string(pos));
+
+			// 偏移量过大
+			if (std::sqrt(comp[0] * comp[0] + comp[1] * comp[1] + comp[2] * comp[2]) > 10) {
+				return 2;
+			}
+
+			// 补偿偏移量
+			move_compensate(comp);
+			return 0;
+		}
+	}
+
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " modify point not found rewriteId: " << id << ". " << vector_to_string(pos));
+	// 未找到匹配轨迹
+	return 1;
+}
+
 /* *************************** RobotGroupManager *************************** */
 RobotGroupManager::RobotGroupManager() {
 	cmdThreadDone = true;
@@ -1305,6 +1344,11 @@ void RobotGroupManager::updateStatusThread() {
 				robotList[i]->notify_waiting_robot();
 				startCmdThread = false;
 				//continue;
+			}
+
+			// 指定轨迹完成唤醒
+			if (robotList[i]->get_notifyType() > 0) {
+				robotList[i]->notify_waiting_robot();
 			}
 
 			// 机器人未异常，指令下发程序，轨迹未下发完成
@@ -1810,6 +1854,11 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << robotIdx << " reach point(" << curTraj.lineNum << ", " <<
 			static_cast<int>(curTraj.get_trajType()) << "): " <<
 			vector_to_string(curTraj.isJoint() ? statusList[robotIdx].jPos : statusList[robotIdx].cPos));
+
+		// 需要唤醒
+		if (curTraj.notifyEnable > 0) {
+			robotList[robotIdx]->set_notifyType(1);
+		}
 
 		// 轨迹完成
 		set_bit(coopState[robotIdx], 5, false);

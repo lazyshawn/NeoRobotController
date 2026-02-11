@@ -28,6 +28,11 @@ int DoubleSCurve::set_condition(double begPos, double endPos, double begVel, dou
 	return 0;
 }
 
+int DoubleSCurve::set_reserve_time(double time) {
+	reserveTime = time;
+	return 0;
+}
+
 int DoubleSCurve::plan() {
 	double Tjs1 = std::sqrt(std::fabs(v1 - v0) / jmax);
 	double Tjs2 = amax / jmax;
@@ -119,8 +124,17 @@ double DoubleSCurve::get_duration() {
 double DoubleSCurve::get_Ta() {
 	return Ta;
 }
+
 double DoubleSCurve::get_Td() {
 	return Td;
+}
+
+bool DoubleSCurve::done() {
+	return doneFlag;
+}
+
+double DoubleSCurve::get_offset() {
+	return offset;
 }
 
 double DoubleSCurve::get_pos(double t) {
@@ -189,6 +203,9 @@ double DoubleSCurve::get_pos(double t) {
 		v = v1;
 	}
 
+	// 插补完成标志
+	doneFlag = t + reserveTime > T;
+
 	q *= sign;
 	v *= sign;
 	a *= sign;
@@ -196,9 +213,14 @@ double DoubleSCurve::get_pos(double t) {
 	return q;
 }
 
-
 int DoubleSCurve::displacement(double dt, double k) {
 	offset = dt;
 	scale = k;
 	return 0;
+}
+
+double DoubleSCurve::get_remain_dist(double dt) {
+	int num = T / dt;
+	double endT = num * dt;
+	return q1 - get_pos(endT);
 }

@@ -375,6 +375,7 @@ namespace FSAIRobotInterface {
 				traj.auxPoint[3] = traj.auxPoint[5];
 				traj.auxPoint[5] = tmp;
 			}
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " notifyEnable = " << traj.notifyEnable);
 		}
 
 		std::unique_lock<std::mutex> lock(mtxMotion);
@@ -572,6 +573,18 @@ namespace FSAIRobotInterface {
 		return 0;
 	}
 
+	int FSAIRobot::move_compensate(const std::vector<float>& det) {
+		int idx = get_cmd_idx_base() + 24102;
+
+		std::vector<int> tableId(4, idx);
+		for (int i = 0; i < tableId.size(); ++idx) {
+			tableId[i] += i;
+		}
+
+		ZController->set_axis_param(tableId, "TABLE", { 1.0, det[0], det[1], det[2] });
+		return 0;
+	}
+
 	/* *************************** 运动设置 *************************** */
 	int FSAIRobot::send_line_num(int axis, const SingleTrajectory &curTraj) {
 
@@ -684,7 +697,8 @@ namespace FSAIRobotInterface {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveJABS: " << vector_to_string(pnt));
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
-			<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : ""));
+			<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")
+			<< ", notifyEnable: " << curTraj.notifyEnable);
 
 		// 开始记录位置
 		save_task_status(true, 1);
@@ -763,7 +777,7 @@ namespace FSAIRobotInterface {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
 			<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // 轴掩码
-			<< ". traj dist: " << trajectory.get_dist()
+			<< ". traj dist: " << trajectory.get_dist() << ", notifyEnable: " << curTraj.notifyEnable
 		);
 
 		// 轨迹点维度与驱动轴维度的较小值

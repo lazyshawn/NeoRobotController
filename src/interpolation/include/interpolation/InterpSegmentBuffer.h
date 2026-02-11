@@ -21,8 +21,13 @@ class InterpBuffer {
 	//! 队尾缓冲正在使用标识符
 	bool bufOccupied = false;
 
+	// 插补周期(s)
+	double cycleTime = 4e-3;
+
 	// 获取相邻的轨迹索引 [0,N)
 	int get_neighbor_index(int *pre, int *cur, int *next);
+	// 获取相邻的轨迹指针, 注意C++中形参的指针是值传递，需要改为指针引用
+	int get_neighbor_buffer(int cur, InterpSegment *&preBuf, InterpSegment *&curBuf, InterpSegment *&nextBuf);
 
 	// 关节轨迹处理
 	int joint_prehandle();
@@ -31,18 +36,20 @@ class InterpBuffer {
 
 	// 空间轨迹处理
 	int cartesian_prehandle();
-	int cartesian_plane();
+	int cartesian_plan();
 	int cartesian_move();
 
 public:
 	InterpBuffer();
 	~InterpBuffer();
 
+	double get_cycleTime();
+
 	// 可以插入轨迹点: 队尾缓冲空闲，缓冲未满, 缓冲队尾行号为负(缓冲未满自动满足)
 	bool buffer_ready();
 
 	/**
-	* @brief  插入点位
+	* @brief  插入点位，并进行预处理
 	* @param  pointInfo    点位信息
 	* @param  motionCfg    基础运动参数
 	* @param  moveCmd      缓冲指令
