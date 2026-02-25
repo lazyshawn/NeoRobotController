@@ -383,8 +383,10 @@ int InterpBuffer::cartesian_plan() {
 	get_neighbor_buffer(bufBeg, preBuf, curBuf, nextBuf);
 
 	// --- 速度规划
+	// 设置规划约束
+	curBuf->curve.set_constraint(curBuf->motionCfg.speed, 10);
 	// 前瞻后溯
-	double vs = 0.0, ve = 0.0;;
+	double vs = 0.0, ve = 0.0;
 	if (curBuf->procInfo.preSmooth > 0) {
 		vs = preBuf->motionCfg.speed / 2;
 	}
@@ -407,7 +409,7 @@ int InterpBuffer::cartesian_plan() {
 
 	// 计算整数倍插补周期后的剩余距离
 	curBuf->procInfo.remainS = curBuf->curve.get_remain_dist(cycleTime);
-
+	curBuf->procInfo.remainT = curBuf->curve.get_remain_time(cycleTime);
 
 	// --- 有前平滑时，获取上一段规划参数
 	if (curBuf->procInfo.preSmooth > 0) {
@@ -418,7 +420,7 @@ int InterpBuffer::cartesian_plan() {
 		// 位置分量不能合并插补，规划段右移，先插补上一条轨迹未完成的部分
 		int shiftNum = ((preBuf->curve.get_duration() - preBuf->curve.get_offset()) - (preBuf->curTime - cycleTime)) / cycleTime;
 		double shiftTime = shiftNum * cycleTime;
-		// 右移整数个周期，少一个周期是为了立刻输出第一个插补点
+		// 右移整数个周期
 		curBuf->curve.displacement(-shiftTime, 1);
 
 		// 前一条轨迹规划曲线左移: 前平滑大于零开始(curve.offset) -> 后平滑从零开始(curTime)
@@ -429,8 +431,8 @@ int InterpBuffer::cartesian_plan() {
 
 	// 有后平滑
 	if (curBuf->procInfo.postSmooth > 0) {
-		// 当前轨迹保留一个周期不插补
-		curBuf->curve.set_reserve_time(cycleTime);
+		// 当前轨迹保留不足一个周期的部分，在下一条轨迹内插补
+		curBuf->curve.set_reserve_time(curBuf->procInfo.remainT);
 	}
 
 	// --- 插补状态复位
@@ -483,7 +485,7 @@ int InterpBuffer::cartesian_move() {
 			curBuf->interpInfo.partId = 1;
 		}
 		double curPos[3];
-		curU = bezier_interp(5, curBuf->procInfo.preCtrlPnt, curBuf->interpInfo.curU, moveS - curBuf->interpInfo.curS);
+		curU = bezier_interp(5, curBuf->procInfo.preCtrlPnt, curBuf->interpInfo.curU, detS);
 		bezier_positioin(5, curBuf->procInfo.preCtrlPnt, curU, curPos);
 
 		for (int i = 0; i < 3; ++i) {
@@ -510,7 +512,7 @@ int InterpBuffer::cartesian_move() {
 		// 后平滑段
 		if (curBuf->procInfo.postSmooth > 0 && moveS > curBuf->procInfo.segmEndDist) {
 			// 后平滑段上的位移增量
-			double dis = moveS - curBuf->interpInfo.curS;
+			double dis = detS;
 
 			if (curBuf->interpInfo.partId != 3) {
 				curBuf->interpInfo.partId = 3;

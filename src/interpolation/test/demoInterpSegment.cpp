@@ -95,6 +95,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[0] += 10;
+	motionCfg.speed = 2;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	while (!interpBuffer.buffer_ready()) {
@@ -102,6 +103,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[1] += 10;
+	motionCfg.speed = 4;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	while (!interpBuffer.buffer_ready()) {
@@ -109,6 +111,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[0] -= 10;
+	motionCfg.speed = 2;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	while (!interpBuffer.buffer_ready()) {
@@ -116,6 +119,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[1] -= 10;
+	motionCfg.speed = 4;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	// 开始信号使能

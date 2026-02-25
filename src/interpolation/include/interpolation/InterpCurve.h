@@ -43,6 +43,7 @@ public:
 	* @brief  设置曲线参数
 	*/
 	int set_condition(double begPos, double endPos, double begVel, double endVel);
+	int set_constraint(double maxVel, double maxAcc);
 	/**
 	* @brief  设置保留时间
 	* @param  time    保留时间(s)
@@ -84,7 +85,7 @@ public:
 	* @param  dt  单个插补周期的时间
 	*/
 	double get_remain_dist(double dt);
-
+	double get_remain_time(double dt);
 
 	/**
 	* @brief  更新保存点位

@@ -28,6 +28,15 @@ int DoubleSCurve::set_condition(double begPos, double endPos, double begVel, dou
 	return 0;
 }
 
+int DoubleSCurve::set_constraint(double maxVel, double maxAcc) {
+	vmax = fabs(maxVel);
+	amax = fabs(maxAcc);
+
+	vmin = -vmax;
+	amin = -amax;
+	return 0;
+}
+
 int DoubleSCurve::set_reserve_time(double time) {
 	reserveTime = time;
 	return 0;
@@ -235,4 +244,10 @@ double DoubleSCurve::get_remain_dist(double dt) {
 	int num = T / dt;
 	double endT = num * dt;
 	return q1 - get_pos(endT);
+}
+
+double DoubleSCurve::get_remain_time(double dt) {
+	int num = T / dt;
+	double endT = num * dt;
+	return T - endT;
 }

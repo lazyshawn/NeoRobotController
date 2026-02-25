@@ -104,8 +104,10 @@ struct PreProcessInfo {
 	double postCtrlPnt[6][3];
 	//! 规划段长度
 	double mainDist, preBlendDist, postBlendDist;
-	//! 剩余距离
+	//! 整数周期插补后的剩余距离
 	double remainS = 0.0;
+	//! 整数周期插补后的剩余时间
+	double remainT = 0.0;
 	//! 结束点速度
 	double constrainedVel;
 
