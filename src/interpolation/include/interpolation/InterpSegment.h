@@ -132,8 +132,7 @@ struct InterpInfo {
 	// --- 结束状态
 	//! 完成时间
 
-	//! 结束点速度
-
+	//! 结束点规划速度
 	//! 结束点位置
 	double doneU = 0.0;
 	double doneS = 0.0;

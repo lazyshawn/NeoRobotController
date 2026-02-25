@@ -113,6 +113,10 @@ int RobotBase::set_ZController(std::shared_ptr<Controller> ZController_, int id)
 	return 0;
 }
 
+std::shared_ptr<Controller> RobotBase::get_ZController() {
+	return ZController;
+}
+
 std::vector<int> RobotBase::get_joint_axis() {
 	int base = robotId * 32;
 	std::vector<int> axis = { base + 0,base + 1,base + 2,base + 3,base + 4,base + 5 };

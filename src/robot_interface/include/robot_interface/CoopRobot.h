@@ -259,6 +259,7 @@ public:
 
 	// 设置控制器句柄
 	int set_ZController(std::shared_ptr<Controller> ZController_, int id = -1);
+	std::shared_ptr<Controller> get_ZController();
 	// 组合轴号
 	std::vector<int> get_composed_axis(const std::vector<std::vector<int>>& axisList);
 	//! 获取保存的机器人状态

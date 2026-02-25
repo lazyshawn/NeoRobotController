@@ -33,6 +33,8 @@ class DoubleSCurve {
 	double reserveTime = 0.0;
 	//! 完成标识符，上次计算点位到达终点
 	bool doneFlag;
+	//! 规划速度
+	double vp = 0.0;
 
 public:
 	// 曲线初始化

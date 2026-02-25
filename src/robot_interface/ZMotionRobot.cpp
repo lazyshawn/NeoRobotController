@@ -73,11 +73,20 @@ int ZMotionRobot::update_rt_robot_status() {
 		tmp.subErrorCode[i] = static_cast<int>(value[i]);
 	}
 
+
 	{
 		// 加锁
 		std::lock_guard<std::mutex> lock(mtxMotion);
 		// 需要保持的状态
-		tmp.upperStatus = robotStatus.upperStatus; 
+		tmp.upperStatus = robotStatus.upperStatus;
+
+		// 机器人未连接，时间戳异常
+		if (std::fabs(tmp.slaveTime) < 1) {
+			set_bit(tmp.upperStatus, 2, 1);
+		}
+		else {
+			set_bit(tmp.upperStatus, 2, 0);
+		}
 	}
 
 	robotStatus = tmp;

@@ -106,6 +106,7 @@ double bezier_interp(int m, const double ctr[][3], double curU, double detS) {
 	bezier_positioin(m, ctr, curU, curPos);
 
 	// 最大迭代次数
+	double lastU = 1.0;
 	for (int i = 0; i < maxIteNum; ++i) {
 		// 中点参数
 		double U = (beg + end) / 2;
@@ -118,7 +119,8 @@ double bezier_interp(int m, const double ctr[][3], double curU, double detS) {
 			itePos[k] -= curPos[k];
 		double dis = sqrt(itePos[0]*itePos[0] + itePos[1] * itePos[1] + itePos[2] * itePos[2]);
 
-		if (fabs(dis - detS) < 1e-5)
+		//if (fabs(dis - detS) < 1e-6)
+		if (fabs(lastU - U) < 1e-2 * U && fabs(dis - detS) < 1e-6)
 			return U;
 
 		// 更新区间端点
@@ -127,6 +129,7 @@ double bezier_interp(int m, const double ctr[][3], double curU, double detS) {
 		else
 			beg = U;
 	}
+
 	return (beg + end) / 2;
 }
 

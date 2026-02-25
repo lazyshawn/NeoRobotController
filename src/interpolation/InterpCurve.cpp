@@ -142,6 +142,15 @@ double DoubleSCurve::get_pos(double t) {
 	// 时间缩放
 	t = t * scale + offset;
 
+	// 插补完成标志
+	if (t + reserveTime > T) {
+		t = T - reserveTime;
+		doneFlag = true;
+	}
+	else {
+		doneFlag = false;
+	}
+
 	double q = q0, v = v0, a = 0.0, j = 0.0;
 	double jmin = -jmax;
 	if (t < 0) {
@@ -204,12 +213,15 @@ double DoubleSCurve::get_pos(double t) {
 	}
 
 	// 插补完成标志
-	doneFlag = t + reserveTime > T;
+	//doneFlag = t + reserveTime > T;
 
 	q *= sign;
 	v *= sign;
 	a *= sign;
 	j *= sign;
+
+	vp = v;
+
 	return q;
 }
 
