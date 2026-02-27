@@ -32,7 +32,7 @@ FIRFilter *firfilter_construct(double* param, int size) {
 		q->ak[0] = 1.0;
 		break;
 	}
-			// 巴特沃斯滤波(当前仅支持二阶)
+	// 巴特沃斯滤波(当前仅支持二阶)
 	case 1: {
 		q->order = 2;
 		double fd = param[2], fs = param[3];
@@ -65,6 +65,7 @@ FIRFilter *firfilter_construct(double* param, int size) {
 
 	q->xt = queue_construct(q->order);
 	q->yt = queue_construct(q->order);
+	q->mean = q->var = 0.0;
 
 	firfilter_clear(q);
 
@@ -118,6 +119,49 @@ double firfilter_process(FIRFilter *q, double sample) {
 
 	queue_push_back(q->xt, sample);
 	queue_push_back(q->yt, ans);
+
+	return ans;
+}
+
+// 计算历史输入均值、方差
+int firfilter_update_statistical(FIRFilter *q) {
+	// 采集个数不够
+	if (queue_size(q->xt) < q->order || q->order <= 1) {
+		return 1;
+	}
+
+	// 均值
+	double sum = 0.0;
+	for (int i = 0; i < q->order; ++i) {
+		sum += queue_at(q->xt, i);
+	}
+	q->mean = sum / q->order;
+
+	// 标准差
+	sum = 0.0;
+	for (int i = 0; i < q->order; ++i) {
+		double tmp = queue_at(q->xt, i);
+		sum += (tmp - q->mean) * (tmp - q->mean);
+	}
+	q->var = sqrt(sum / (q->order - 1));
+	return 0;
+}
+
+// 异常值判断
+double firfilter_error_check(FIRFilter *q, double sample) {
+	int type = 0;
+	// 采集个数不够
+	if (queue_size(q->xt) < q->order || q->order <= 1) {
+		return sample;
+	}
+	double ans = sample;
+
+	// 1. 均方差异常判断
+	double k = 2;
+	if (sample > q->mean + k * q->var)
+		ans = q->mean + k * q->var;
+	else if (sample < q->mean - k * q->var)
+		ans = q->mean - k * q->var;
 
 	return ans;
 }

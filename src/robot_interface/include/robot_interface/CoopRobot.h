@@ -180,6 +180,8 @@ protected:
 	int aliasId = -1;
 	//! 状态刷新线程
 	bool enableRefresh = false;
+	//! 唤醒类型
+	int notifyType;
 
 	//! 控制卡
 	std::shared_ptr<Controller> ZController;
@@ -241,6 +243,12 @@ public:
 	inline int get_lineNum() {
 		return cmdNum;
 	}
+	inline int set_notifyType(int type) {
+		return notifyType = type;
+	}
+	inline int get_notifyType() const {
+		return notifyType;
+	}
 	std::vector<int> get_joint_axis();
 	std::vector<int> get_axis_idx();
 
@@ -249,9 +257,9 @@ public:
 	//! 等待机器人运动停止
 	int wait_auto_task_stop();
 
-
 	// 设置控制器句柄
 	int set_ZController(std::shared_ptr<Controller> ZController_, int id = -1);
+	std::shared_ptr<Controller> get_ZController();
 	// 组合轴号
 	std::vector<int> get_composed_axis(const std::vector<std::vector<int>>& axisList);
 	//! 获取保存的机器人状态
@@ -347,6 +355,16 @@ public:
 	*/
 	int pop_slave_buffer(std::vector<motion::BufferUnit>& buffer, bool popFlag, int num = -1);
 
+	/**
+	* @brief  查找并补偿轨迹缓冲中的目标点
+	* @param  id    下发轨迹时设定的 rewriteId
+	* @param  pos   补偿点的目标位置
+	* @return   0 - 正常返回
+				1 - 未找到对应id的点位
+				2 - 修正量过大警告
+	*/
+	int modify_point_in_buffer(int id, const std::vector<float>& pos);
+
 	/* *************************** 底层可修改接口 *************************** */
 	/**
 	* @brief  缓冲中执行底层封装好的运动指令
@@ -379,6 +397,8 @@ public:
 
 	virtual int moveC(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) = 0;
 	virtual int moveCABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) = 0;
+
+	virtual int move_compensate(const std::vector<float>& det) = 0;
 
 	virtual int set_manual_speed(float ratio) = 0;
 

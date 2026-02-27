@@ -17,13 +17,18 @@
 
 FSAIRobotInterface::RobotGroupManager group;
 
+// --- 辅助函数
+// Ref: https ://leetcode.cn/problems/validate-ip-address/solutions/1521467/yan-zheng-ipdi-zhi-by-leetcode-solution-kge5/
+int validIPAddress(std::string queryIP);
+
+
 Worker::Worker() {
 	// 加载默认参数
 	// 主窗口显示数据
 	displayData = std::shared_ptr<MainWindowDisplayData>(new MainWindowDisplayData);
 
 	// 最大机器人个数
-	displayData->robotNum = 2;
+	displayData->robotNum = 1;
 	// 获取系统当前的时间: yyMMdd_hhmmss
 	QDateTime dateTime = QDateTime::currentDateTime();
 	displayData->projectName = "project/" + dateTime.toString("yyMMdd").toStdString() + ".json";
@@ -363,7 +368,7 @@ void FSAIApp::connect_slot() {
 		}
 		else {
 			auto now = std::chrono::steady_clock::now();
-			auto masterStamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+			auto masterStamp = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
 			log = "Test 1: stream off " + QString::number(masterStamp);
 		}
 
@@ -478,16 +483,16 @@ void FSAIApp::connect_slot() {
 		// 数字
 		bool isNum = true;
 		int cardId = address.toInt(&isNum);
-		// IP 地址
-		QHostAddress ipAddr(address.trimmed());
+		// IP 地址判断
+		int ipType = validIPAddress(address.toStdString());
 
 		// 自动连接
 		if (address.isEmpty()) {
 			ret = ZController->lazy_connect();
 		}
 		// IP 连接
-		else if (ipAddr.protocol() == QAbstractSocket::IPv4Protocol) {
-			ret = ZController->connect_eth(ipAddr.toString().toStdString().c_str());
+		else if (ipType == 1) {
+			ret = ZController->connect_eth(address.toStdString().c_str());
 		}
 		// 750 连接
 		else if (address == "LOCAL") {
@@ -1451,4 +1456,60 @@ int FSAIApp::save_project(std::string fileName) {
 	ofile << json << "\n";
 	
 	return 0;
+}
+
+// Ref: https ://leetcode.cn/problems/validate-ip-address/solutions/1521467/yan-zheng-ipdi-zhi-by-leetcode-solution-kge5/
+// @return 0 - 非法IP地址; 1 - IPv4; 2 - IPv6
+int validIPAddress(std::string queryIP) {
+	if (queryIP.find('.') != std::string::npos) {
+		// IPv4
+		int last = -1;
+		for (int i = 0; i < 4; ++i) {
+			int cur = (i == 3 ? queryIP.size() : queryIP.find('.', last + 1));
+			if (cur == std::string::npos) {
+				return 0;
+			}
+			if (cur - last - 1 < 1 || cur - last - 1 > 3) {
+				return 0;
+			}
+			int addr = 0;
+			for (int j = last + 1; j < cur; ++j) {
+				if (!isdigit(queryIP[j])) {
+					return 0;
+				}
+				addr = addr * 10 + (queryIP[j] - '0');
+			}
+			if (addr > 255) {
+				return 0;
+			}
+			if (addr > 0 && queryIP[last + 1] == '0') {
+				return 0;
+			}
+			if (addr == 0 && cur - last - 1 > 1) {
+				return 0;
+			}
+			last = cur;
+		}
+		return 1;
+	}
+	else {
+		// IPv6
+		int last = -1;
+		for (int i = 0; i < 8; ++i) {
+			int cur = (i == 7 ? queryIP.size() : queryIP.find(':', last + 1));
+			if (cur == std::string::npos) {
+				return 0;
+			}
+			if (cur - last - 1 < 1 || cur - last - 1 > 4) {
+				return 0;
+			}
+			for (int j = last + 1; j < cur; ++j) {
+				if (!isdigit(queryIP[j]) && !('a' <= tolower(queryIP[j]) && tolower(queryIP[j]) <= 'f')) {
+					return 0;
+				}
+			}
+			last = cur;
+		}
+		return 2;
+	}
 }

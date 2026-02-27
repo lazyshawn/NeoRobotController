@@ -245,6 +245,7 @@ int matrix_cout(const MatrixXd * q) {
 		}
 		printf("\n");
 	}
+	return 0;
 }
 
 // 矩阵拷贝

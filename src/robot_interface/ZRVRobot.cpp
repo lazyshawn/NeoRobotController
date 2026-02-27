@@ -216,6 +216,10 @@ namespace FSAIRobotInterface {
 		////调用命令执行函数
 		//return ZController->sendCmd(cmdbuff, cmdbuffAck);
 	}
+	
+	int ZRVRobot::move_compensate(const std::vector<float>& det) {
+		return 0;
+	}
 
 	int ZRVRobot::set_manual_speed(float ratio) {
 

@@ -105,6 +105,11 @@ struct TrajectoryConfig {
 	bool moveInBase = false;
 	// 轴号掩码
 	std::vector<int> axisMask;
+	// 修改编号
+	int rewriteId = -1;
+	// 允许唤醒
+	int notifyEnable = 0;
+
 	// 协同段总距离
 	DT_scale syncDist = 0;
 

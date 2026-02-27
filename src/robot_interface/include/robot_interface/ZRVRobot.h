@@ -30,6 +30,8 @@ public:
 	int moveC(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) override;
 	int moveCABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& mid, const std::vector<float>& end, int imode, const std::vector<int>& mask) override;
 
+	int move_compensate(const std::vector<float>& det) override;
+
 	/**
 	* @brief  设置手动速度比率
 	* @param  ratio    速度比率(0-100)

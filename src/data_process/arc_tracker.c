@@ -16,7 +16,7 @@ FIRFilter *compFilter[MaxFilterNum];
 void print_release_info() {
 	static int printFlag = 0;
 	if (printFlag == 0) {
-		printf("=> <ArcTrackPackage> Data: 260119, Version: 0.0.1\n");
+		printf("=> <ArcTrackPackage> Data: 260202_1359, Version: 0.0.6\n");
 		printFlag++;
 	}
 }
@@ -40,7 +40,7 @@ void filter_construct(int idx, double* param, int num) {
 	printf("\n");
 	
 	// 控制算法初始化
-	double config[10] = { 0, 3 };
+	double config[10] = { 0, 10 };
 	compFilter[idx] = firfilter_construct(config, num);
 }
 
@@ -80,7 +80,7 @@ double calc_interval_refrence(double *config, double *data) {
 	// 样本区间起止位置(闭区间)
 	int begIdx = (int)config[1], endIdx = (int)config[2];
 	// 参考值计算方法 + 算法参数
-	int type = 1;
+	int type = 2;
 	// 计算结果
 	double ans = data[(begIdx) % maxSampleNum];
 
@@ -89,8 +89,8 @@ double calc_interval_refrence(double *config, double *data) {
 		return ans;
 	}
 
-	// --- 1. 四分位点
-	if (type == 1) {
+	// --- 1. 四分位点法
+	if (type == 1 || type == 2) {
 		// 复制区间数组
 		int arrSize = endIdx - begIdx + 1;
 		double *arr = (double *)malloc(sizeof(double) * (arrSize));
@@ -110,17 +110,41 @@ double calc_interval_refrence(double *config, double *data) {
 				}
 			}
 		}
-		ans = arr[ansIdx];
-	}
-	// --- 2. 求均值
-	else if (type == 2) {
-		double sum = 0.0;
-		for (int i = begIdx; i < endIdx + 1; ++i) {
-			sum += data[(i) % maxSampleNum];
-		}
-		ans = sum / (endIdx - begIdx + 1);
-	}
 
+		// 第一四分位数与第三四分位数
+		double Q1 = arr[firIdx];
+		double Q3 = arr[ansIdx];
+		double IQR = Q3 - Q1;
+
+		// - 1.1. 四分位点法
+		if (type == 1) {
+			ans = arr[ansIdx];
+		}
+		// - 1.2 均值
+		else if (type == 2) {
+			double sum = 0.0;
+			int num = 0;
+			for (int i = begIdx; i < endIdx + 1; ++i) {
+				double sample = data[(i) % maxSampleNum];
+				if (sample > Q1 - IQR && sample < Q3 + IQR) {
+					sum += sample;
+					num++;
+				}
+			}
+			ans = num > 0 ? (sum / num) : 0;
+		}
+
+		// 释放内存
+		free(arr);
+	}
+	// --- 3. 直接均值法
+	else if (type == 3) {
+		//double sum = 0.0;
+		//for (int i = begIdx; i < endIdx + 1; ++i) {
+		//	sum += data[(i) % maxSampleNum];
+		//}
+		//ans = sum / (endIdx - begIdx + 1);
+	}
 
 	return ans;
 }
@@ -174,16 +198,17 @@ int calc_compensate(int idx, double* config, double* data) {
 	//	}
 	//}
 
-	// 轨迹切向
+	// 轨迹切向 {World}
 	double tanDir[3] = { config[33], config[34], config[35] };
 	if (vector_norm(tanDir)) {
 		printf("tanDir error: %f, %f, %f\n", tanDir[0], tanDir[1], tanDir[2]);
 		return 0;
 	}
-	// 焊枪方向
+	// 焊枪方向 {Base}
 	double rx = config[36] * M_PI / 180, ry = config[37] * M_PI / 180, rz = config[38] * M_PI / 180;
 	euler2mat((double[]){ rx,ry,rz }, (double[]){ 0,1,2 }, mat);
 	double zDir[3] = { mat[2], mat[5], mat[8] };
+	printf("z0: %f, %f, %f\n", zDir[0], zDir[1], zDir[2]);
 	// 焊枪方向从基坐标系转到世界坐标系
 	rx = config[40] * M_PI / 180;
 	ry = config[41] * M_PI / 180;
@@ -244,8 +269,12 @@ int calc_compensate(int idx, double* config, double* data) {
 	double dArl = 0.0, compRL = 0.0;
 	if (enable == 1 && enableRL == 1) {
 		dArl = AR - AL;
-		compRL = firfilter_process(compFilter[idx], (dArl * gainRL));
-		printf("filter comp: %f to %f\n", (dArl * gainRL), compRL);
+		// 补偿估计值
+		double tmpComp = firfilter_error_check(compFilter[idx], dArl * gainRL);
+		compRL = firfilter_process(compFilter[idx], tmpComp);
+		// 更新统计指标
+		firfilter_update_statistical(compFilter[idx]);
+		printf("filter comp: %f to %f, (%f, %f)\n", (dArl * gainRL), compRL, compFilter[idx]->mean, compFilter[idx]->var);
 	}
 
 	// 上下跟踪: dAud > 0 向上跟踪

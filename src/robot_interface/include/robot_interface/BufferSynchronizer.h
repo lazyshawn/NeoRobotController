@@ -4,6 +4,7 @@
 #include <chrono>
 #include <deque>
 #include <mutex>
+#include <atomic>
 #include <vector>
 
 #include "Data_Info.h"
@@ -30,6 +31,7 @@ class BufferSynchronizer {
 	// 互斥锁与条件变量 
 	std::mutex mtxBuffer;
 	std::condition_variable cvBuffer;
+	std::atomic<bool> bufferReady;
 
 	//! 下位机缓冲区数据
 	std::deque<motion::BufferUnit> slaveBuffer;
@@ -48,8 +50,11 @@ public:
 	// 下位机时间戳转化为上位机时间戳
 	uint64_t to_master_time(uint64_t slaveStamp) const;
 
+	int get_size();
+
 	// 新增下位机数据
 	int push_slave_buffer(uint64_t slaveStamp, int flag, const std::vector<float>& data);
+	int push_slave_buffer(const std::vector<motion::BufferUnit>& buffer);
 
 	// 新增上位机数据
 	int push_master_buffer(uint64_t masterStamp, const std::vector<float>& data);

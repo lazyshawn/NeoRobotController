@@ -197,6 +197,7 @@ public:
 	* @param       type       寄存器类型: 0 TABLE; 1 VR
 	*/
 	int get_register(int start, int numes, std::vector<float>& pfValue, int type = 0);
+	int get_register_double(int start, int numes, std::vector<double>& pfValue);
 
 	/**
 	* @brief 设置寄存器值
