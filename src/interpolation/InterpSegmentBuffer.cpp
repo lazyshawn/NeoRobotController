@@ -151,6 +151,12 @@ int InterpBuffer::get_neighbor_buffer(int cur, InterpSegment *&preBuf, InterpSeg
 	return 0;
 }
 
+InterpSegment *InterpBuffer::get_following_buffer(int cur, int accent) {
+	cur = (cur + accent) % maxBufNum;
+
+	return interpBuf[cur].get();
+}
+
 // 执行轨迹插补
 int InterpBuffer::move(PosData& pos) {
 	int num = bufBeg, next, pre;
@@ -387,6 +393,7 @@ int InterpBuffer::cartesian_plan() {
 	curBuf->curve.set_constraint(curBuf->motionCfg.speed, 10);
 	// 前瞻后溯
 	double vs = 0.0, ve = 0.0;
+	ve = cartesian_look_ahead();
 	if (curBuf->procInfo.preSmooth > 0) {
 		vs = preBuf->motionCfg.speed / 2;
 	}
@@ -414,7 +421,7 @@ int InterpBuffer::cartesian_plan() {
 	// --- 有前平滑时，获取上一段规划参数
 	if (curBuf->procInfo.preSmooth > 0) {
 		// 无平滑段始末位置
-		curBuf->procInfo.segmBegDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, preBuf->interpInfo.doneU, 1.0, 1000);
+		curBuf->procInfo.segmBegDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, preBuf->procInfo.doneU, 1.0, 1000);
 		curBuf->procInfo.segmEndDist = curBuf->procInfo.segmBegDist + curBuf->procInfo.mainDist;
 
 		// 位置分量不能合并插补，规划段右移，先插补上一条轨迹未完成的部分
@@ -452,8 +459,9 @@ int InterpBuffer::cartesian_move() {
 	// 插补结果
 	PosData pos;
 	
+	// --- 计算上一段+当前段的总位移
 	// 上一段规划位移
-	double preS = preBuf->interpInfo.doneS;
+	double preS = preBuf->procInfo.doneS;
 	bool preDone = true;
 	if (curBuf->procInfo.preSmooth > 0) {
 		preS = preBuf->curve.get_pos(curBuf->curTime);
@@ -462,23 +470,22 @@ int InterpBuffer::cartesian_move() {
 	// 当前段规划位移
 	double curS = curBuf->curve.get_pos(curBuf->curTime);
 	bool curDone = curBuf->curve.done();
-
 	// 当前总位移
-	double moveS = preS - preBuf->interpInfo.doneS;
+	double moveS = preS - preBuf->procInfo.doneS;
 	// 上一条轨迹插补完成
 	if (preDone) {
 		moveS += curS;
 	}
 	// 当前周期位移增量
-	double detS = moveS - curBuf->interpInfo.curS;
+	double detS = moveS - curBuf->interpInfo.curMoveS;
 
 	// 当前插补比例
 	double ratio = curS / (curBuf->procInfo.preBlendDist + curBuf->procInfo.mainDist + curBuf->procInfo.postBlendDist);
 
+	// --- 计算当前位置
+	pos.rbtPos = curBuf->pointInfo.begPos.rbtPos;
 	// 当前曲线参数，离开平滑段后复位
 	double curU = 0.0;
-	// 计算当前位置
-	pos.rbtPos = curBuf->pointInfo.begPos.rbtPos;
 	// 前平滑段
 	if (curBuf->procInfo.preSmooth > 0 && moveS < curBuf->procInfo.segmBegDist) {
 		if (curBuf->interpInfo.partId != 1) {
@@ -495,15 +502,15 @@ int InterpBuffer::cartesian_move() {
 	else {
 		// 前平滑段结束后，基于实际走的S和曲线计算的S偏差重新计算 `前平滑段长度`，这样切换到直线段时速度计算才准确
 		if (curBuf->interpInfo.partId == 1 && curBuf->procInfo.preSmooth > 0) {
+			// 实际直线计算是从距离大于curMoveS开始的，计算的曲线距离(realDist) -> 实际规划距离(interpInfo.curMoveS)
+			double realDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, preBuf->procInfo.doneU, curBuf->interpInfo.curU, 1000);
 			// 避免直线段计算的距离为负数
-			// 实际直线计算是从距离大于curS开始的，计算的曲线距离(realDist) -> 实际规划距离(interpInfo.curS)
-			double realDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, preBuf->interpInfo.doneU, curBuf->interpInfo.curU, 1000);
 			double maxError = moveS - curBuf->procInfo.segmBegDist;
 
 			// 切换到直线段速度不突变: 规划比实际多走的距离，计算直线时起点往后偏移即可补偿回来，但是实际终点位置会超出给定终点位置
-			double error = curBuf->interpInfo.curS - realDist;
+			double error = curBuf->interpInfo.curMoveS - realDist;
 			// 保证moveS走完后正好停在结束点: moveS = (preS - pre.doneS) + pre.remainS + preBlendDist + mainDist
-			error = preBuf->procInfo.remainS + (preS - preBuf->interpInfo.doneS) + curBuf->procInfo.preBlendDist - curBuf->procInfo.segmBegDist;
+			error = preBuf->procInfo.remainS + (preS - preBuf->procInfo.doneS) + curBuf->procInfo.preBlendDist - curBuf->procInfo.segmBegDist;
 
 			curBuf->procInfo.segmBegDist += error;
 			curBuf->procInfo.segmEndDist += error;
@@ -519,7 +526,7 @@ int InterpBuffer::cartesian_move() {
 				curBuf->interpInfo.curU = 0;
 				//dis = moveS - curBuf->procInfo.segmBegDist - curBuf->procInfo.mainDist;
 				// 减去直线段剩余长度
-				dis -= curBuf->procInfo.segmEndDist - curBuf->interpInfo.curS;
+				dis -= curBuf->procInfo.segmEndDist - curBuf->interpInfo.curMoveS;
 			}
 
 			double curPos[3];
@@ -553,7 +560,7 @@ int InterpBuffer::cartesian_move() {
 	curBuf->interpInfo.schedule = ratio;
 	// 当前目标位置
 	curBuf->interpInfo.dpos = pos;
-	curBuf->interpInfo.curS = moveS;
+	curBuf->interpInfo.curMoveS = moveS;
 	curBuf->interpInfo.curU = curU;
 
 	// 插补完成: 有平滑时，剩余规划时间小于一个插补周期，将剩余距离移到下条轨迹前平滑段内插补
@@ -561,12 +568,48 @@ int InterpBuffer::cartesian_move() {
 		curBuf->interpInfo.partId = -1;
 		// 下一段平滑从当前后平滑继续
 		nextBuf->interpInfo.curU = curBuf->interpInfo.curU;
-		curBuf->interpInfo.doneS = curS;
-		curBuf->interpInfo.doneU = curU;
+		curBuf->procInfo.doneS = curS;
+		curBuf->procInfo.doneU = curU;
 	}
 
 	// 插补时间累加
 	curBuf->curTime += cycleTime;
 
+	return 0;
+}
+
+double InterpBuffer::cartesian_look_ahead() {
+	// 轨迹前瞻，队首开始
+	InterpSegment *preBuf = nullptr, *curBuf = nullptr, *nextBuf = nullptr;
+	get_neighbor_buffer(bufBeg, preBuf, curBuf, nextBuf);
+
+	// 最大前瞻段数, 实际前瞻段数
+	int maxForwardNum = 10, forwardNum = 0;
+	// 当前段有后平滑，启用前瞻
+	if (curBuf->procInfo.postSmooth > 0) {
+		for (int i = 0; i < maxForwardNum; ++i) {
+			forwardNum++;
+
+			InterpSegment *tmpBuf = get_following_buffer(bufBeg, i+1);
+			if (tmpBuf->procInfo.postSmooth < dim_EPS)
+				break;
+		}
+	}
+	// 无需前瞻, 结束点速度为0
+	if (forwardNum == 0)
+		return 0;
+
+	// 前瞻
+	for (int i = 0; i < forwardNum; ++i) {
+		// 1. 记录前瞻减速点: 从当前点可以正常运动加速到目标点
+
+		// 2. 记录后溯减速点: 从当前点可以正常运动并停在结束点
+
+		// 3. 合并减速点，得到最终减速点的速度
+
+		// 4. 基于第一个减速点，计算到达当前段后平滑曲率点的终点速度
+
+		// 5. 基于当前段/下一段设置速度和自适应速度约束Ve值
+	}
 	return 0;
 }

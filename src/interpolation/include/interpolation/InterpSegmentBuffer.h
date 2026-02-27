@@ -28,16 +28,21 @@ class InterpBuffer {
 	int get_neighbor_index(int *pre, int *cur, int *next);
 	// 获取相邻的轨迹指针, 注意C++中形参的指针是值传递，需要改为指针引用
 	int get_neighbor_buffer(int cur, InterpSegment *&preBuf, InterpSegment *&curBuf, InterpSegment *&nextBuf);
+	// 获取后续轨迹指针
+	InterpSegment *get_following_buffer(int cur, int accent);
 
-	// 关节轨迹处理
+	// --- 关节轨迹处理
 	int joint_prehandle();
 	int joint_plane();
 	int joint_move();
 
-	// 空间轨迹处理
+	// --- 空间轨迹处理
 	int cartesian_prehandle();
 	int cartesian_plan();
 	int cartesian_move();
+
+	// 轨迹前瞻: 输出最大终点速度
+	double cartesian_look_ahead();
 
 public:
 	InterpBuffer();

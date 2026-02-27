@@ -2,7 +2,7 @@
 #include "interpolation/InterpSegment.h"
 
 
-void PreProcessInfo::reset() {
+void ProcessInfo::reset() {
 	lineNum = -1;
 	processed = false;
 }

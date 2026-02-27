@@ -27,6 +27,8 @@ class DoubleSCurve {
 
 	//! 轨迹段最大速度、加速度
 	double alima, alimd, vlim;
+	//! 不同阶段的位移
+	double s1, s2, s3, s4, s5, s6;
 
 	// - 保持规划插补参数
 	//! 保留时间，剩余时间小于保留时间时视作插补完成
@@ -86,6 +88,12 @@ public:
 	*/
 	double get_remain_dist(double dt);
 	double get_remain_time(double dt);
+
+	/**
+	* @brief  提速最大速度值
+	* @param  ds  提速位移
+	*/
+	double get_max_speed(double ds);
 
 	/**
 	* @brief  更新保存点位

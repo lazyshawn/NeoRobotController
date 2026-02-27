@@ -1,6 +1,78 @@
 ﻿
 #include "interpolation/InterpCurve.h"
 
+// - 辅助函数：解三次方程, 盛金公式
+double solve_cubic_eqution(double a0, double a1, double a2, double a3) {
+	double d = a0, c = a1, b = a2, a = a3;
+	if (a < 0) {
+		a *= -1;
+		b *= -1;
+		c *= -1;
+		d *= -1;
+	}
+
+	// 重根判别式
+	double A = b * b - 3 * a*c;
+	double B = b * c - 9 * a*d;
+	double C = c * c - 3 * b*d;
+
+	// 总判别式
+	double Det = B * B - 4 * A*C;
+	double epsillon = 1e-6;
+	double x[3] = { 0.0 };
+
+	// 公式1: 三重实根
+	if (fabs(A) < epsillon && fabs(B) < epsillon) {
+		x[0] = x[1] = x[2] = (-b - c - 3 * d) / (3 * a + b + c);
+	}
+	// 公式3: 三个实根，其中一个两重实根
+	else if (fabs(Det) < epsillon) {
+		double K = B / A;
+		double sol = -b / a + K;
+		x[0] = sol;
+
+		sol = -K / 2;
+		x[1] = x[2] = sol;
+	}
+	else {
+		// 公式 4: 三个不同实根
+		if (Det < 0) {
+			double T = (2 * A*b - 3 * a*B) / (2 * sqrt(A*A*A));
+			double q = acos(T);
+
+			double sol = (-b - 2 * sqrt(A)*cos(q / 3)) / (3 * a);
+			x[0] = sol;
+
+			sol = (-b + sqrt(A)*(cos(q / 3) + sqrt(3)*sin(q / 3))) / (3 * a);
+			x[1] = sol;
+
+			sol = (-b + sqrt(A)*(cos(q / 3) - sqrt(3)*sin(q / 3))) / (3 * a);
+			x[2] = sol;
+		}
+		// 公式2: 一个实根，一对共轭虚根
+		else if (Det > 0) {
+			double Y1 = A * b + 3 * a*(-B + sqrt(B*B - 4 * A*C)) / 2;
+			double Y2 = A * b + 3 * a*(-B - sqrt(B*B - 4 * A*C)) / 2;
+			double sol = (-b - cbrt(Y1) - cbrt(Y2)) / (3 * a);
+			x[0] = x[1] = x[2] = sol;
+		}
+	}
+
+	// 从小到大排序
+	for (int i = 0; i < 3; ++i) {
+		for (int j = i + 1; j < 3; ++j) {
+			// 后者更小，交换顺序
+			if (x[j] < x[i]) {
+				double tmp = x[i];
+				x[i] = x[j];
+				x[j] = tmp;
+			}
+		}
+	}
+
+	return x[0];
+}
+
 DoubleSCurve::DoubleSCurve() {
 	vmin = -vmax;
 	amin = -amax;
@@ -123,6 +195,14 @@ int DoubleSCurve::plan() {
 	vlim = v0 + (Ta - Tj1)*alima;
 	T = Ta + Tv + Td;
 
+	// - 计算各个阶段的结束点位置
+	s1 = get_pos(Tj1);
+	s2 = get_pos(Ta - Tj1);
+	s3 = get_pos(Ta);
+	s4 = get_pos(Ta + Tv);
+	s5 = get_pos(T - Td + Tj2);
+	s6 = get_pos(T - Tj2);
+
 	return 0;
 }
 
@@ -221,9 +301,6 @@ double DoubleSCurve::get_pos(double t) {
 		v = v1;
 	}
 
-	// 插补完成标志
-	//doneFlag = t + reserveTime > T;
-
 	q *= sign;
 	v *= sign;
 	a *= sign;
@@ -250,4 +327,39 @@ double DoubleSCurve::get_remain_time(double dt) {
 	int num = T / dt;
 	double endT = num * dt;
 	return T - endT;
+}
+
+double DoubleSCurve::get_max_speed(double ds) {
+
+	double ans = v0;
+	if (ds < 0) {
+		ans = v0;
+	}
+	else if (ds < s1 - q0) {
+
+	}
+	else if (ds < s2 - q0) {
+
+	}
+	else if (ds < s3 - q0) {
+
+	}
+	else if (ds < s4 - q0) {
+
+	}
+	else if (ds < s5 - q0) {
+
+	}
+	else if (ds < s6 - q0) {
+
+	}
+	else if (ds < q1 - q0) {
+
+	}
+	else {
+		ans = v1;
+	}
+
+
+	return ans;
 }

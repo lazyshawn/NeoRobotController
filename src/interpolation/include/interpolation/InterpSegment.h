@@ -17,6 +17,7 @@
 
 // 轨迹类型
 enum class InterpSegmentType {
+	NONE,    // 未指定
 	JOINT,   // 关节
 	LINE,    // 直线
 	CIRCLE,  // 圆弧
@@ -62,10 +63,14 @@ struct MoveCmd {
 
 };
 
-// 预处理信息
-// 1. 接收轨迹信息时，需要根据前置或后置轨迹获取的信息
-// 2. 规划时补充或修改的信息
-struct PreProcessInfo {
+/* ************************************************************ *
+* @brief 轨迹处理信息                                           *
+*															    *
+* 1. 预处理: 接收轨迹信息时，需要根据前置或后置轨迹获取的信息   *
+* 2. 规划: 补充或修改的信息                                     *
+* 3. 插补: 插补完成后，保存的信息                               *
+* ************************************************************* */
+struct ProcessInfo {
 	// 预处理完毕标志
 	bool processed = false;
 
@@ -114,37 +119,37 @@ struct PreProcessInfo {
 	//! 直线段始末位置
 	double segmBegDist, segmEndDist;
 
+	// --- 结束状态
+	//! 完成时间
+
+	//! 结束点规划速度
+	//! 结束点位置: 当前段位置
+	double doneS = 0.0;
+	double doneU = 0.0;
+
 	void reset();
 };
 
-// 插补状态(可能需要输出的状态)
+// 插补状态
+// 1. 插补过程中频繁更新的数据
+// 2, 可能需要输出的状态
 struct InterpInfo {
 	// --- 过程状态
 	//! 插补轨迹位置: 完成(-1), 未开始(0)，前平滑，无平滑，后平滑
 	int partId;
 	//! 插补比列
 	double schedule = 0.0;
-	//! 当前参数(贝塞尔曲线)
+	//! 当前过渡曲线位置参数，前平滑和后平滑共同使用该参数
 	double curU = 0.0;
-	//! 当前速度曲线规划的位移
-	double curS = 0.0;
+	//! 当前速度曲线规划的位移: 包含上一段曲线位移
+	double curMoveS = 0.0;
 	//! 当前周期目标位置
 	PosData dpos;
-
-	// --- 结束状态
-	//! 完成时间
-
-	//! 结束点规划速度
-	//! 结束点位置
-	double doneU = 0.0;
-	double doneS = 0.0;
 };
 
 // 插补线段基类
 class InterpSegment {
 protected:
-	// 插补周期(s)
-	//double cycleTime = 4e-3;
 
 public:
 
@@ -161,27 +166,13 @@ public:
 	MoveCmd moveCmd;
 
 	// 预处理信息
-	PreProcessInfo procInfo;
+	ProcessInfo procInfo;
 
 	// 插补信息
 	InterpInfo interpInfo;
 
 	// 设置轨迹数据
 	int set_data(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd);
-
-	//// - 虚函数
-	//// 预处理: 插入点位时执行
-	//virtual int prehandle(InterpSegment& pre) = 0;
-	//// 规划: 插补开始前执行，同时输出第一个插补点
-	//virtual int plan(InterpSegment& pre, InterpSegment& next) = 0;
-	//// 插补: 插补点位
-	//virtual int move(PosData& pos) = 0;
-	//// 停止规划: 修改插补规划
-	//virtual int stop_plan() = 0;
-	//// 重置
-	//virtual int reset() = 0;
-	//// 获取当前时间
-	//virtual double get_current_time() = 0;
 };
 
 
