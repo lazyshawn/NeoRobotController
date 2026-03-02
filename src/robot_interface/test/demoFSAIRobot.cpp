@@ -284,14 +284,14 @@ void shawn_test::task_test() {
 	Weave waveCfg;
 	waveCfg.Id = 1;
 	waveCfg.Freq = 1;
-	waveCfg.Shape = 0;
+	waveCfg.Shape = 4;
 	waveCfg.LeftWidth = 2;
 	waveCfg.RightWidth = 2;
 	waveCfg.Dwell_left = 0;
 	waveCfg.Dwell_right = 0;
 	waveCfg.Dwell_center = 0;
 	waveCfg.Dwell_type = 1;
-	//trajCfg.add_appendix(FSAIRobotInterface::serialize_Weave(waveCfg));
+	trajCfg.add_appendix(FSAIRobotInterface::serialize_Weave(waveCfg));
 
 	Track trackCfg;
 	trackCfg.Id = 1;
@@ -320,6 +320,8 @@ void shawn_test::task_test() {
 
 
 	trajCfg.set_speed(20);
+	waveCfg.Id = 0;
+	trajCfg.add_appendix(FSAIRobotInterface::serialize_Weave(waveCfg));
 	action.actionBefore.clear();
 	action.actionAfter.clear();
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));

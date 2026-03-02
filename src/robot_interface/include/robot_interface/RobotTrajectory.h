@@ -182,6 +182,8 @@ public:
 	int saveSeq = -1;
 	//! 轨迹编号
 	int lineNum = 0;
+	//! 轨迹类型
+	int taskId = 0;
 
 	SingleTrajectory();
 	SingleTrajectory(const TrajectoryPoint& pnt, const TrajectoryConfig cfg);
@@ -244,6 +246,8 @@ public:
 	// 设置上一条轨迹
 	int set_preTraj(const SingleTrajectory& traj);
 	int set_preTraj(const TrajectoryPoint& point);
+	// 修改当前轨迹
+	int set_curTraj(const SingleTrajectory& traj);
 	// 设置当条轨迹的序号
 	inline int set_current_line_num(int num) {
 		trajList.front().lineNum = num;

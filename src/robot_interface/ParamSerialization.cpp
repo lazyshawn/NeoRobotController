@@ -8,7 +8,7 @@ namespace FSAIRobotInterface {
 std::pair<int, std::vector<float>> serialize_Weave(const Weave& waveCfg) {
 
 	std::pair<int, std::vector<float>> ans;
-	std::vector<float> param(13);
+	std::vector<float> param(15);
 
 	param[0] = waveCfg.Id;
 	param[1] = waveCfg.Shape;

@@ -1205,6 +1205,9 @@ namespace FSAIRobotInterface {
 		else if (waveCfg.Shape == 3) {
 			value[0] = 4;
 		}
+		else if (waveCfg.Shape == 4) {
+			value[0] = 1;
+		}
 		value[1] = waveCfg.Dwell_center;
 		value[2] = waveCfg.Angle_Ltype_top;
 		value[3] = waveCfg.Angle_Ltype_btm;

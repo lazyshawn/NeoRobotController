@@ -728,6 +728,12 @@ int DiscreteTrajectory::set_preTraj(const TrajectoryPoint& point) {
 
 }
 
+int DiscreteTrajectory::set_curTraj(const SingleTrajectory& traj) {
+	trajList.front() = traj;
+
+	return 0;
+}
+
 bool make_circle(const std::vector<Eigen::Matrix<DT_scale, 3, 1>>& pts, Eigen::Matrix<DT_scale, 3, 1>& center) {
 	
 	double r = 0.0;
