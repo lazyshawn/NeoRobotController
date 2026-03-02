@@ -27,8 +27,6 @@ class DoubleSCurve {
 
 	//! 轨迹段最大速度、加速度
 	double alima, alimd, vlim;
-	//! 不同阶段的位移
-	double s1, s2, s3, s4, s5, s6;
 
 	// - 保持规划插补参数
 	//! 保留时间，剩余时间小于保留时间时视作插补完成

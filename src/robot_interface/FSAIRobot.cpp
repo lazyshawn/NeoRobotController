@@ -1097,6 +1097,14 @@ namespace FSAIRobotInterface {
 				ZController->set_axis_param(idx + 267, "TABLE", 1);
 				delayNum++;
 			}
+			// 息弧 + 回填，修改当前段终点，避免下一条轨迹起点设置异常
+			//if (type == 3 && param[6] > 0) {
+			//	auto preTraj = trajectory.get_preTraj();
+			//	TrajectoryPoint point;
+			//	point.trajType = preTraj.trajType;
+			//	point.mainPoint = std::vector<DT_scale>(param.begin() + 22, param.begin() + 31);
+			//	trajectory.set_preTraj(point);
+			//}
 
 			// 完成标志位复位
 			if (flag == 0)
@@ -1162,6 +1170,7 @@ namespace FSAIRobotInterface {
 		auto curTraj = trajectory.get_curTraj();
 		Weave waveCfg = deserialize_Weave(curTraj.get_appendix());
 
+		// 基础摆焊参数
 		std::vector<int> idx(8, 160000 + 10);
 		for (size_t i = 0; i < idx.size(); ++i) {
 			idx[i] += i;
@@ -1175,6 +1184,32 @@ namespace FSAIRobotInterface {
 		value[5] = waveCfg.Freq;
 		value[6] = waveCfg.Dwell_left;
 		value[7] = waveCfg.Dwell_right;
+
+		ZController->set_axis_param(idx, "TABLE", value);
+
+		// 补充摆焊参数
+		idx = std::vector<int>(6, 160000 + 292);
+		for (size_t i = 0; i < idx.size(); ++i) {
+			idx[i] += i;
+		}
+		value = std::vector<float>(idx.size(), 0.0);
+		if (waveCfg.Shape == 0) {
+			value[0] = 0;
+		}
+		else if (waveCfg.Shape == 1) {
+			value[0] = 3;
+		}
+		else if (waveCfg.Shape == 2) {
+			value[0] = 2;
+		}
+		else if (waveCfg.Shape == 3) {
+			value[0] = 4;
+		}
+		value[1] = waveCfg.Dwell_center;
+		value[2] = waveCfg.Angle_Ltype_top;
+		value[3] = waveCfg.Angle_Ltype_btm;
+		value[4] = waveCfg.AzimuthAngle;
+		value[5] = waveCfg.Angle_lead;
 
 		ZController->set_axis_param(idx, "TABLE", value);
 

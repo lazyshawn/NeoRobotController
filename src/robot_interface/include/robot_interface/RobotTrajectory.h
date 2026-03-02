@@ -285,7 +285,7 @@ public:
 * @param  mode        模式: 0-比例, 1-距离
 * @return
 */
-//TrajectoryPoint partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode);
+TrajectoryPoint partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode);
 
 std::vector<DT_scale> get_relative_distance(const std::vector<DT_scale>& beg, const std::vector<DT_scale>& mid, const std::vector<DT_scale>& end);
 

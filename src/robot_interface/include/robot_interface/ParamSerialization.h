@@ -60,7 +60,7 @@ struct Move_Config {
 
 // 自定义参数类型
 enum class AppendixType {
-	WAVE_CFG, TRACK_CFG, WELD_CFG, REARC_CFG, MOTION_CFG, Sync_CFG, MOVE_CONFIG
+	WAVE_CFG, TRACK_CFG, WELD_CFG, REARC_CFG, MOTION_CFG, Sync_CFG, MOVE_CONFIG, PitFill_CFG
 };
 
 // 自定义参数序列化与反序列化
@@ -91,5 +91,9 @@ Sync_Config deserialize_Sync_Config(const std::map<int, std::vector<float>>& app
 // 运动参数
 std::pair<int, std::vector<float>> serialize_Move_Config(const Move_Config& moveCfg);
 Move_Config deserialize_Move_Config(const std::map<int, std::vector<float>>& appendix);
+
+// 弧坑回填参数
+std::pair<int, std::vector<float>> serialize_ArcPitBackfill(const ArcPitBackfill& cfg);
+ArcPitBackfill deserialize_ArcPitBackfill(const std::map<int, std::vector<float>>& appendix);
 
 }

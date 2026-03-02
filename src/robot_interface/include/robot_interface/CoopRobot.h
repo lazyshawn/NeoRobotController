@@ -303,6 +303,15 @@ public:
 	* @param    action    运动参数
 	*/
 	int trigger_action(int type, const std::vector<float>& param);
+	/**
+	* @brief  补充缓冲运动参数
+	*/
+	int rewrie_actioin_param(Move_Action& cfg);
+	/**
+	* @brief  插入任务轨迹
+	*/
+	int insert_task_traj();
+
 
 	/**
 	* @brief  导出电弧跟踪数据

@@ -200,94 +200,94 @@ std::vector<DT_scale> calc_traj_info(const std::vector<DT_scale>& begPnt, const 
 }
 
 
-//TrajectoryPoint partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode) {
-//
-//	// 获取节点目标位置
-//	auto curPoint = curTraj.mainPoint;
-//	auto prePoint = preTraj.mainPoint;
-//	auto midPoint = curTraj.auxPoint;
-//
-//	int num = curPoint.size();
-//	// 分段结果
-//	TrajectoryPoint ans(num);
-//	ans.trajType = curTraj.trajType;
-//	std::vector<DT_scale> relEndMove(num, 0);
-//
-//	// 附加轴相对变化量
-//	for (size_t i = 0; i < num; ++i)
-//		relEndMove[i] = curPoint[i] - prePoint[i];
-//
-//	// 欧拉角相对变化量
-//	if (curPoint.size() > 5) {
-//		auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(prePoint[3], prePoint[4], prePoint[5]);
-//		auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(midPoint[3], midPoint[4], midPoint[5]);
-//		auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(curPoint[3], curPoint[4], curPoint[5]);
-//		auto relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
-//		for (size_t i = 0; i < 3; ++i) {
-//			relEndMove[3 + i] = relEuler[i];
-//		}
-//	}
-//
-//	bool isArc = (curTraj.trajType == TrajType::Arc);
-//
-//	// 计算位置分量
-//	auto trajInfo = calc_traj_info(prePoint, midPoint, curPoint, isArc);
-//	DT_scale partial = 0;
-//	// 圆弧运动
-//	if (isArc) {
-//		// Eigen 类型的点位，用于计算
-//		Eigen::Vector3f rotNorm(trajInfo[4], trajInfo[5], trajInfo[6]), centerPos(trajInfo[0], trajInfo[1], trajInfo[2]);
-//
-//		// 轨迹总旋转角度
-//		DT_scale theta = rotNorm.norm();
-//		rotNorm.normalize();
-//		// 起点处的半径
-//		Eigen::Vector3f radiusDir(0, 0, 0);
-//		for (size_t i = 0; i < 3; ++i) {
-//			radiusDir[i] = prePoint[i] - centerPos[i];
-//		}
-//		// 分段点位置
-//		Eigen::Vector3f arcPos;
-//
-//		// 中间点处的比例
-//		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / (theta * radiusDir.norm());
-//		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
-//		// 位置分量单独计算，姿态和附加值按线性累加
-//		for (size_t i = 0; i < num; ++i) {
-//			ans.auxPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
-//		}
-//
-//		// 终点处的比例
-//		partial = (mode == 0) ? endRatio : endRatio / (theta * radiusDir.norm());
-//		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
-//		// 位置分量单独计算，姿态和附加值按线性累加
-//		for (size_t i = 0; i < num; ++i) {
-//			ans.mainPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
-//		}
-//	}
-//	// 直线运动
-//	else {
-//		// 比例
-//		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / trajInfo[3];
-//		//if (partial > 1)
-//		//	partial = 1;
-//		for (size_t i = 0; i < num; ++i)
-//			ans.auxPoint[i] = prePoint[i] + relEndMove[i] * partial;
-//
-//		// 比例
-//		partial = (mode == 0) ? endRatio : endRatio / trajInfo[3];
-//		//if (partial > 1)
-//		//	partial = 1;
-//		for (size_t i = 0; i < num; ++i)
-//			ans.mainPoint[i] = prePoint[i] + relEndMove[i] * partial;
-//	}
-//
-//	//if (std::fabs(endRatio-1) < 1e-2) {
-//	//	ans.mainPoint = curPoint;
-//	//}
-//
-//	return ans;
-//}
+TrajectoryPoint partition_trajectory(const TrajectoryPoint& preTraj, const TrajectoryPoint& curTraj, DT_scale begRatio, DT_scale endRatio, int mode) {
+
+	// 获取节点目标位置
+	auto curPoint = curTraj.mainPoint;
+	auto prePoint = preTraj.mainPoint;
+	auto midPoint = curTraj.auxPoint;
+
+	int num = curPoint.size();
+	// 分段结果
+	TrajectoryPoint ans(num);
+	ans.trajType = curTraj.trajType;
+	std::vector<DT_scale> relEndMove(num, 0);
+
+	// 附加轴相对变化量
+	for (size_t i = 0; i < num; ++i)
+		relEndMove[i] = curPoint[i] - prePoint[i];
+
+	// 欧拉角相对变化量
+	if (curPoint.size() > 5) {
+		auto begEuler = Eigen::Matrix<DT_scale, 3, 1>(prePoint[3], prePoint[4], prePoint[5]);
+		auto midEuler = Eigen::Matrix<DT_scale, 3, 1>(midPoint[3], midPoint[4], midPoint[5]);
+		auto endEuler = Eigen::Matrix<DT_scale, 3, 1>(curPoint[3], curPoint[4], curPoint[5]);
+		auto relEuler = get_zyx_euler_distance(begEuler, midEuler, endEuler);
+		for (size_t i = 0; i < 3; ++i) {
+			relEndMove[3 + i] = relEuler[i];
+		}
+	}
+
+	bool isArc = (curTraj.trajType == TrajType::Arc);
+
+	// 计算位置分量
+	auto trajInfo = calc_traj_info(prePoint, midPoint, curPoint, isArc);
+	DT_scale partial = 0;
+	// 圆弧运动
+	if (isArc) {
+		// Eigen 类型的点位，用于计算
+		Eigen::Vector3f rotNorm(trajInfo[4], trajInfo[5], trajInfo[6]), centerPos(trajInfo[0], trajInfo[1], trajInfo[2]);
+
+		// 轨迹总旋转角度
+		DT_scale theta = rotNorm.norm();
+		rotNorm.normalize();
+		// 起点处的半径
+		Eigen::Vector3f radiusDir(0, 0, 0);
+		for (size_t i = 0; i < 3; ++i) {
+			radiusDir[i] = prePoint[i] - centerPos[i];
+		}
+		// 分段点位置
+		Eigen::Vector3f arcPos;
+
+		// 中间点处的比例
+		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / (theta * radiusDir.norm());
+		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
+		// 位置分量单独计算，姿态和附加值按线性累加
+		for (size_t i = 0; i < num; ++i) {
+			ans.auxPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
+		}
+
+		// 终点处的比例
+		partial = (mode == 0) ? endRatio : endRatio / (theta * radiusDir.norm());
+		arcPos = Eigen::AngleAxisf(partial * theta, rotNorm) * radiusDir + centerPos;
+		// 位置分量单独计算，姿态和附加值按线性累加
+		for (size_t i = 0; i < num; ++i) {
+			ans.mainPoint[i] = i < 3 ? arcPos[i] : (prePoint[i] + relEndMove[i] * partial);
+		}
+	}
+	// 直线运动
+	else {
+		// 比例
+		partial = (mode == 0) ? (begRatio + endRatio) / 2 : (begRatio + endRatio) / 2 / trajInfo[3];
+		//if (partial > 1)
+		//	partial = 1;
+		for (size_t i = 0; i < num; ++i)
+			ans.auxPoint[i] = prePoint[i] + relEndMove[i] * partial;
+
+		// 比例
+		partial = (mode == 0) ? endRatio : endRatio / trajInfo[3];
+		//if (partial > 1)
+		//	partial = 1;
+		for (size_t i = 0; i < num; ++i)
+			ans.mainPoint[i] = prePoint[i] + relEndMove[i] * partial;
+	}
+
+	//if (std::fabs(endRatio-1) < 1e-2) {
+	//	ans.mainPoint = curPoint;
+	//}
+
+	return ans;
+}
 
 std::vector<DT_scale> get_relative_distance(const std::vector<DT_scale>& beg, const std::vector<DT_scale>& mid, const std::vector<DT_scale>& end) {
 

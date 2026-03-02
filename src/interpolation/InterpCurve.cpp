@@ -1,9 +1,31 @@
 ﻿
 #include "interpolation/InterpCurve.h"
 
-// - 辅助函数：解三次方程, 盛金公式
-double solve_cubic_eqution(double a0, double a1, double a2, double a3) {
-	double d = a0, c = a1, b = a2, a = a3;
+// - 辅助函数
+// 解二次方程
+int solve_quadratic_eqution(double *k, double *ans) {
+	double c = k[0], b = k[1], a = k[2];
+
+	double det = b * b - 4 * a*c;
+	if (det < 0)
+		return -1;
+
+	ans[0] = (-b + sqrt(det)) / (2 * a);
+	ans[1] = (-b - sqrt(det)) / (2 * a);
+	
+	// 从小到大排序
+	if (ans[1] < ans[0]) {
+		double tmp = ans[1];
+		ans[1] = ans[0];
+		ans[0] = ans[1];
+	}
+
+	return 0;
+}
+
+// 解三次方程, 盛金公式
+double solve_cubic_eqution(double *k, double *ans) {
+	double d = k[0], c = k[1], b = k[2], a = k[3];
 	if (a < 0) {
 		a *= -1;
 		b *= -1;
@@ -19,20 +41,19 @@ double solve_cubic_eqution(double a0, double a1, double a2, double a3) {
 	// 总判别式
 	double Det = B * B - 4 * A*C;
 	double epsillon = 1e-6;
-	double x[3] = { 0.0 };
 
 	// 公式1: 三重实根
 	if (fabs(A) < epsillon && fabs(B) < epsillon) {
-		x[0] = x[1] = x[2] = (-b - c - 3 * d) / (3 * a + b + c);
+		ans[0] = ans[1] = ans[2] = (-b - c - 3 * d) / (3 * a + b + c);
 	}
 	// 公式3: 三个实根，其中一个两重实根
 	else if (fabs(Det) < epsillon) {
 		double K = B / A;
 		double sol = -b / a + K;
-		x[0] = sol;
+		ans[0] = sol;
 
 		sol = -K / 2;
-		x[1] = x[2] = sol;
+		ans[1] = ans[2] = sol;
 	}
 	else {
 		// 公式 4: 三个不同实根
@@ -41,20 +62,20 @@ double solve_cubic_eqution(double a0, double a1, double a2, double a3) {
 			double q = acos(T);
 
 			double sol = (-b - 2 * sqrt(A)*cos(q / 3)) / (3 * a);
-			x[0] = sol;
+			ans[0] = sol;
 
 			sol = (-b + sqrt(A)*(cos(q / 3) + sqrt(3)*sin(q / 3))) / (3 * a);
-			x[1] = sol;
+			ans[1] = sol;
 
 			sol = (-b + sqrt(A)*(cos(q / 3) - sqrt(3)*sin(q / 3))) / (3 * a);
-			x[2] = sol;
+			ans[2] = sol;
 		}
 		// 公式2: 一个实根，一对共轭虚根
 		else if (Det > 0) {
 			double Y1 = A * b + 3 * a*(-B + sqrt(B*B - 4 * A*C)) / 2;
 			double Y2 = A * b + 3 * a*(-B - sqrt(B*B - 4 * A*C)) / 2;
 			double sol = (-b - cbrt(Y1) - cbrt(Y2)) / (3 * a);
-			x[0] = x[1] = x[2] = sol;
+			ans[0] = ans[1] = ans[2] = sol;
 		}
 	}
 
@@ -62,15 +83,19 @@ double solve_cubic_eqution(double a0, double a1, double a2, double a3) {
 	for (int i = 0; i < 3; ++i) {
 		for (int j = i + 1; j < 3; ++j) {
 			// 后者更小，交换顺序
-			if (x[j] < x[i]) {
-				double tmp = x[i];
-				x[i] = x[j];
-				x[j] = tmp;
+			if (ans[j] < ans[i]) {
+				double tmp = ans[i];
+				ans[i] = ans[j];
+				ans[j] = tmp;
 			}
 		}
 	}
 
-	return x[0];
+	// 返回最小正实根
+	for (int i = 0; i < 3; ++i) {
+		if (ans[i] > 0)
+			return ans[i];
+	}
 }
 
 DoubleSCurve::DoubleSCurve() {
@@ -130,13 +155,13 @@ int DoubleSCurve::plan() {
 		if (q1 - q0 < (v0 + v1) / 2 * (Tjs + std::fabs(v1 - v0) / jmax))
 			valid = false;
 	}
-	// 规划失败，无法在给定约束下通过双S曲线到达目标位置
+	// 规划失败，无法在给定约束下通过双S曲线到达目标位置，速度规划时需要排除这种情况
 	if (!valid)
 		return 1;
 
 	// - 计算各阶段时间
 	// Case 1: vlim = vmax
-	// 加速阶段达到最大速度
+	// 加速阶段达到最大加速度
 	if ((vmax-v0)*jmax < amax*amax) {
 		Tj1 = std::sqrt(std::fabs(vmax - v0) / jmax);
 		Ta = 2 * Tj1;
@@ -145,7 +170,7 @@ int DoubleSCurve::plan() {
 		Tj1 = amax / jmax;
 		Ta = Tj1 + (vmax - v0) / amax;
 	}
-	// 减速阶段达到最大速度
+	// 减速阶段达到最大加速度
 	if ((vmax - v1)*jmax < amax*amax) {
 		Tj2 = std::sqrt(std::fabs(vmax - v1) / jmax);
 		Td = 2 * Tj2;
@@ -194,14 +219,6 @@ int DoubleSCurve::plan() {
 	alimd = -jmax * Tj2;
 	vlim = v0 + (Ta - Tj1)*alima;
 	T = Ta + Tv + Td;
-
-	// - 计算各个阶段的结束点位置
-	s1 = get_pos(Tj1);
-	s2 = get_pos(Ta - Tj1);
-	s3 = get_pos(Ta);
-	s4 = get_pos(Ta + Tv);
-	s5 = get_pos(T - Td + Tj2);
-	s6 = get_pos(T - Tj2);
 
 	return 0;
 }
@@ -331,33 +348,49 @@ double DoubleSCurve::get_remain_time(double dt) {
 
 double DoubleSCurve::get_max_speed(double ds) {
 
+	// 各加速阶段时间节点
+	double t1, t2, t3, t;
+	// 加速阶段达到最大加速度
+	if ((vmax - v0)*jmax < amax*amax) {
+		t1 = t2 = std::sqrt(std::fabs(vmax - v0) / jmax);
+		t3 = t1 + t2;
+	}
+	else {
+		t1 = amax / jmax;
+		t2 = (vmax - v0) / amax;
+		t3 = t1 + t2;
+	}
+	// 各加速阶段最大位移
+	t = t1;
+	double s1 = v0 * t + jmax * t*t*t / 6;
+	double a = jmax * t1;
+	t = t2;
+	double s2 = v0 * t + a / 6 * (3 * t*t - 3 * Tj1*t + Tj1 * Tj1);
+	t = t3;
+	double s3 = (vmax + v0) * t / 2;
+
 	double ans = v0;
 	if (ds < 0) {
 		ans = v0;
 	}
-	else if (ds < s1 - q0) {
-
+	else if (ds < s1) {
+		double sol[3] = { 0.0 }, coeff[4] = { -ds, v0, 0, jmax / 6 };
+		t = solve_cubic_eqution(coeff, sol);
+		ans = v0 + jmax * t*t / 2;
 	}
-	else if (ds < s2 - q0) {
-
+	else if (ds < s2) {
+		double sol[2] = { 0.0 }, coeff[3] = { a*t1*t1 / 6 - ds, v0 - a / 2 * t1, a / 2 };
+		t = solve_quadratic_eqution(coeff, sol);
+		ans = v0 + a * (t - t1 / 2);
 	}
-	else if (ds < s3 - q0) {
-
+	else if (ds < s3) {
+		double sol[3] = { 0.0 }, coeff[4] = { ds-s3, vmax, 0, jmin / 6 };
+		t = solve_cubic_eqution(coeff, sol);
+		ans = vmax + jmin * t*t / 2;
 	}
-	else if (ds < s4 - q0) {
-
-	}
-	else if (ds < s5 - q0) {
-
-	}
-	else if (ds < s6 - q0) {
-
-	}
-	else if (ds < q1 - q0) {
-
-	}
+	// 达到最大速度
 	else {
-		ans = v1;
+		ans = vmax;
 	}
 
 

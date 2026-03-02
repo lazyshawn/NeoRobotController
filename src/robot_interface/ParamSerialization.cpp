@@ -24,6 +24,9 @@ std::pair<int, std::vector<float>> serialize_Weave(const Weave& waveCfg) {
 	param[10] = waveCfg.Bias;
 	param[11] = waveCfg.Angle_Ltype_top;
 	param[12] = waveCfg.Angle_Ltype_btm;
+	// 补充参数
+	param[13] = waveCfg.AzimuthAngle;
+	param[14] = waveCfg.Angle_lead;
 
 	ans.first = static_cast<int>(AppendixType::WAVE_CFG);
 	ans.second = param;
@@ -53,6 +56,9 @@ Weave deserialize_Weave(const std::map<int, std::vector<float>>& appendix) {
 	cfg.Bias            = param[10];
 	cfg.Angle_Ltype_top = param[11];
 	cfg.Angle_Ltype_btm = param[12];
+	// 补充参数
+	cfg.AzimuthAngle = param[13];
+	cfg.Angle_lead   = param[14];
 
 	return cfg;
 }
@@ -516,5 +522,94 @@ Move_Config deserialize_Move_Config(const std::map<int, std::vector<float>>& app
 	return cfg;
 }
 
+
+// 弧坑回填参数
+std::pair<int, std::vector<float>> serialize_ArcPitBackfill(const ArcPitBackfill& cfg) {
+
+	std::pair<int, std::vector<float>> ans;
+	std::vector<float> param(18);
+
+	// 焊接参数
+	param[0] = cfg.enable;
+	param[1] = cfg.swingenable;
+	param[2] = cfg.current;
+	param[3] = cfg.voltage;
+	param[4] = cfg.voltageAdjust;
+	param[5] = cfg.distance;
+	param[6] = cfg.speed;
+	param[7] = cfg.jobNumber;
+	param[8] = cfg.inductanceCorrection;
+
+	// 运动参数
+	param[9] = cfg.swingMode;
+	param[10] = cfg.amplitudeLeft;
+	param[11] = cfg.amplitudeRight;
+	param[12] = cfg.frequency;
+	param[13] = cfg.leftStaytime;
+	param[14] = cfg.rightStaytime;
+	param[15] = cfg.leftSwingangles;
+	param[16] = cfg.rightSwingangle;
+	param[17] = cfg.stopMode;
+
+
+	ans.first = static_cast<int>(AppendixType::PitFill_CFG);
+	ans.second = param;
+
+	return ans;
+}
+ArcPitBackfill deserialize_ArcPitBackfill(const std::map<int, std::vector<float>>& appendix) {
+	ArcPitBackfill cfg;
+	auto ite = appendix.find(static_cast<int>(AppendixType::PitFill_CFG));
+	if (ite == appendix.end())
+		return cfg;
+	std::vector<float> param = ite->second;
+
+	cfg.enable = param[0];
+
+	// 焊接参数
+	cfg.swingenable = param[1];
+	cfg.current = param[2];
+	cfg.voltage = param[3];
+	cfg.voltageAdjust = param[4];
+	cfg.distance = param[5];
+	cfg.speed = param[6];
+	cfg.jobNumber = param[7];
+	cfg.inductanceCorrection = param[8];
+
+	// 运动参数
+	cfg.swingMode = param[9];
+	cfg.amplitudeLeft = param[10];
+	cfg.amplitudeRight = param[11];
+	cfg.frequency = param[12];
+	cfg.leftStaytime = param[13];
+	cfg.rightStaytime = param[14];
+	cfg.leftSwingangles = param[15];
+	cfg.rightSwingangle = param[16];
+	cfg.stopMode = param[17];
+
+	return cfg;
+}
+int split_ArcPitBackfill(const ArcPitBackfill& cfg, Arc_WeldingParaItem& weldCfg, Weave& waveCfg) {
+	// 焊接参数
+	weldCfg.WeldingCrt_Spd = cfg.current;
+	weldCfg.WeldingVtg_Strth = cfg.voltage;
+	weldCfg.WeldingVtg_Strth = cfg.voltageAdjust;
+	weldCfg.WeldJobChannelNum = cfg.jobNumber;
+	weldCfg.Weldinductance = cfg.inductanceCorrection;
+
+	// 运动参数
+	waveCfg.Id = cfg.swingenable;
+	waveCfg.Shape = cfg.swingMode;
+	waveCfg.LeftWidth = cfg.amplitudeLeft;
+	waveCfg.RightWidth = cfg.amplitudeRight;
+	waveCfg.Freq = cfg.frequency;
+	waveCfg.Dwell_left = cfg.leftStaytime;
+	waveCfg.Dwell_right = cfg.rightStaytime;
+	waveCfg.Angle_Ltype_top = cfg.leftSwingangles;
+	waveCfg.Angle_Ltype_btm = cfg.rightSwingangle;
+	waveCfg.Dwell_type = cfg.stopMode;
+
+	return 0;
+}
 
 } // namespace ZMotionRobot

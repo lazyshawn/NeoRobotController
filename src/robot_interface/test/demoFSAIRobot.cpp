@@ -272,8 +272,8 @@ void shawn_test::task_test() {
 	trajCfg.set_speed(80);
 	trajCfg.set_smooth(0);
 
-	trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
-	trajList.moveLABS({ 879.5140, 155.3090, 659.0740, -169.9990, - 44.9990, 179.9990 }, trajCfg);
+	//trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
+	trajList.moveLABS({ 879.5140, 155.3090, 659.0740, -169.9990, - 44.9990, 179.9990, 0,0,0 }, trajCfg);
 	//trajList.moveCABS({ 979.5140, 55.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, { 1179.5140, 155.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, trajCfg);
 
 	Arc_WeldingParaItem weldCfg;
@@ -297,8 +297,12 @@ void shawn_test::task_test() {
 	trackCfg.Id = 1;
 	trackCfg.Lr_enable = 1;
 	trackCfg.Ud_enable = 1;
-	//trajCfg.add_appendix(ZMotionRobot::serialize_Track(trackCfg));
+	//trajCfg.add_appendix(FSAIRobotInterface::serialize_Track(trackCfg));
 
+	ArcPitBackfill pitFillCfg;
+	pitFillCfg.enable = true;
+	pitFillCfg.distance = 10;
+	trajCfg.add_appendix(FSAIRobotInterface::serialize_ArcPitBackfill(pitFillCfg));
 
 	FSAIRobotInterface::Move_Action action;
 	// 等待
@@ -306,13 +310,13 @@ void shawn_test::task_test() {
 	// 起弧
 	//action.actionBefore.push_back({ 2, FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg).second });
 	// 息弧
-	//action.actionAfter.push_back({ 3, {} });
+	action.actionAfter.push_back({ 3, {} });
 	// 寻位
-	action.actionAfter.push_back({ 5, {869.5140, 255.3090, 659.0740, 10, 879.5140, 255.3090, 659.0740, 10} });
+	//action.actionAfter.push_back({ 5, {869.5140, 255.3090, 659.0740, 10, 879.5140, 255.3090, 659.0740, 10} });
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
 
 	trajCfg.set_speed(10);
-	trajList.moveLABS({ 879.5140, 255.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, trajCfg);
+	trajList.moveLABS({ 879.5140, 255.3090, 659.0740, -169.9990, -44.9990, 179.9990, 0,0,0 }, trajCfg);
 
 
 	trajCfg.set_speed(20);
@@ -320,7 +324,7 @@ void shawn_test::task_test() {
 	action.actionAfter.clear();
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
 	//trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
-	//trajList.moveLABS({ 1011, 100, 1298, 180, 0, 180, 0 }, trajCfg);
+	trajList.moveLABS({ 889.5140, 255.3090, 659.0740, -169.9990, -44.9990, 179.9990, 0,0,0 }, trajCfg);
 
 	//trajList.moveLABS({ 911, 0, 1298, 180, 0, 180, 0 }, trajCfg);
 	//trajList.moveCABS({ 911, 100, 1298, 180, 0, 180, 0 }, { 1011, 0, 1298, 180, 0, 180, 0 }, trajCfg);

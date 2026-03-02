@@ -585,6 +585,88 @@ int RobotBase::trigger_action(int type, const std::vector<float>& param) {
 	return 0;
 }
 
+int RobotBase::rewrie_actioin_param(Move_Action& cfg) {
+	// --- 缓冲前运动
+	for (auto& action : cfg.actionBefore) {
+		auto& type = action.first;
+		auto& param = action.second;
+
+		// 2. 起弧
+		if (type == 2) {
+		}
+	}
+
+	// --- 缓冲后运动
+	for (auto& action : cfg.actionAfter) {
+		auto& type = action.first;
+		auto& param = action.second;
+
+		// 息弧+弧坑回填: 计算回填轨迹
+		if (type == 3) {
+			// 获取当前轨迹
+			auto curTraj = trajectory.get_curTraj();
+			auto preTraj = trajectory.get_preTraj();
+
+			// 息弧参数
+			param.clear();
+			auto weldCfg = deserialize_Arc_WeldingParaItem(curTraj.get_appendix());
+			// 模式，电流，电压，电感，收弧时间，收气时间
+			param.push_back(weldCfg.ArcOffWorkMode);
+			param.push_back(weldCfg.ArcOffCrt_Spd);
+			param.push_back(weldCfg.ArcOffVtg_Strth);
+			param.push_back(weldCfg.ArcOffinductance);
+			param.push_back(weldCfg.ArcOffTime);
+			param.push_back(weldCfg.ArcOffBlowTime);
+
+			// 回填参数
+			auto pitFillCfg = deserialize_ArcPitBackfill(curTraj.get_appendix());
+			// 距离计算异常，回填动作不生效
+			if (trajectory.calc_traj_info() < 0)
+				pitFillCfg.enable = false;
+			// 写入回填参数
+			auto pitFillSerial = serialize_ArcPitBackfill(pitFillCfg);
+			param.push_back(pitFillCfg.enable);
+			param.push_back(pitFillCfg.current);
+			param.push_back(pitFillCfg.voltage);
+			param.push_back(pitFillCfg.inductanceCorrection);
+
+			if (pitFillCfg.enable) {
+				// 总距离
+				double dist = trajectory.get_dist();
+				auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), dist, dist - pitFillCfg.distance, 1);
+				// 回填运动: 运动类型，速度，平滑度，起点，中间点，结束点
+				int moveType = static_cast<int>(curTraj.get_trajType());
+				if (moveType == 2)
+					moveType = 0;
+				else if (moveType == 3)
+					moveType = 2;
+				param.push_back(static_cast<int>(curTraj.get_trajType()));
+				param.push_back(curTraj.speed);
+				param.push_back(curTraj.smooth);
+				// 回填中间点
+				param.insert(param.end(), segment.auxPoint.begin(), segment.auxPoint.end());
+				// 回填终点
+				param.insert(param.end(), segment.mainPoint.begin(), segment.mainPoint.end());
+				// 摆动参数
+			}
+		}
+	}
+
+	return 0;
+}
+
+int RobotBase::insert_task_traj() {
+
+	// 获取当前轨迹
+	auto curTraj = trajectory.get_curTraj();
+	// 获取上一条轨迹
+	auto preTraj = trajectory.get_preTraj();
+
+	// --- 弧坑回填，原本息弧指令后增加回填运动
+
+
+	return 0;
+}
 
 int RobotBase::export_tracking_data() {
 	// 检测文件夹是否存在
@@ -1144,14 +1226,18 @@ void RobotGroupManager::processCommandThread() {
 				if (!robotList[i]->consistent_traj_ready(coopState[i]))
 					break;
 
-				// 轨迹分割
+				// --- 轨迹下发前的重新处理
 				if (curTraj.isCartesian()) {
+					// 插入轨迹
+
 					// 拆分轨迹
 					robotList[i]->separate_trajectory();
+
 					// 更新轨迹
 					curTraj = robotList[i]->trajectory.get_curTraj();
 				}
 
+				// --- 轨迹下发检测
 				// 指令缓存检测
 				if (!robotList[i]->remain_buffer_free()) {
 					if (get_bit(coopState[i], 2) == 0) {
@@ -1191,8 +1277,12 @@ void RobotGroupManager::processCommandThread() {
 					sharedAxisState.second = i;
 				}
 
-				// 执行运动前动作
+				// --- 开始下发轨迹
+				// 缓冲动作补充参数: 部分参数需要在轨迹下发前才能确定，特别是需要在下位机补充执行轨迹的动作
 				auto action = deserialize_Move_Action(curTraj.appendix);
+				//robotList[i]->rewrie_actioin_param(action);
+
+				// 执行运动前动作
 				robotList[i]->execute_move_action(action.actionBefore, 0);
 
 				// 下发运动指令
