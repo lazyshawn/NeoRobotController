@@ -98,32 +98,32 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[0] += 10;
-	motionCfg.speed = 6;
+	motionCfg.speed = 20;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
-	//while (!interpBuffer.buffer_ready()) {
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	//}
-	//pointInfo.begPos = pointInfo.endPos;
-	//pointInfo.endPos.rbtPos[1] += 10;
-	//motionCfg.speed = 4;
-	//interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[1] += 10;
+	motionCfg.speed = 4;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
-	//while (!interpBuffer.buffer_ready()) {
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	//}
-	//pointInfo.begPos = pointInfo.endPos;
-	//pointInfo.endPos.rbtPos[0] -= 10;
-	//motionCfg.speed = 2;
-	//interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[0] -= 10;
+	motionCfg.speed = 40;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
-	//while (!interpBuffer.buffer_ready()) {
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	//}
-	//pointInfo.begPos = pointInfo.endPos;
-	//pointInfo.endPos.rbtPos[1] -= 10;
-	//motionCfg.speed = 4;
-	//interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[1] -= 10;
+	motionCfg.speed = 60;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	// 开始信号使能
 	dispatcher.interp_enable(true);
@@ -131,10 +131,29 @@ int push_trajectory() {
 }
 
 int test_cuvre() {
+	std::ofstream file, velFile;
+	file.open("interp_pos.txt", std::ios::out);
+	velFile.open("interp_vel.txt", std::ios::out);
+
 	DoubleSCurve curve;
 
-	curve.set_condition(0, 10, 7.5, 0);
+	curve.set_constraint(40, 10);
+	curve.set_condition(0, 9.2955883508964892, 4, 7.3523639345486407);
 	curve.plan();
+
+	double dt = 4e-3;
+	int num = curve.get_duration() / dt;
+
+	for (int i = 0; i < num + 1; ++i) {
+		double curT = i * dt;
+		double pos = curve.get_pos(curT);
+
+		// 位置输出
+		file << pos << ", " << 0 << ", " << 0 << std::endl;
+		// 速度输出
+		velFile << curve.get_vp() << std::endl;
+	}
+
 	return 0;
 }
 

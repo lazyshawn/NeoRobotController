@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         0.4.1\n"
-		<< "Release Date:    260120");
+		<< "Version:         1.0.0\n"
+		<< "Release Date:    260303_0939");
 }
 
 
@@ -49,10 +49,12 @@ int RobotBase::wait_auto_task_stop() {
 	// 等待条件置反
 	motionDone = false;
 
+	int ret = 0;
 	if (get_notifyType() > 0) {
-		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " notify type effect.");
+		ret = get_notifyType();
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " notify type effect: " << ret);
 		set_notifyType(0);
-		return 1;
+		return ret;
 	}
 
 	if (robotStatus.lowerStatus == 0 && trajectory.trajectory_loaded() && robotStatus.lineNum == get_lineNum()) {
@@ -71,7 +73,7 @@ int RobotBase::notify_waiting_robot() {
 	// 防止虚假唤醒
 	std::lock_guard<std::mutex> lock(mtxMotion);
 	motionDone = true;
-
+	
 	// 轨迹完成唤醒
 	if (notifyType == 0) {
 		// 清空轨迹
@@ -1092,12 +1094,12 @@ int RobotBase::pop_slave_buffer(std::vector<motion::BufferUnit>& buffer, bool po
 
 	int ans = bufferSync.pop_new_buffer(buffer, popFlag, num);
 
-	if (buffer.size()) {
-		LOG4CPLUS_INFO(RobotLog::getLogger(), "Pop Slave Buffer " << buffer.size() << ": " << buffer[0].timeStamp << ", " << vector_to_string(buffer[0].dpos));
-	}
-	else {
-		LOG4CPLUS_INFO(RobotLog::getLogger(), "Slave Buffer Empty");
-	}
+	//if (buffer.size()) {
+	//	LOG4CPLUS_INFO(RobotLog::getLogger(), "Pop Slave Buffer " << buffer.size() << ": " << buffer[0].timeStamp << ", " << vector_to_string(buffer[0].dpos));
+	//}
+	//else {
+	//	LOG4CPLUS_INFO(RobotLog::getLogger(), "Slave Buffer Empty");
+	//}
 
 	return ans;
 }
@@ -1136,6 +1138,7 @@ int RobotBase::modify_point_in_buffer(int id, const std::vector<float>& pos) {
 /* *************************** RobotGroupManager *************************** */
 RobotGroupManager::RobotGroupManager() {
 	cmdThreadDone = true;
+	bufferThreadDone.store(true);
 }
 
 RobotGroupManager::~RobotGroupManager() {
@@ -1615,8 +1618,13 @@ void RobotGroupManager::readSlaveBufferThread() {
 
 int RobotGroupManager::slave_buffer_stream(bool enable) {
 	if (enable) {
-		bufferThreadDone.store(false);
+		// 线程已经开启
+		if (!bufferThreadDone) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread Already Running.");
+			return 0;
+		}
 
+		bufferThreadDone.store(false);
 		if (bufferThreadWorker.joinable())
 			bufferThreadWorker.join();
 		// 绑定成员函数和 this 指针
@@ -2025,7 +2033,7 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 
 		// 需要唤醒
 		if (curTraj.notifyEnable > 0) {
-			robotList[robotIdx]->set_notifyType(1);
+			robotList[robotIdx]->set_notifyType(curTraj.saveSeq + 1);
 		}
 
 		// 轨迹完成

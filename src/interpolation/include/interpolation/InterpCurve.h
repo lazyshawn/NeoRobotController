@@ -62,6 +62,7 @@ public:
 	double get_duration();
 	double get_Ta();
 	double get_Td();
+	double get_vp();
 	/**
 	* @brief  计算曲线
 	*

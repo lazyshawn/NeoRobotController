@@ -273,6 +273,7 @@ void shawn_test::task_test() {
 	trajCfg.set_smooth(0);
 
 	//trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
+	trajCfg.saveSeq = 10;
 	trajList.moveLABS({ 879.5140, 155.3090, 659.0740, -169.9990, - 44.9990, 179.9990, 0,0,0 }, trajCfg);
 	//trajList.moveCABS({ 979.5140, 55.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, { 1179.5140, 155.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, trajCfg);
 
@@ -315,6 +316,7 @@ void shawn_test::task_test() {
 	//action.actionAfter.push_back({ 5, {869.5140, 255.3090, 659.0740, 10, 879.5140, 255.3090, 659.0740, 10} });
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
 
+	trajCfg.saveSeq = 20;
 	trajCfg.set_speed(10);
 	trajList.moveLABS({ 879.5140, 255.3090, 659.0740, -169.9990, -44.9990, 179.9990, 0,0,0 }, trajCfg);
 
@@ -326,6 +328,7 @@ void shawn_test::task_test() {
 	action.actionAfter.clear();
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
 	//trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
+	trajCfg.saveSeq = 30;
 	trajList.moveLABS({ 889.5140, 255.3090, 659.0740, -169.9990, -44.9990, 179.9990, 0,0,0 }, trajCfg);
 
 	//trajList.moveLABS({ 911, 0, 1298, 180, 0, 180, 0 }, trajCfg);

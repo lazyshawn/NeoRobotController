@@ -398,6 +398,7 @@ void SingleTrajectory::set_config(const TrajectoryConfig& cfg) {
 	moveInBase = cfg.moveInBase;
 	axisMask = cfg.axisMask;
 	notifyEnable = cfg.notifyEnable;
+	saveSeq = cfg.saveSeq;
 
 	appendix = cfg.appendix;
 }
@@ -553,11 +554,11 @@ int DiscreteTrajectory::moveJABS(const std::vector<DT_scale>& end, const Traject
 
 	// 定义新轨迹
 	SingleTrajectory traj(trajPoint, config);
-	traj.saveSeq = trajList.size();
+	//traj.saveSeq = trajList.size();
 
 	// 添加轨迹
 	trajList.push_back(traj);
-	traj.saveSeq = trajList.size();
+	//traj.saveSeq = trajList.size();
 
 	return 0;
 }
@@ -583,7 +584,7 @@ int DiscreteTrajectory::moveLABS(const std::vector<DT_scale>& end, const Traject
 	}
 
 	SingleTrajectory traj(trajPoint, config);
-	traj.saveSeq = trajList.size();
+	//traj.saveSeq = trajList.size();
 
 	trajList.push_back(traj);
 
@@ -612,7 +613,7 @@ int DiscreteTrajectory::moveCABS(const std::vector<DT_scale>& mid, const std::ve
 	}
 
 	SingleTrajectory traj(trajPoint, config);
-	traj.saveSeq = trajList.size();
+	//traj.saveSeq = trajList.size();
 
 	trajList.push_back(traj);
 

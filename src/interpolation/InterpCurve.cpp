@@ -140,24 +140,29 @@ int DoubleSCurve::set_reserve_time(double time) {
 }
 
 int DoubleSCurve::plan() {
+	// 不考虑加速度限制，两段加速到达目标点时，加加速时间Tjs1
 	double Tjs1 = std::sqrt(std::fabs(v1 - v0) / jmax);
+	// 到达最大加速度时间，到达后需要匀加速阶段，即三段加速到达目标点，此时加加速时间Tjs2
 	double Tjs2 = amax / jmax;
 	double Tjs = Tjs1;
 	
-	// - 轨迹合法性检测
+	// - 轨迹合法性检测: 单个加速/减速阶段即达到目标点速度，验证最短轨迹长度
 	bool valid = true;
+	double minDis = 0.0;
+	// 两段加速的最短运动距离
 	if (Tjs1 < Tjs2) {
-		if (q1 - q0 < Tjs * (v0 + v1))
-			valid = false;
+		minDis = Tjs * (v0 + v1);
 	}
+	// 三段加速的最短运动距离
 	else {
 		Tjs = Tjs2;
-		if (q1 - q0 < (v0 + v1) / 2 * (Tjs + std::fabs(v1 - v0) / jmax))
-			valid = false;
+		minDis = (v0 + v1) / 2 * (Tjs + std::fabs(v1 - v0) / jmax);
 	}
-	// 规划失败，无法在给定约束下通过双S曲线到达目标位置，速度规划时需要排除这种情况
-	if (!valid)
+	// 规划失败，无法在给定约束下通过双S曲线到达目标位置，速度规划时需要规避这种情况
+	if (q1 - q0 < minDis) {
+		valid = false;
 		return 1;
+	}
 
 	// - 计算各阶段时间
 	// Case 1: vlim = vmax
@@ -184,35 +189,62 @@ int DoubleSCurve::plan() {
 	// Case 2: vlim < vmax
 	if (Tv < 0) {
 		Tv = Ta = Td = 0.0;
-
-		double gama = 1.0, Tj = amax / jmax;
-		for (int i = 0; i < 10; ++i) {
-			double alim = gama * amax;
+		valid = false;
+		double low = 0.0, upp = 1.0;
+		for (int i = 0; i < 5; ++i) {
+			double mid = (low + upp) / 2.0;
+			// 当前加速度限制可以规划，二分区间上移
+			bool moveLow = true;
+			// 迭代解
+			double tj, tj1, tj2, ta, td, alim = mid * amax;
 
 			// Case 2.1: alim = amax
 			double det = std::pow(alim, 4.0) / jmax / jmax + 2 * (v0*v0 + v1 * v1) + alim * (4 * (q1 - q0) - 2 * alim / jmax * (v0 + v1));
-			Tj = Tj1 = Tj2 = alim / jmax;
-			Ta = (alim*alim / jmax - 2 * v0 + std::sqrt(det)) / (2 * alim);
-			Td = (alim*alim / jmax - 2 * v1 + std::sqrt(det)) / (2 * alim);
+			tj = tj1 = tj2 = alim / jmax;
+			ta = (alim*alim / jmax - 2 * v0 + std::sqrt(det)) / (2 * alim);
+			td = (alim*alim / jmax - 2 * v1 + std::sqrt(det)) / (2 * alim);
 
-			// this case is possible when v0 > v1
-			if (Ta < 0) {
-				Ta = Tj1 = 0.0;
-				Td = 2 * (q1 - q0) / (v1 + v0);
-				Tj2 = (jmax * (q1 - q0) - std::sqrt(jmax*(jmax*(q1 - q0)*(q1 - q0) + (v1 + v0)*(v1 + v0)*(v1 - v0)))) / (jmax*(v1 + v0));
+			// 仅需一个加速阶段，可以规划 (发生在v0 > v1)
+			if (ta < 0) {
+				ta = tj1 = 0.0;
+				td = 2 * (q1 - q0) / (v1 + v0);
+				tj2 = (jmax * (q1 - q0) - std::sqrt(jmax*(jmax*(q1 - q0)*(q1 - q0) + (v1 + v0)*(v1 + v0)*(v1 - v0)))) / (jmax*(v1 + v0));
 			}
-			// this case is possible when v1 > v0
-			else if (Td < 0) {
-				Td = Tj2 = 0;
-				Ta = 2 * (q1 - q0) / (v1 + v0);
-				Tj1 = (jmax * (q1 - q0) - std::sqrt(jmax*(jmax*(q1 - q0)*(q1 - q0) - (v1 + v0)*(v1 + v0)*(v1 - v0)))) / (jmax*(v1 + v0));
+			// 仅需一个减速阶段，可以规划 (发生在v0 < v1)
+			else if (td < 0) {
+				td = tj2 = 0;
+				ta = 2 * (q1 - q0) / (v1 + v0);
+				tj1 = (jmax * (q1 - q0) - std::sqrt(jmax*(jmax*(q1 - q0)*(q1 - q0) - (v1 + v0)*(v1 + v0)*(v1 - v0)))) / (jmax*(v1 + v0));
 			}
 			// Case 2.2: alim < amax, 继续减小加速度限制
-			else if (Ta < 2 * Tj || Td < 2 * Tj) {
-				gama *= 0.8;
+			else if (ta < 2 * tj || td < 2 * tj) {
+				moveLow = false;
+			}
+			// 两个阶段，两段都达到最大加速度时可以规划，此时Tj段时间相同
+
+			// 当前区间终点可以规划
+			if (moveLow) {
+				valid = true;
+				// 迭代更新
+				Ta = ta;
+				Tj1 = tj1;
+				Td = td;
+				Tj2 = tj2;
+				low = mid;
+
+				// 第一次迭代就成功则直接返回，当前即为封闭解
+				if (i == 0)
+					break;
+			}
+			else {
+				upp = mid;
 			}
 		}
 	}
+
+	// 规划失败，无法找到合适的加速度
+	if (!valid)
+		return 2;
 
 	// - 计算最大速度、加速度
 	alima = jmax * Tj1;
@@ -233,6 +265,10 @@ double DoubleSCurve::get_Ta() {
 
 double DoubleSCurve::get_Td() {
 	return Td;
+}
+
+double DoubleSCurve::get_vp() {
+	return vp;
 }
 
 bool DoubleSCurve::done() {
@@ -348,51 +384,62 @@ double DoubleSCurve::get_remain_time(double dt) {
 
 double DoubleSCurve::get_max_speed(double ds) {
 
-	// 各加速阶段时间节点
-	double t1, t2, t3, t;
-	// 加速阶段达到最大加速度
-	if ((vmax - v0)*jmax < amax*amax) {
-		t1 = t2 = std::sqrt(std::fabs(vmax - v0) / jmax);
-		t3 = t1 + t2;
-	}
-	else {
-		t1 = amax / jmax;
-		t2 = (vmax - v0) / amax;
-		t3 = t1 + t2;
-	}
-	// 各加速阶段最大位移
-	t = t1;
-	double s1 = v0 * t + jmax * t*t*t / 6;
-	double a = jmax * t1;
-	t = t2;
-	double s2 = v0 * t + a / 6 * (3 * t*t - 3 * Tj1*t + Tj1 * Tj1);
-	t = t3;
-	double s3 = (vmax + v0) * t / 2;
+	// 不考虑减速阶段，按 vmax, amax, jmax 约束，计算在给定距离 ds 和初始速度 v0 时可以达到的最终速度 vlim
 
-	double ans = v0;
-	if (ds < 0) {
-		ans = v0;
+	// 速度冗余，防止计算误差导致规划时最大速度超出限制
+	double margin = 1e-9;
+	double Tjk, Tacc;
+	// 加速到最大速度过程中达到最大加速度
+	if ((vmax - v0)*jmax < amax*amax) {
+		Tjk = std::sqrt(std::fabs(vmax - v0) / jmax);
+		Tacc = 2 * Tjk;
 	}
-	else if (ds < s1) {
-		double sol[3] = { 0.0 }, coeff[4] = { -ds, v0, 0, jmax / 6 };
-		t = solve_cubic_eqution(coeff, sol);
-		ans = v0 + jmax * t*t / 2;
-	}
-	else if (ds < s2) {
-		double sol[2] = { 0.0 }, coeff[3] = { a*t1*t1 / 6 - ds, v0 - a / 2 * t1, a / 2 };
-		t = solve_quadratic_eqution(coeff, sol);
-		ans = v0 + a * (t - t1 / 2);
-	}
-	else if (ds < s3) {
-		double sol[3] = { 0.0 }, coeff[4] = { ds-s3, vmax, 0, jmin / 6 };
-		t = solve_cubic_eqution(coeff, sol);
-		ans = vmax + jmin * t*t / 2;
-	}
-	// 达到最大速度
 	else {
+		Tjk = amax / jmax;
+		Tacc = Tjk + (vmax - v0) / amax;
+	}
+	// 临界距离，加速到最大速度需要的距离
+	double dsCmax = Tacc * (v0 + vmax) / 2;
+
+	double ans = 0.0;
+	// 1. 加速距离内能达到最大速度
+	if (ds > dsCmax) {
 		ans = vmax;
 	}
+	// 2. 距离不够加速到最大速度
+	else {
+		// 无法达到最大速度时，加速到目标距离的临界情况：两段加速刚好达到最大加速度
+		double dvC2 = amax * amax / jmax;
+		double dsC2 = (2 * v0*jmax + amax * amax) * amax / (jmax*jmax);
 
+		// 2.1. 需要三段加速到达目标距离
+		if (ds > dsC2) {
+			Tjk = amax / jmax;
+			double coeff[3] = { Tjk / 2 * v0 - v0 * v0 / (2 * amax), Tjk / 2, 1 / (2 * amax) };
+			double sol[2] = { 0.0 };
+			solve_quadratic_eqution(coeff, sol);
+			// 最小正解
+			for (int i = 0; i < 2; ++i) {
+				if (sol[i] > 0) {
+					ans = sol[i];
+					break;
+				}
+			}
+		}
+		// 2.2. 两段加速到达目标距离
+		else {
+			double coeff[4] = { -v0 * v0 * v0 - ds * ds * jmax, -v0 * v0, v0, 1.0 };
+			double sol[3] = { 0.0 };
+			solve_cubic_eqution(coeff, sol);
+			// 最小正解
+			for (int i = 0; i < 3; ++i) {
+				if (sol[i] > 0) {
+					ans = sol[i];
+					break;
+				}
+			}
+		}
+	}
 
-	return ans;
+	return ans - margin;
 }

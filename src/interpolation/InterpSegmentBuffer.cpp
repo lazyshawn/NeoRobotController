@@ -48,16 +48,7 @@ int InterpBuffer::add_move_point(const PointInfo& point, const MotionCfg& cfg, c
 	// - 插入轨迹
 	bufOccupied = true;
 	// 缓冲轨迹
-	std::shared_ptr<InterpSegment> traj;
-	traj = std::shared_ptr<InterpSegment>(new InterpSegment);
-	//// 关节轨迹
-	//if (cfg.moveType % 2 == 0) {
-	//	traj = std::shared_ptr<InterpSegment>(new JointInterpSegment);
-	//}
-	//// 空间轨迹
-	//else {
-	//	traj = std::shared_ptr<InterpSegment>(new CartesianInterpSegment);
-	//}
+	std::shared_ptr<InterpSegment> traj = std::shared_ptr<InterpSegment>(new InterpSegment);
 
 	// 轨迹加入缓冲
 	traj->set_data(point, cfg, cmd);
@@ -377,6 +368,11 @@ int InterpBuffer::cartesian_prehandle() {
 	// 实际后平滑开始位置，前平滑曲线插补完成后同步偏移
 	preBuf->procInfo.segmEndDist = preBuf->procInfo.preBlendDist + preBuf->procInfo.mainDist;
 
+	// --- 计算前一段轨迹的终点约束速度
+	if (preBuf->procInfo.processed) {
+		preBuf->procInfo.constrainedVel = std::min(preBuf->motionCfg.speed, curBuf->motionCfg.speed);
+	}
+
 	// - 预处理完毕
 	curBuf->procInfo.processed = true;
 
@@ -391,15 +387,10 @@ int InterpBuffer::cartesian_plan() {
 	// --- 速度规划
 	// 设置规划约束
 	curBuf->curve.set_constraint(curBuf->motionCfg.speed, 10);
-	// 前瞻后溯
-	double vs = 0.0, ve = 0.0;
-	ve = cartesian_look_ahead();
-	if (curBuf->procInfo.preSmooth > 0) {
-		vs = preBuf->motionCfg.speed / 2;
-	}
-	if (curBuf->procInfo.postSmooth > 0) {
-		ve = curBuf->motionCfg.speed / 2;
-	}
+	double vs = preBuf->procInfo.constrainedVel;
+	// 前瞻回溯
+	double ve = cartesian_look_ahead();
+	curBuf->procInfo.constrainedVel = ve;
 	
 	// --- 插补曲线规划
 	// 当前段规划总长度
@@ -579,11 +570,17 @@ int InterpBuffer::cartesian_move() {
 }
 
 double InterpBuffer::cartesian_look_ahead() {
+	// 1. 记录前瞻减速点: 从当前点可以正常运动加速到目标点
+	// 2. 记录后溯减速点: 从当前点可以正常运动并停在结束点
+	// 3. 合并减速点，得到最终减速点的速度
+	// 4. 基于第一个减速点，计算到达当前段后平滑曲率点的终点速度
+	// 5. 基于当前段/下一段设置速度和自适应速度约束Ve值
+
 	// 轨迹前瞻，队首开始
 	InterpSegment *preBuf = nullptr, *curBuf = nullptr, *nextBuf = nullptr;
 	get_neighbor_buffer(bufBeg, preBuf, curBuf, nextBuf);
 
-	// 最大前瞻段数, 实际前瞻段数
+	// 最大前瞻段数, 实际前瞻段数: forwardNum = 2表示除了当前段，还有两段需要前瞻
 	int maxForwardNum = 10, forwardNum = 0;
 	// 当前段有后平滑，启用前瞻
 	if (curBuf->procInfo.postSmooth > 0) {
@@ -597,19 +594,37 @@ double InterpBuffer::cartesian_look_ahead() {
 	}
 	// 无需前瞻, 结束点速度为0
 	if (forwardNum == 0)
-		return 0;
+		return 0.0;
 
-	// 前瞻
-	for (int i = 0; i < forwardNum; ++i) {
-		// 1. 记录前瞻减速点: 从当前点可以正常运动加速到目标点
-
-		// 2. 记录后溯减速点: 从当前点可以正常运动并停在结束点
-
-		// 3. 合并减速点，得到最终减速点的速度
-
-		// 4. 基于第一个减速点，计算到达当前段后平滑曲率点的终点速度
-
-		// 5. 基于当前段/下一段设置速度和自适应速度约束Ve值
+	double ans = curBuf->procInfo.constrainedVel;
+	DoubleSCurve curve;
+	curve.set_constraint(curBuf->motionCfg.speed, 10);
+	double dist = preBuf->procInfo.remainS;
+	dist += curBuf->procInfo.preBlendDist + curBuf->procInfo.mainDist + curBuf->procInfo.postBlendDist;
+	double vsForward = preBuf->procInfo.constrainedVel;
+	curve.set_condition(0, dist, vsForward, vsForward);
+	double maxSpeed = curve.get_max_speed(dist);
+	if (maxSpeed < curBuf->procInfo.constrainedVel) {
+		ans = maxSpeed;
 	}
-	return 0;
+
+	// --- 前瞻: 从当前点加速
+	//std::vector<double> vlim(forwardNum + 1, 0.0);
+	//for (int i = 0; i < forwardNum + 1; ++i) {
+	//	InterpSegment *tmpBuf = get_following_buffer(bufBeg, i);
+	//	dist += tmpBuf->procInfo.preBlendDist + tmpBuf->procInfo.mainDist + tmpBuf->procInfo.postBlendDist;
+
+	//	// 最大提速速度
+	//	curve.set_constraint(tmpBuf->motionCfg.speed, 10);
+	//	curve.set_condition(0, dist, vsForward, 0);
+	//	double maxSpeed = curve.get_max_speed(dist);
+
+	//	// 前瞻约束速度
+	//	vlim[i] = std::min(maxSpeed, tmpBuf->procInfo.constrainedVel);
+	//	vsForward = vlim[i];
+	//}
+
+	// --- 回溯: 从终点加速
+
+	return ans;
 }

@@ -1193,18 +1193,23 @@ namespace FSAIRobotInterface {
 			idx[i] += i;
 		}
 		value = std::vector<float>(idx.size(), 0.0);
+		// 正弦摆
 		if (waveCfg.Shape == 0) {
 			value[0] = 0;
 		}
+		// 三角摆
 		else if (waveCfg.Shape == 1) {
-			value[0] = 3;
-		}
-		else if (waveCfg.Shape == 2) {
-			value[0] = 2;
-		}
-		else if (waveCfg.Shape == 3) {
 			value[0] = 4;
 		}
+		// L 摆
+		else if (waveCfg.Shape == 2) {
+			value[0] = 3;
+		}
+		// 钟摆
+		else if (waveCfg.Shape == 3) {
+			value[0] = 2;
+		}
+		// 斜正弦
 		else if (waveCfg.Shape == 4) {
 			value[0] = 1;
 		}

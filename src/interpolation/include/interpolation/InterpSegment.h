@@ -48,7 +48,7 @@ struct PointInfo {
 // 基础运动参数: 如运动类型、速度、平滑度、轴屏蔽等
 struct MotionCfg {
 	int moveType;
-	double speed;
+	double speed = 0.0;
 	double accel;
 	// 结束点平滑度，起点平滑度即上一段结束点平滑度
 	double smooth;
@@ -114,7 +114,7 @@ struct ProcessInfo {
 	//! 整数周期插补后的剩余时间
 	double remainT = 0.0;
 	//! 结束点速度
-	double constrainedVel;
+	double constrainedVel = 0.0;
 
 	//! 直线段始末位置
 	double segmBegDist, segmEndDist;

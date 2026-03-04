@@ -109,6 +109,8 @@ struct TrajectoryConfig {
 	int rewriteId = -1;
 	// 允许唤醒
 	int notifyEnable = 0;
+	//! 保存编号
+	int saveSeq = -1;
 
 	// 协同段总距离
 	DT_scale syncDist = 0;
@@ -179,7 +181,7 @@ public:
 class SingleTrajectory : public TrajectoryPoint, public TrajectoryConfig {
 public:
 	//! 保存编号
-	int saveSeq = -1;
+	//int saveSeq = -1;
 	//! 轨迹编号
 	int lineNum = 0;
 	//! 轨迹类型
