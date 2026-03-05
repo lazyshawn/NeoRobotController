@@ -596,35 +596,43 @@ double InterpBuffer::cartesian_look_ahead() {
 	if (forwardNum == 0)
 		return 0.0;
 
-	double ans = curBuf->procInfo.constrainedVel;
 	DoubleSCurve curve;
-	curve.set_constraint(curBuf->motionCfg.speed, 10);
-	double dist = preBuf->procInfo.remainS;
-	dist += curBuf->procInfo.preBlendDist + curBuf->procInfo.mainDist + curBuf->procInfo.postBlendDist;
+	// 前瞻/回溯段起点速度
 	double vsForward = preBuf->procInfo.constrainedVel;
-	curve.set_condition(0, dist, vsForward, vsForward);
-	double maxSpeed = curve.get_max_speed(dist);
-	if (maxSpeed < curBuf->procInfo.constrainedVel) {
-		ans = maxSpeed;
-	}
+	// 第i段终点限速，当前段起点和最后一段终点速度(0)均已知
+	std::vector<double> vlim(forwardNum, 0.0);
 
 	// --- 前瞻: 从当前点加速
-	//std::vector<double> vlim(forwardNum + 1, 0.0);
-	//for (int i = 0; i < forwardNum + 1; ++i) {
-	//	InterpSegment *tmpBuf = get_following_buffer(bufBeg, i);
-	//	dist += tmpBuf->procInfo.preBlendDist + tmpBuf->procInfo.mainDist + tmpBuf->procInfo.postBlendDist;
+	for (int i = 0; i < forwardNum; ++i) {
+		InterpSegment *tmpBuf = get_following_buffer(bufBeg, i);
+		double dist = (i == 0) ? preBuf->procInfo.remainS : 0.0;
+		dist += tmpBuf->procInfo.preBlendDist + tmpBuf->procInfo.mainDist + tmpBuf->procInfo.postBlendDist;
 
-	//	// 最大提速速度
-	//	curve.set_constraint(tmpBuf->motionCfg.speed, 10);
-	//	curve.set_condition(0, dist, vsForward, 0);
-	//	double maxSpeed = curve.get_max_speed(dist);
+		// 最大提速速度
+		curve.set_constraint(tmpBuf->motionCfg.speed, 10);
+		curve.set_condition(0, dist, vsForward, 0);
+		double maxSpeed = curve.get_max_speed(dist);
 
-	//	// 前瞻约束速度
-	//	vlim[i] = std::min(maxSpeed, tmpBuf->procInfo.constrainedVel);
-	//	vsForward = vlim[i];
-	//}
+		// 前瞻约束速度
+		vlim[i] = std::min(maxSpeed, tmpBuf->procInfo.constrainedVel);
+		vsForward = vlim[i];
+	}
 
-	// --- 回溯: 从终点加速
+	// --- 回溯: 从终点加速, i+1 段起点速度即为 i 段终点速度
+	vsForward = 0.0;
+	for (int i = forwardNum - 1; i >= 0; --i) {
+		InterpSegment *tmpBuf = get_following_buffer(bufBeg, i + 1);
+		double dist = tmpBuf->procInfo.preBlendDist + tmpBuf->procInfo.mainDist + tmpBuf->procInfo.postBlendDist;
 
-	return ans;
+		// 最大提速速度
+		curve.set_constraint(tmpBuf->motionCfg.speed, 10);
+		curve.set_condition(0, dist, vsForward, 0);
+		double maxSpeed = curve.get_max_speed(dist);
+
+		// 回溯约束速度
+		vlim[i] = std::min(maxSpeed, vlim[i]);
+		vsForward = vlim[i];
+	}
+
+	return vlim[0];
 }

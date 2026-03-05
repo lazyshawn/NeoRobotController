@@ -274,8 +274,10 @@ void shawn_test::task_test() {
 
 	//trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
 	trajCfg.saveSeq = 10;
+	trajCfg.rewriteId = 1;
 	trajList.moveLABS({ 879.5140, 155.3090, 659.0740, -169.9990, - 44.9990, 179.9990, 0,0,0 }, trajCfg);
 	//trajList.moveCABS({ 979.5140, 55.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, { 1179.5140, 155.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, trajCfg);
+	trajCfg.rewriteId = -1;
 
 	Arc_WeldingParaItem weldCfg;
 	weldCfg.Id = 1;
@@ -340,4 +342,6 @@ void shawn_test::task_test() {
 
 	//trajList2.moveLABS({ -1095, 40, 1700, -160, 20, 0, 0 }, trajCfg);
 
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	group.robotList[0]->modify_point_in_buffer(1, { 0,1,2,3,4 });
 }
