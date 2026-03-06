@@ -603,7 +603,7 @@ int RobotBase::rewrie_actioin_param(Move_Action& cfg) {
 		auto& type = action.first;
 		auto& param = action.second;
 
-		// 息弧+弧坑回填: 计算回填轨迹
+		// 息弧
 		if (type == 3) {
 			// 获取当前轨迹
 			auto curTraj = trajectory.get_curTraj();
@@ -620,37 +620,6 @@ int RobotBase::rewrie_actioin_param(Move_Action& cfg) {
 			param.push_back(weldCfg.ArcOffTime);
 			param.push_back(weldCfg.ArcOffBlowTime);
 
-			//// 回填参数
-			//auto pitFillCfg = deserialize_ArcPitBackfill(curTraj.get_appendix());
-			//// 距离计算异常，回填动作不生效
-			//if (trajectory.calc_traj_info() < 0)
-			//	pitFillCfg.enable = false;
-			//// 写入回填参数
-			//auto pitFillSerial = serialize_ArcPitBackfill(pitFillCfg);
-			//param.push_back(pitFillCfg.enable);
-			//param.push_back(pitFillCfg.current);
-			//param.push_back(pitFillCfg.voltage);
-			//param.push_back(pitFillCfg.inductanceCorrection);
-
-			//if (pitFillCfg.enable) {
-			//	// 总距离
-			//	double dist = trajectory.get_dist();
-			//	auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), dist, dist - pitFillCfg.distance, 1);
-			//	// 回填运动: 运动类型，速度，平滑度，起点，中间点，结束点
-			//	int moveType = static_cast<int>(curTraj.get_trajType());
-			//	if (moveType == 2)
-			//		moveType = 0;
-			//	else if (moveType == 3)
-			//		moveType = 2;
-			//	param.push_back(static_cast<int>(curTraj.get_trajType()));
-			//	param.push_back(curTraj.speed);
-			//	param.push_back(curTraj.smooth);
-			//	// 回填中间点
-			//	param.insert(param.end(), segment.auxPoint.begin(), segment.auxPoint.end());
-			//	// 回填终点
-			//	param.insert(param.end(), segment.mainPoint.begin(), segment.mainPoint.end());
-			//	// 摆动参数
-			//}
 		}
 	}
 
@@ -717,6 +686,8 @@ int RobotBase::insert_task_traj() {
 				pitTraj.auxPoint = segment.auxPoint;
 				auto ite = trajectory.trajList.begin();
 				trajectory.trajList.insert(++ite, pitTraj);
+
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " PitFill Enabled: " << vector_to_string(serialize_ArcPitBackfill(pitFillCfg).second, 2));
 				break;
 			}
 		}

@@ -322,39 +322,53 @@ int InterpBuffer::cartesian_prehandle() {
 		double distCur = curBuf->procInfo.dist * 0.5;
 		// 平滑距离
 		double smoothDist = std::min(distPre, distCur) * curBuf->procInfo.preSmooth * 1e-2;
+		// 重复点，平滑距离为0，取消平滑
+		if (smoothDist < dim_EPS) {
+			curBuf->procInfo.preSmooth = 0.0;
+			preBuf->procInfo.postSmooth = 0.0;
 
-		// 当前段前平滑
-		curBuf->procInfo.preSmoothK = smoothDist / curBuf->procInfo.dist;
-		// 前段后平滑
-		preBuf->procInfo.postSmoothK = 1.0 - smoothDist / preBuf->procInfo.dist;
-
-		// 直线拐点位置
-		MatrixXd *corner = matrix_from_array(3, 1, curBuf->pointInfo.begPos.rbtPos.data(), 3);
-		// 始末点切线方向
-		MatrixXd *preDir = matrix_from_array(3, 1, preBuf->procInfo.dir, 3);
-		MatrixXd *curDir = matrix_from_array(3, 1, curBuf->procInfo.dir, 3);
-		// 计算当前段前平滑控制点
-		MatrixXd *ctrl = matrix_copy(corner);
-		double detK = 1.0 / 3;
-		for (int i = 0; i < 3; ++i) {
-			// 前半段 (u: 0 -> 0.5)
-			matrix_plus(1, corner, -(1.0 - detK * i) * smoothDist, preDir, ctrl);
-			matrix_to_array(ctrl, curBuf->procInfo.preCtrlPnt[i], 3);
-			// 后半段 (u: 1 -> 0.5)
-			matrix_plus(1, corner, (1.0 - detK * i) * smoothDist, curDir, ctrl);
-			matrix_to_array(ctrl, curBuf->procInfo.preCtrlPnt[5 - i], 3);
+			curBuf->procInfo.preSmoothK = 0.0;
+			preBuf->procInfo.postSmoothK = 1.0;
 		}
-		// 前段后平滑控制点
-		memcpy(preBuf->procInfo.postCtrlPnt, curBuf->procInfo.preCtrlPnt, 18 * sizeof(double));
+		else {
+			// 当前段前平滑
+			curBuf->procInfo.preSmoothK = smoothDist / curBuf->procInfo.dist;
+			// 前段后平滑
+			preBuf->procInfo.postSmoothK = 1.0 - smoothDist / preBuf->procInfo.dist;
 
-		matrix_delete(preDir);
-		matrix_delete(curDir);
-		matrix_delete(ctrl);
+			// 直线拐点位置
+			MatrixXd *corner = matrix_from_array(3, 1, curBuf->pointInfo.begPos.rbtPos.data(), 3);
+			// 始末点切线方向
+			MatrixXd *preDir = matrix_from_array(3, 1, preBuf->procInfo.dir, 3);
+			MatrixXd *curDir = matrix_from_array(3, 1, curBuf->procInfo.dir, 3);
+			// 计算当前段前平滑控制点
+			MatrixXd *ctrl = matrix_copy(corner);
+			double detK = 1.0 / 3;
+			for (int i = 0; i < 3; ++i) {
+				// 前半段 (u: 0 -> 0.5)
+				matrix_plus(1, corner, -(1.0 - detK * i) * smoothDist, preDir, ctrl);
+				matrix_to_array(ctrl, curBuf->procInfo.preCtrlPnt[i], 3);
+				// 后半段 (u: 1 -> 0.5)
+				matrix_plus(1, corner, (1.0 - detK * i) * smoothDist, curDir, ctrl);
+				matrix_to_array(ctrl, curBuf->procInfo.preCtrlPnt[5 - i], 3);
+			}
+			// 前段后平滑控制点
+			memcpy(preBuf->procInfo.postCtrlPnt, curBuf->procInfo.preCtrlPnt, 18 * sizeof(double));
+
+			matrix_delete(preDir);
+			matrix_delete(curDir);
+			matrix_delete(ctrl);
+		}
 	}
 
 	// --- 计算规划段长度
-	// 前平滑曲线长度 (前平滑曲线长度在前平滑曲线插补完后重新计算，因为会有一定的误差，影响过渡到直线的速度计算)
-	curBuf->procInfo.preBlendDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, 0.5, 1, 1000);
+	if (curBuf->procInfo.preSmooth > 0) {
+		// 前平滑曲线长度 (前平滑曲线长度在前平滑曲线插补完后重新计算，因为会有一定的误差，影响过渡到直线的速度计算)
+		curBuf->procInfo.preBlendDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, 0.5, 1, 1000);
+	}
+	else {
+		curBuf->procInfo.preBlendDist = 0.0;
+	}
 	// 无平滑段长度
 	curBuf->procInfo.mainDist = curBuf->procInfo.dist * (1.0 - curBuf->procInfo.preSmoothK);
 	curBuf->procInfo.postBlendDist = 0.0;
@@ -362,14 +376,15 @@ int InterpBuffer::cartesian_prehandle() {
 	curBuf->procInfo.segmBegDist = curBuf->procInfo.preBlendDist;
 	curBuf->procInfo.segmEndDist = curBuf->procInfo.preBlendDist + curBuf->procInfo.mainDist;
 
-	// 后平滑曲线长度
-	preBuf->procInfo.postBlendDist = curBuf->procInfo.preBlendDist;
-	preBuf->procInfo.mainDist = preBuf->procInfo.dist * (preBuf->procInfo.postSmoothK - preBuf->procInfo.preSmoothK);
-	// 实际后平滑开始位置，前平滑曲线插补完成后同步偏移
-	preBuf->procInfo.segmEndDist = preBuf->procInfo.preBlendDist + preBuf->procInfo.mainDist;
-
-	// --- 计算前一段轨迹的终点约束速度
+	// --- 前一段曲线参数
 	if (preBuf->procInfo.processed) {
+		// 后平滑曲线长度
+		preBuf->procInfo.postBlendDist = curBuf->procInfo.preBlendDist;
+		preBuf->procInfo.mainDist = preBuf->procInfo.dist * (preBuf->procInfo.postSmoothK - preBuf->procInfo.preSmoothK);
+		// 实际后平滑开始位置，前平滑曲线插补完成后同步偏移
+		preBuf->procInfo.segmEndDist = preBuf->procInfo.preBlendDist + preBuf->procInfo.mainDist;
+
+		// 前一段轨迹的终点约束速度
 		preBuf->procInfo.constrainedVel = std::min(preBuf->motionCfg.speed, curBuf->motionCfg.speed);
 	}
 
@@ -569,13 +584,14 @@ int InterpBuffer::cartesian_move() {
 		else {
 			// 直线段长度
 			double dis = moveS - curBuf->procInfo.segmBegDist + curBuf->procInfo.preSmoothK * curBuf->procInfo.dist;
+			double lambda = (curBuf->procInfo.dist < dim_EPS) ? 0.0 : dis / curBuf->procInfo.dist;
 
 			if (curBuf->interpInfo.partId != 2) {
 				curBuf->interpInfo.partId = 2;
 			}
 
 			for (int i = 0; i < 3; ++i) {
-				pos.rbtPos[i] = curBuf->pointInfo.begPos.rbtPos[i] * (1.0 - dis / curBuf->procInfo.dist) + curBuf->pointInfo.endPos.rbtPos[i] * dis / curBuf->procInfo.dist;
+				pos.rbtPos[i] = curBuf->pointInfo.begPos.rbtPos[i] * (1.0 - lambda) + curBuf->pointInfo.endPos.rbtPos[i] * lambda;
 			}
 		}
 	}
