@@ -157,8 +157,10 @@ public:
 	double curTime = 0;
 
 	//! 各轴插补的 S 曲线
-	DoubleSCurve curve;
-	DoubleSCurve curvePre;
+	// 关节: 机械臂(6) + 附加轴(3) + 变位机(3)
+	// 空间: 位置(1) + 姿态(1) + 附加轴(3) + 变位机(3)
+	DoubleSCurve curve[9];
+	DoubleSCurve curvePre[9];
 
 	// 轨迹数据
 	PointInfo pointInfo;

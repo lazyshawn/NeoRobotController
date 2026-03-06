@@ -36,10 +36,14 @@ int main() {
 	std::ofstream file, velFile;
 	file.open("interp_pos.txt", std::ios::out);
 	velFile.open("interp_vel.txt", std::ios::out);
+	std::ofstream extFile, extVelFile;
+	extFile.open("interp_ext.txt", std::ios::out);
+	extVelFile.open("interp_ext_vel.txt", std::ios::out);
 
 	dpos.pointType = 0;
 	dpos.rbtPos = std::vector<double>(6, 0.0);
-	std::vector<double> dposPre = dpos.rbtPos;
+	dpos.extPos = std::vector<double>(6, 0.0);
+	PosData dposPre = dpos;
 
 	// 开启插点线程
 	auto pointThreadWorker = std::thread(push_trajectory);
@@ -61,10 +65,19 @@ int main() {
 			file << dpos.rbtPos[0] << ", " << dpos.rbtPos[1] << ", " << dpos.rbtPos[2] << std::endl;
 			// 速度输出
 			for (int j = 0; j < 3; ++j) {
-				dposPre[j] -= dpos.rbtPos[j];
+				dposPre.rbtPos[j] -= dpos.rbtPos[j];
 			}
-			velFile << sqrt(dposPre[0] * dposPre[0] + dposPre[1] * dposPre[1] + dposPre[2] * dposPre[2]) / interpBuffer.get_cycleTime() << std::endl;
-			dposPre = dpos.rbtPos;
+			velFile << sqrt(dposPre.rbtPos[0] * dposPre.rbtPos[0] + dposPre.rbtPos[1] * dposPre.rbtPos[1] + dposPre.rbtPos[2] * dposPre.rbtPos[2]) / interpBuffer.get_cycleTime() << std::endl;
+
+			// 附加轴位置
+			extFile << dpos.extPos[0] << std::endl;
+			// 附加轴速度
+			for (int j = 0; j < 3; ++j) {
+				dposPre.extPos[j] -= dpos.extPos[j];
+			}
+			extVelFile << sqrt(dposPre.extPos[0] * dposPre.extPos[0] + dposPre.extPos[1] * dposPre.extPos[1] + dposPre.extPos[2] * dposPre.extPos[2]) / interpBuffer.get_cycleTime() << std::endl;
+
+			dposPre = dpos;
 		}
 
 		if (dispatcherState.interpState % 2 == 1) {
@@ -87,6 +100,7 @@ int main() {
 
 int push_trajectory() {
 	pointInfo.endPos.rbtPos = std::vector<double>(6, 0.0);
+	pointInfo.endPos.extPos = std::vector<double>(3, 0.0);
 	motionCfg.moveType = 1;
 	motionCfg.speed = 2;
 	motionCfg.smooth = 40;
@@ -98,6 +112,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[0] += 10;
+	pointInfo.endPos.extPos[0] += 100;
 	motionCfg.speed = 20;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
@@ -106,6 +121,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[1] += 10;
+	pointInfo.endPos.extPos[0] += 100;
 	motionCfg.speed = 4;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
@@ -114,6 +130,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[0] -= 10;
+	pointInfo.endPos.extPos[0] += 100;
 	motionCfg.speed = 40;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
@@ -122,6 +139,7 @@ int push_trajectory() {
 	}
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[1] -= 10;
+	pointInfo.endPos.extPos[0] += 100;
 	motionCfg.speed = 60;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 

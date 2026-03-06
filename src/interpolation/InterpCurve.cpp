@@ -1,7 +1,7 @@
 ﻿
 #include "interpolation/InterpCurve.h"
 
-// - 辅助函数
+// --- 辅助函数
 // 解二次方程
 int solve_quadratic_eqution(double *k, double *ans) {
 	double c = k[0], b = k[1], a = k[2];
@@ -98,10 +98,39 @@ double solve_cubic_eqution(double *k, double *ans) {
 	}
 }
 
+
+/***********************************************************************
+ *                        DoubleSCurve                                 *
+ ***********************************************************************/
+
 DoubleSCurve::DoubleSCurve() {
 	vmin = -vmax;
 	amin = -amax;
 	jmin = -jmax;
+}
+
+int DoubleSCurve::calc_plan_param() {
+
+	// 速度、加速度上确界
+	alima = jmax * Tj1;
+	alimd = -jmax * Tj2;
+	vlim = v0 + (Ta - Tj1)*alima;
+	T = Ta + Tv + Td;
+
+	// 不同阶段的运动位移
+	double t = Tj1;
+	s1 = v0 * t + jmax * t*t*t / 6;
+	t = Ta - Tj1;
+	s2 = v0 * t + alima / 6 * (3 * t*t - 3 * Tj1*t + Tj1 * Tj1);
+	s3 = (vlim + v0) * Ta / 2;
+	t = Tv;
+	s4 = (vlim + v0) * Ta / 2 + vlim * t;
+	t = Tj2;
+	s5 = q1 - q0 - (vlim + v1)*Td / 2 + vlim * t - jmax * t*t*t / 6;
+	t = Td - Tj2;
+	s6 = q1 - q0 - (vlim + v1)*Td / 2 + vlim * t + alimd / 6 * (3 * t * t - 3 * Tj2 * t + Tj2 * Tj2);
+
+	return 0;
 }
 
 int DoubleSCurve::set_condition(double begPos, double endPos, double begVel, double endVel) {
@@ -247,10 +276,30 @@ int DoubleSCurve::plan() {
 		return 2;
 
 	// - 计算最大速度、加速度
-	alima = jmax * Tj1;
-	alimd = -jmax * Tj2;
-	vlim = v0 + (Ta - Tj1)*alima;
-	T = Ta + Tv + Td;
+	calc_plan_param();
+
+	return 0;
+}
+
+int DoubleSCurve::plan_by_duration(double Tall, double Tacc, double Tjerk) {
+	double alpha = Tacc / Tall;
+	double beta = Tjerk / Tacc;
+	double h = q1 - q0;
+
+	T = Tall;
+	Ta = Td = Tacc;
+	Tj1 = Tj2 = Tjerk;
+	Tv = Tall - Ta - Td;
+	
+	double denom = (1 - alpha) * T;
+	vmax = h / denom;
+	denom *= alpha * (1 - beta) * T;
+	amax = h / denom;
+	denom *= alpha * beta * T;
+	jmax = h / denom;
+
+	// - 计算最大速度、加速度
+	calc_plan_param();
 
 	return 0;
 }
@@ -265,6 +314,10 @@ double DoubleSCurve::get_Ta() {
 
 double DoubleSCurve::get_Td() {
 	return Td;
+}
+
+double DoubleSCurve::get_Tv() {
+	return Tv;
 }
 
 double DoubleSCurve::get_vp() {
@@ -384,8 +437,6 @@ double DoubleSCurve::get_remain_time(double dt) {
 
 double DoubleSCurve::get_max_speed(double ds) {
 
-	// 不考虑减速阶段，按 vmax, amax, jmax 约束，计算在给定距离 ds 和初始速度 v0 时可以达到的最终速度 vlim
-
 	// 速度冗余，防止计算误差导致规划时最大速度超出限制
 	double margin = 1e-9;
 	double Tjk, Tacc;
@@ -398,7 +449,7 @@ double DoubleSCurve::get_max_speed(double ds) {
 		Tjk = amax / jmax;
 		Tacc = Tjk + (vmax - v0) / amax;
 	}
-	// 临界距离，加速到最大速度需要的距离
+	// 加速到最大速度需要的临界距离
 	double dsCmax = Tacc * (v0 + vmax) / 2;
 
 	double ans = 0.0;
@@ -409,37 +460,97 @@ double DoubleSCurve::get_max_speed(double ds) {
 	// 2. 距离不够加速到最大速度
 	else {
 		// 无法达到最大速度时，加速到目标距离的临界情况：两段加速刚好达到最大加速度
-		double dvC2 = amax * amax / jmax;
 		double dsC2 = (2 * v0*jmax + amax * amax) * amax / (jmax*jmax);
+		double sol[3] = { 0.0 };
+		int solNum = 3;
 
 		// 2.1. 需要三段加速到达目标距离
 		if (ds > dsC2) {
 			Tjk = amax / jmax;
 			double coeff[3] = { Tjk / 2 * v0 - v0 * v0 / (2 * amax), Tjk / 2, 1 / (2 * amax) };
-			double sol[2] = { 0.0 };
 			solve_quadratic_eqution(coeff, sol);
-			// 最小正解
-			for (int i = 0; i < 2; ++i) {
-				if (sol[i] > 0) {
-					ans = sol[i];
-					break;
-				}
-			}
 		}
 		// 2.2. 两段加速到达目标距离
 		else {
 			double coeff[4] = { -v0 * v0 * v0 - ds * ds * jmax, -v0 * v0, v0, 1.0 };
-			double sol[3] = { 0.0 };
+			solNum = 2;
 			solve_cubic_eqution(coeff, sol);
-			// 最小正解
-			for (int i = 0; i < 3; ++i) {
-				if (sol[i] > 0) {
-					ans = sol[i];
-					break;
-				}
+		}
+
+		// 最小正解
+		for (int i = 0; i < solNum; ++i) {
+			if (sol[i] > 0) {
+				ans = sol[i];
+				break;
 			}
 		}
 	}
 
 	return ans - margin;
 }
+
+double DoubleSCurve::calc_time_PiTPe(double ds) {
+	// 当前运动距离
+	double s = q1 - q0 - ds;
+
+
+	double sol[3] = { 0.0 }, t0 = 0.0;
+	double solNum = 2, solShift = 0.0;
+	if (s < 0) {
+		sol[0] = T;
+		solNum = 1;
+	}
+	else if (s < s1) {
+		double coeff[4] = { -s, v0, 0, jmax / 6 };
+		solve_cubic_eqution(coeff, sol);
+		solNum = 3;
+	}
+	else if (s < s2) {
+		double coeff[3] = { alima*Tj1*Tj1 / 6 - s, v0 - alima * Tj1 / 2, alima / 2 };
+		solve_quadratic_eqution(coeff, sol);
+	}
+	else if (s < s3) {
+		double coeff[4] = { s - (vlim + v0)*Ta / 2, vlim, 0, jmin / 6 };
+		solve_cubic_eqution(coeff, sol);
+		solNum = 3;
+		solShift = -Ta;
+	}
+	else if (s < s4) {
+		sol[0] = (s - (vlim + v0)*Ta / 2) / vlim + Ta;
+		solNum = 1;
+	}
+	else if (s < s5) {
+		double coeff[4] = { s - (vlim + v1)*Td / 2, -vlim, 0, jmax / 6 };
+		solve_cubic_eqution(coeff, sol);
+		solNum = 3;
+		solShift = T - Td;
+	}
+	else if (s < s6) {
+		double coeff[3] = { alimd*Tj2*Tj2 / 6 - (vlim + v1)*Tj2 / 2 - s, vlim - alimd * Tj2 / 2, alimd / 2 };
+		solve_quadratic_eqution(coeff, sol);
+		solShift = T - Td;
+	}
+	else if (s < q1 - q0) {
+		double coeff[4] = { s, v1, 0, jmax / 6 };
+		solve_cubic_eqution(coeff, sol);
+		solNum = 3;
+		solShift = -T;
+	}
+	else {
+		sol[0] = 0;
+		solNum = 1;
+	}
+
+	// 最小正解
+	double ans = 0.0;
+	for (int i = 0; i < solNum; ++i) {
+		if (sol[i] > 0) {
+			ans = sol[i];
+			break;
+		}
+	}
+	ans = T - std::fabs(ans + solShift);
+
+	return ans;
+}
+
