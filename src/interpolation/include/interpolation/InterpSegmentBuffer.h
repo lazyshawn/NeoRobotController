@@ -14,9 +14,11 @@ class InterpBuffer {
 	std::vector<std::shared_ptr<InterpSegment>> interpBuf;
 	//! 缓冲容量(N)
 	int maxBufNum;
+	//! 预留余量(n)
+	int reserveNum;
 	//! 缓存起点编号, 当前正在插补的轨迹编号, [0,...]
 	int bufBeg;
-	//! 缓存终点编号, 下一条写入缓冲的轨迹编号, (beg, beg+N]
+	//! 缓存终点编号, 下一条写入缓冲的轨迹编号, [beg, beg+N-n]
 	int bufEnd;
 	//! 队尾缓冲正在使用标识符
 	bool bufOccupied = false;

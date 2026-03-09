@@ -398,6 +398,7 @@ void SingleTrajectory::set_config(const TrajectoryConfig& cfg) {
 	moveInBase = cfg.moveInBase;
 	axisMask = cfg.axisMask;
 	notifyEnable = cfg.notifyEnable;
+	rewriteId = cfg.rewriteId;
 	saveSeq = cfg.saveSeq;
 
 	appendix = cfg.appendix;
@@ -410,6 +411,8 @@ TrajectoryConfig SingleTrajectory::get_config() {
 	cfg.moveInBase = moveInBase;
 	cfg.axisMask = axisMask;
 	cfg.notifyEnable = notifyEnable;
+	cfg.rewriteId = rewriteId;
+	cfg.saveSeq = saveSeq;
 
 	cfg.appendix = appendix;
 

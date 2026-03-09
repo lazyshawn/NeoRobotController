@@ -267,7 +267,8 @@ void shawn_test::sync_test() {
 }
 
 void shawn_test::task_test() {
-	
+	group.robotList[0]->move_compensate({0,1,2});
+
 	// 机器人1
 	trajCfg.set_speed(80);
 	trajCfg.set_smooth(0);
@@ -342,6 +343,6 @@ void shawn_test::task_test() {
 
 	//trajList2.moveLABS({ -1095, 40, 1700, -160, 20, 0, 0 }, trajCfg);
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	group.robotList[0]->modify_point_in_buffer(1, { 0,1,2,3,4 });
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//group.robotList[0]->modify_point_in_buffer(1, { 0,1,2,3,4 });
 }

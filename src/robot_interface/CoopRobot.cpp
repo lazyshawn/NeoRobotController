@@ -666,6 +666,7 @@ int RobotBase::insert_task_traj() {
 				nextWeldCfg.VtgUniCorrection = pitFillCfg.voltageAdjust;
 				nextWeldCfg.Inductance = pitFillCfg.inductanceCorrection;
 				nextWeldCfg.WeldJobChannelNum = pitFillCfg.jobNumber;
+				pitTraj.add_appendix(serialize_Arc_WeldingParaItem(nextWeldCfg));
 
 				// 摆焊参数
 				Weave nextWeaveCfg = weaveCfg;
@@ -679,6 +680,7 @@ int RobotBase::insert_task_traj() {
 				nextWeaveCfg.Angle_Ltype_top = pitFillCfg.leftSwingangles;
 				nextWeaveCfg.Angle_Ltype_btm = pitFillCfg.rightSwingangle;
 				nextWeaveCfg.Dwell_type = pitFillCfg.stopMode;
+				pitTraj.add_appendix(serialize_Weave(nextWeaveCfg));
 
 				double dist = trajectory.get_dist();
 				auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), dist, dist - pitFillCfg.distance, 1);

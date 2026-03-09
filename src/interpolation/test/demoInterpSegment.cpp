@@ -105,7 +105,6 @@ int push_trajectory() {
 	motionCfg.speed = 2;
 	motionCfg.smooth = 40;
 
-
 	// 点位指令插入缓存区
 	while (!interpBuffer.buffer_ready()) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -145,6 +144,7 @@ int push_trajectory() {
 
 	// 开始信号使能
 	dispatcher.interp_enable(true);
+
 	return 0;
 }
 

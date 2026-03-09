@@ -4,7 +4,7 @@
 
 void ProcessInfo::reset() {
 	lineNum = -1;
-	processed = false;
+	procStage = 0;
 }
 
 /***********************************************************************

@@ -12,6 +12,8 @@ static const double dim_EPS = 1e-6;
 InterpBuffer::InterpBuffer() {
 	bufBeg = bufEnd = 0;
 	maxBufNum = 10;
+	// 保留一个缓冲位置，用于记录上一条运动
+	reserveNum = 1;
 
 	for (size_t i = 0; i < maxBufNum; ++i) {
 		interpBuf.push_back(std::shared_ptr<InterpSegment>(new InterpSegment));
@@ -26,12 +28,12 @@ double InterpBuffer::get_cycleTime() {
 }
 
 bool InterpBuffer::buffer_ready() {
-	return (!bufOccupied) && (bufEnd - bufBeg - maxBufNum < 0);
+	return (!bufOccupied) && (bufEnd - bufBeg - maxBufNum + reserveNum < 0);
 }
 
 int InterpBuffer::add_move_point(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd) {
 	// - 轨迹队列已满
-	if (bufEnd - bufBeg - maxBufNum == 0) {
+	if (bufEnd - bufBeg - maxBufNum + reserveNum == 0) {
 		printf("point buffer is full: %d\n", maxBufNum);
 		return 1;
 	}
@@ -55,23 +57,15 @@ int InterpBuffer::add_move_point(const PointInfo& point, const MotionCfg& cfg, c
 	interpBuf[curBuf] = traj;
 
 	// - 预处理
-	//interpBuf[curBuf]->prehandle(*interpBuf[preBuf]);
-	if (cfg.moveType % 2 == 0) {
+	interpBuf[curBuf]->procInfo.procStage = 1;
+	if (cfg.moveType % 2 == 0)
 		joint_prehandle();
-	}
-	else {
+	else
 		cartesian_prehandle();
-	}
+	interpBuf[curBuf]->procInfo.procStage = 2;
 
 	// 行号
 	interpBuf[curBuf]->procInfo.lineNum = bufEnd;
-
-	// 若无等待则上一段终点设为当前起点
-	if (bufEnd - bufBeg > 0) {
-		int preBuf = (bufEnd - 1) % maxBufNum;
-
-		interpBuf[curBuf]->pointInfo.begPos = interpBuf[preBuf]->pointInfo.endPos;
-	}
 
 	// - 轨迹插入成功
 	printf("add new point: %d\n", bufEnd);
@@ -153,14 +147,15 @@ int InterpBuffer::move(PosData& pos) {
 	int num = bufBeg, next, pre;
 	get_neighbor_index(&pre, &num, &next);
 
-	// 如果是新轨迹则进行规划
-	if (interpBuf[num]->procInfo.processed && interpBuf[num]->procInfo.maxTime < dim_EPS) {
-		if (interpBuf[num]->motionCfg.moveType == 0) {
+	// 如果是第一条轨迹，等待若干周期，保证前两条轨迹平滑生效
+	// 如果是新轨迹则进行规划, 预处理完成，未开始规划
+	if (interpBuf[num]->procInfo.procStage == 2) {
+		interpBuf[num]->procInfo.procStage = 3;
+		if (interpBuf[num]->motionCfg.moveType == 0)
 			joint_plane();
-		}
-		else if (interpBuf[num]->motionCfg.moveType == 1) {
+		else if (interpBuf[num]->motionCfg.moveType == 1)
 			cartesian_plan();
-		}
+		interpBuf[num]->procInfo.procStage = 4;
 	}
 
 	// - 执行插补
@@ -196,9 +191,6 @@ int InterpBuffer::joint_prehandle() {
 		preBuf->procInfo.postSmooth = preBuf->motionCfg.smooth = curBuf->procInfo.preSmooth;
 	}
 
-	// - 预处理完毕
-	curBuf->procInfo.processed = true;
-
 	return 0;
 }
 
@@ -214,7 +206,7 @@ int InterpBuffer::joint_plane() {
 
 	double moveEndTime = 0.0;
 	// 有后平滑，且下一段轨迹已插入
-	if (curBuf->procInfo.postSmooth > 0 && nextBuf->procInfo.processed) {
+	if (curBuf->procInfo.postSmooth > 0 && nextBuf->procInfo.procStage == 2) {
 		// 下一段曲线规划
 		DoubleSCurve nextCurve;
 		nextCurve.set_condition(nextBuf->pointInfo.begPos.rbtPos[0], nextBuf->pointInfo.endPos.rbtPos[0], 0, 0);
@@ -311,8 +303,8 @@ int InterpBuffer::cartesian_prehandle() {
 	// --- 平滑处理
 	// 当前段平滑设置
 	curBuf->procInfo.postSmooth = 0;
-	// 前段平滑设置
-	if (preBuf->motionCfg.smooth > 0) {
+	// 前段平滑设置，前段未开始规划，可能需要提前到前两条轨迹结束前若干个周期，以免当前段预处理时前一段正好开始规划
+	if (preBuf->motionCfg.smooth > 0 && preBuf->procInfo.procStage == 2) {
 		preBuf->procInfo.postSmooth = curBuf->procInfo.preSmooth = preBuf->motionCfg.smooth;
 	}
 
@@ -376,8 +368,8 @@ int InterpBuffer::cartesian_prehandle() {
 	curBuf->procInfo.segmBegDist = curBuf->procInfo.preBlendDist;
 	curBuf->procInfo.segmEndDist = curBuf->procInfo.preBlendDist + curBuf->procInfo.mainDist;
 
-	// --- 前一段曲线参数
-	if (preBuf->procInfo.processed) {
+	// --- 前一段曲线参数, 预处理完成，未开始规划
+	if (preBuf->procInfo.procStage == 2) {
 		// 后平滑曲线长度
 		preBuf->procInfo.postBlendDist = curBuf->procInfo.preBlendDist;
 		preBuf->procInfo.mainDist = preBuf->procInfo.dist * (preBuf->procInfo.postSmoothK - preBuf->procInfo.preSmoothK);
@@ -387,9 +379,6 @@ int InterpBuffer::cartesian_prehandle() {
 		// 前一段轨迹的终点约束速度
 		preBuf->procInfo.constrainedVel = std::min(preBuf->motionCfg.speed, curBuf->motionCfg.speed);
 	}
-
-	// - 预处理完毕
-	curBuf->procInfo.processed = true;
 
 	return 0;
 }

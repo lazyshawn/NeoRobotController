@@ -577,7 +577,7 @@ namespace FSAIRobotInterface {
 		int idx = get_cmd_idx_base() + 24102;
 
 		std::vector<int> tableId(4, idx);
-		for (int i = 0; i < tableId.size(); ++idx) {
+		for (int i = 0; i < tableId.size(); ++i) {
 			tableId[i] += i;
 		}
 
@@ -777,7 +777,7 @@ namespace FSAIRobotInterface {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
 			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
 			<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // 轴掩码
-			<< ". traj dist: " << trajectory.get_dist() << ", notifyEnable: " << curTraj.notifyEnable
+			<< ". traj dist: " << trajectory.get_dist() << ", notifyEnable: " << curTraj.notifyEnable << ", rewriteId: " << curTraj.rewriteId
 		);
 
 		// 轨迹点维度与驱动轴维度的较小值
