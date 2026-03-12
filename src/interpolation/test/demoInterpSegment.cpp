@@ -105,42 +105,48 @@ int push_trajectory() {
 	motionCfg.speed = 2;
 	motionCfg.smooth = 40;
 
+	SwingInterpParam swingCfg;
+	swingCfg.enable = 1;
+	swingCfg.freq = 1.0;
+	swingCfg.leftWidth = swingCfg.rightWidth = 2;
+	moveCmd.set_swing(swingCfg);
+
 	// 点位指令插入缓存区
 	while (!interpBuffer.buffer_ready()) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	pointInfo.begPos = pointInfo.endPos;
-	pointInfo.endPos.rbtPos[0] += 10;
+	pointInfo.endPos.rbtPos[0] += 1000;
 	pointInfo.endPos.extPos[0] += 100;
 	motionCfg.speed = 20;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
-	while (!interpBuffer.buffer_ready()) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
-	pointInfo.begPos = pointInfo.endPos;
-	pointInfo.endPos.rbtPos[1] += 10;
-	pointInfo.endPos.extPos[0] += 100;
-	motionCfg.speed = 4;
-	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	//while (!interpBuffer.buffer_ready()) {
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	//}
+	//pointInfo.begPos = pointInfo.endPos;
+	//pointInfo.endPos.rbtPos[1] += 10;
+	//pointInfo.endPos.extPos[0] += 100;
+	//motionCfg.speed = 4;
+	//interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
-	while (!interpBuffer.buffer_ready()) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
-	pointInfo.begPos = pointInfo.endPos;
-	pointInfo.endPos.rbtPos[0] -= 10;
-	pointInfo.endPos.extPos[0] += 100;
-	motionCfg.speed = 40;
-	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	//while (!interpBuffer.buffer_ready()) {
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	//}
+	//pointInfo.begPos = pointInfo.endPos;
+	//pointInfo.endPos.rbtPos[0] -= 10;
+	//pointInfo.endPos.extPos[0] += 100;
+	//motionCfg.speed = 40;
+	//interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
-	while (!interpBuffer.buffer_ready()) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
-	pointInfo.begPos = pointInfo.endPos;
-	pointInfo.endPos.rbtPos[1] -= 10;
-	pointInfo.endPos.extPos[0] += 100;
-	motionCfg.speed = 60;
-	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	//while (!interpBuffer.buffer_ready()) {
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	//}
+	//pointInfo.begPos = pointInfo.endPos;
+	//pointInfo.endPos.rbtPos[1] -= 10;
+	//pointInfo.endPos.extPos[0] += 100;
+	//motionCfg.speed = 60;
+	//interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	// 开始信号使能
 	dispatcher.interp_enable(true);
@@ -155,8 +161,10 @@ int test_cuvre() {
 
 	DoubleSCurve curve;
 
-	curve.set_constraint(40, 10);
-	curve.set_condition(0, 9.2955883508964892, 4, 7.3523639345486407);
+	curve.set_constraint(10, 10);
+	curve.set_condition(2, 0, 0,0);
+	//curve.set_constraint(40, 10);
+	//curve.set_condition(0, 9.2955883508964892, 4, 7.3523639345486407);
 	curve.plan();
 
 	double dt = 4e-3;

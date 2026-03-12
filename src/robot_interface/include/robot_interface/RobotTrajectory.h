@@ -184,7 +184,7 @@ public:
 	//int saveSeq = -1;
 	//! 轨迹编号
 	int lineNum = 0;
-	//! 轨迹类型
+	//! 轨迹类型: 指令轨迹(0), 弧坑回填轨迹(1)
 	int taskId = 0;
 
 	SingleTrajectory();

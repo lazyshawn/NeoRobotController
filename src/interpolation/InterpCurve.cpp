@@ -220,7 +220,7 @@ int DoubleSCurve::plan() {
 		Tv = Ta = Td = 0.0;
 		valid = false;
 		double low = 0.0, upp = 1.0;
-		for (int i = 0; i < 5; ++i) {
+		for (int i = 0; i < 10; ++i) {
 			double mid = (low + upp) / 2.0;
 			// 当前加速度限制可以规划，二分区间上移
 			bool moveLow = true;

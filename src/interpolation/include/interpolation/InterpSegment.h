@@ -11,8 +11,47 @@
 
 #include <queue>
 #include <memory>
+#include <map>
 
 #include "interpolation/InterpCurve.h"
+
+
+/***********************************************************************
+ *                        T A S K P A R A M                            *
+ ***********************************************************************/
+ // 参数类型
+enum class TaskParamType {
+	SWING,   // 摆焊
+};
+
+struct SwingInterpParam {
+	static TaskParamType type;
+
+	// 设置参数
+	int enable = 0;
+	double freq;
+	double leftWidth;
+	double rightWidth;
+
+	// 过程参数
+	int state;
+	double time;
+	double duration;
+
+	void clear();
+	int get_type() const;
+	// 序列化
+	int serialize(std::vector<double>& param) const;
+	// 反序列化
+	int deserialize(const std::vector<double>& param);
+};
+
+// 任务参数: 参数启用，参数Id，序列化参数
+struct TaskParam {
+	// 摆焊参数: 当前阶段
+	std::vector<double> swing;
+};
+
 
 
 // 轨迹类型
@@ -58,9 +97,17 @@ struct MotionCfg {
 	int positionerMask;
 };
 
-// 缓冲指令: 如焊接参数、摆焊参数、缓冲动作等
+// 缓冲指令: 如焊接参数、摆焊参数、缓冲动作等，在轨迹开始执行时写入到公共的任务参数区
 struct MoveCmd {
+	// 摆焊(0)
+	std::vector<int> state;
+	std::vector<std::vector<double>> data;
 
+	MoveCmd();
+
+	int reset_swing();
+	int set_swing(const SwingInterpParam& param);
+	int get_swing(SwingInterpParam& param) const;
 };
 
 /* ************************************************************ *
@@ -158,7 +205,7 @@ public:
 
 	//! 各轴插补的 S 曲线
 	// 关节: 机械臂(6) + 附加轴(3) + 变位机(3)
-	// 空间: 位置(1) + 姿态(1) + 附加轴(3) + 变位机(3)
+	// 空间: 位置(1) + 姿态(1) + 摆焊(1) + 保留(3) + 附加轴(3) + 变位机(3)
 	DoubleSCurve curve[9];
 	DoubleSCurve curvePre[9];
 
@@ -176,6 +223,7 @@ public:
 	// 设置轨迹数据
 	int set_data(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd);
 };
+
 
 
 

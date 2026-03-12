@@ -462,6 +462,14 @@ int InterpBuffer::cartesian_plan() {
 		oriAccT = 1.5 * time2;
 	curBuf->curve[6].plan_by_duration(eulerTime, oriAccT, oriAccT / 2);
 
+	// --- 工艺参数赋值
+	SwingInterpParam swing;
+	curBuf->moveCmd.get_swing(swing);
+	swing.state = 0;
+	swing.time = 0.0;
+	swing.duration = curBuf->curve[0].get_duration();
+	swing.serialize(taskParam.swing);
+
 	// --- 插补状态复位
 	// 插补完成标志复位
 	curBuf->interpInfo.partId = 0;
@@ -501,15 +509,6 @@ int InterpBuffer::cartesian_move() {
 
 	// 当前插补比例
 	double ratio = curS / (curBuf->procInfo.preBlendDist + curBuf->procInfo.mainDist + curBuf->procInfo.postBlendDist);
-
-	// --- 附加轴插补
-	pos.extPos = std::vector<double>(6, 0.0);
-	if (curBuf->procInfo.preSmooth > 0) {
-		pos.extPos[0] = preBuf->curve[6].get_pos(curBuf->curTime) + curBuf->curve[6].get_pos(curBuf->curTime) - curBuf->curve[6].get_pos(0);
-	}
-	else {
-		pos.extPos[0] = curBuf->curve[6].get_pos(curBuf->curTime);
-	}
 
 	// --- 计算当前位置
 	pos.rbtPos = curBuf->pointInfo.begPos.rbtPos;
@@ -585,7 +584,55 @@ int InterpBuffer::cartesian_move() {
 		}
 	}
 
-	// - 插补状态更新
+	// --- 附加轴插补
+	pos.extPos = std::vector<double>(6, 0.0);
+	if (curBuf->procInfo.preSmooth > 0) {
+		pos.extPos[0] = preBuf->curve[6].get_pos(curBuf->curTime) + curBuf->curve[6].get_pos(curBuf->curTime) - curBuf->curve[6].get_pos(0);
+	}
+	else {
+		pos.extPos[0] = curBuf->curve[6].get_pos(curBuf->curTime);
+	}
+
+	// --- 摆焊叠加
+	double swingAdd = 0.0;
+	SwingInterpParam swing;
+	swing.deserialize(taskParam.swing);
+	double singleSwingTime = 0.5 / swing.freq;
+	if (swing.state == 0) {
+		swing.state = 1;
+		curBuf->curve[2].set_condition(0, 2, 0, 0);
+		curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime/2, singleSwingTime/10);
+		curBuf->curve[2].plan();
+		swing.time = cycleTime;
+	}
+	else {
+		swingAdd = curBuf->curve[2].get_pos(swing.time);
+
+		if (curBuf->curve[2].done()) {
+			swing.state = (swing.state + 1) % 2 + 2;
+
+			// 剩余时间不足一个完整周期
+			double remainSwingTime = curBuf->curve[0].get_duration() - curBuf->curTime - 2;
+
+			if (swing.state == 2) {
+				curBuf->curve[2].set_condition(2, remainSwingTime < 0 ? 0 : -2, 0, 0);
+			}
+			else {
+				curBuf->curve[2].set_condition(-2, remainSwingTime < 0 ? 0 : 2, 0, 0);
+			}
+
+			if (remainSwingTime < 0)
+				curBuf->curve[2].plan_by_duration(remainSwingTime + 2, (remainSwingTime + 2) / 2, (remainSwingTime + 2) / 10);
+			else
+				curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
+			swing.time = 0.0;
+		}
+		swing.time += cycleTime;
+	}
+	swing.serialize(taskParam.swing);
+	pos.rbtPos[1] += swingAdd;
+
+	// --- 插补状态更新
 	// 插补进度
 	curBuf->interpInfo.schedule = ratio;
 	// 当前目标位置

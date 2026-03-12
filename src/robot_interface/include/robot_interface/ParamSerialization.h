@@ -74,7 +74,7 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 
 // 再起弧参数
 std::pair<int, std::vector<float>> serialize_ReArc(const ReArc& cfg);
-ReArc serialize_ReArc(const std::map<int, std::vector<float>>& appendix);
+ReArc deserialize_ReArc(const std::map<int, std::vector<float>>& appendix);
 
 // 跟踪参数
 std::pair<int, std::vector<float>> serialize_Track(const Track& trackCfg);

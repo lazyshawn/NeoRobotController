@@ -363,8 +363,9 @@ namespace FSAIRobotInterface {
 			return -2;
 		}
 
-		// 轨迹预处理: 欧拉角修正
+		// 轨迹预处理
 		for (auto& traj : trajList.trajList) {
+			// 1. 欧拉角修正
 			if (traj.isJoint()) {}
 			else {
 				float tmp = traj.mainPoint[3];
@@ -375,7 +376,64 @@ namespace FSAIRobotInterface {
 				traj.auxPoint[3] = traj.auxPoint[5];
 				traj.auxPoint[5] = tmp;
 			}
-			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " notifyEnable = " << traj.notifyEnable);
+
+			// 2. 焊接参数修正, 电压与电压修正
+			auto weldCfg = deserialize_Arc_WeldingParaItem(traj.appendix);
+			auto rearcCfg = deserialize_ReArc(traj.appendix);
+			auto actionCfg = deserialize_Move_Action(traj.appendix);
+
+			// 3. 缓冲运动参数写入
+			if (weldCfg.Id > 0) {
+				for (auto& item : actionCfg.actionBefore) {
+					// 起弧动作中添加起弧参数、再起弧参数和焊接参数
+					if (item.first == 2) {
+						std::vector<DT_scale> data;
+						// 起弧参数 0
+						data.push_back(weldCfg.ArcOnWorkMode);
+						data.push_back(weldCfg.ArcOnCrt_Spd);
+						data.push_back(weldCfg.ArcOnVtg_Strth);
+						data.push_back(weldCfg.ArcOninductance);
+						data.push_back(weldCfg.ArcOnJobChannelNum);
+						data.push_back(weldCfg.ArcOnTime);
+						data.push_back(weldCfg.ArcOnBlowTime);
+						// 再起弧参数 7
+						data.push_back(rearcCfg.ReArc_Enable);
+						data.push_back(rearcCfg.ReArcTime);
+						data.push_back(rearcCfg.ReArcSnagTime);
+						// 焊接参数 10
+						data.push_back(weldCfg.WeldingWorkMode);
+						data.push_back(weldCfg.WeldingCrt_Spd);
+						data.push_back(weldCfg.WeldingVtg_Strth);
+						data.push_back(weldCfg.Weldinductance);
+						data.push_back(weldCfg.WeldJobChannelNum);
+
+						// 添加起弧参数
+						item.second = data;
+						traj.add_appendix(serialize_Move_Action(actionCfg));
+						break;
+					}
+
+				}
+
+				for (auto& item : actionCfg.actionAfter) {
+					// 息弧动作中添加息弧参数
+					if (item.first == 3) {
+						std::vector<DT_scale> data;
+
+						// 模式，电流，电压，电感，收弧Job，收弧时间，收气时间
+						data.push_back(weldCfg.ArcOffWorkMode);
+						data.push_back(weldCfg.ArcOffCrt_Spd);
+						data.push_back(weldCfg.ArcOffVtg_Strth);
+						data.push_back(weldCfg.ArcOffinductance);
+						data.push_back(weldCfg.ArcOffJobChannelNum);
+						data.push_back(weldCfg.ArcOffTime);
+						data.push_back(weldCfg.ArcOffBlowTime);
+
+						item.second = data;
+						traj.add_appendix(serialize_Move_Action(actionCfg));
+					}
+				}
+			}
 		}
 
 		std::unique_lock<std::mutex> lock(mtxMotion);
@@ -1097,14 +1155,6 @@ namespace FSAIRobotInterface {
 				ZController->set_axis_param(idx + 267, "TABLE", 1);
 				delayNum++;
 			}
-			// 息弧 + 回填，修改当前段终点，避免下一条轨迹起点设置异常
-			//if (type == 3 && param[6] > 0) {
-			//	auto preTraj = trajectory.get_preTraj();
-			//	TrajectoryPoint point;
-			//	point.trajType = preTraj.trajType;
-			//	point.mainPoint = std::vector<DT_scale>(param.begin() + 22, param.begin() + 31);
-			//	trajectory.set_preTraj(point);
-			//}
 
 			// 完成标志位复位
 			if (flag == 0)
@@ -1280,27 +1330,27 @@ namespace FSAIRobotInterface {
 		if (weldCfg.Id <= 0)
 			return 1;
 
-		float current, voltage;
-		// 电流
+		float current, voltage, inductance, jobId;
+		// - 电流
 		current = weldCfg.WeldingCrt_Spd;
-		// 电压分别模式
-		//if (weldCfg.WeldingWorkMode == 4) {
-		if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1) {
+		// - 电压
+		// 分别模式
+		if ((weldCfg.WeldingWorkMode >> 4) % 2 == 1)
 			voltage = weldCfg.WeldingVtg_Strth;
-		}
 		// 一元模式
-		else {
+		else
 			voltage = weldCfg.VtgUniCorrection + 30;
-		}
-
+		// - 模式: 起弧(0), 机器人就绪(1), 焊接模式(2-7)
 		uint8_t modeCmd = 0;
-		//modeCmd += (1 << 1);
-		//modeCmd += (weldCfg.WeldingWorkMode == 1) << 2;
-		modeCmd += weldCfg.WeldingWorkMode;
 		modeCmd += (weldCfg.Id >= 0);
+		modeCmd += weldCfg.WeldingWorkMode;
+		// - 电感
+		inductance = weldCfg.Weldinductance;
+		// - Job号
+		jobId = weldCfg.WeldJobChannelNum;
 
 		int stateBase = get_state_idx_base();
-		std::vector<int> tableList(3, stateBase + 171);
+		std::vector<int> tableList(5, stateBase + 171);
 		for (size_t i = 0; i < tableList.size(); ++i) {
 			tableList[i] += i;
 		}
@@ -1309,17 +1359,15 @@ namespace FSAIRobotInterface {
 		data.push_back(modeCmd);
 		data.push_back(current);
 		data.push_back(voltage);
+		data.push_back(inductance);
+		data.push_back(jobId);
 
 		// 写入变工艺参数
-		//ZController->set_axis_param(tableList, "TABLE", data, get_execute_axis()[0]);
 		begRegister.add_buffer(tableList, data);
 		// 变工艺使能
-		//ZController->set_axis_param(stateBase + 170, "TABLE", 1, get_execute_axis()[0]);
 		begRegister.add_buffer(stateBase + 170, 1);
 
-		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId <<
-			" Update welder config: " << vector_to_string(serialize_Arc_WeldingParaItem(weldCfg).second, 2)
-		);
+		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Update welder config: " << vector_to_string(data, 2));
 
 		return 0;
 	}

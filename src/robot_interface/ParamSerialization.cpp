@@ -87,8 +87,9 @@ std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_Weldi
 	param.push_back(voltage);                      // 2 焊接电压: 下发电压/修正，往同一个地址下发的，不区分两个变量
 	param.push_back(mode);                         // 3 焊接工作模式
 	param.push_back(inductance);                   // 4 焊接电压修正值 -> 电感
+	param.push_back(weldCfg.WeldJobChannelNum);    // 5 焊接 Job
 
-	// 起弧参数 5
+	// 起弧参数 6
 	mode = weldCfg.ArcOnWorkMode;
 	current = weldCfg.ArcOnCrt_Spd;
 	voltage = useVtgCorrection ? weldCfg.ArcOnVtg_Correction + 30 : weldCfg.ArcOnVtg_Strth;
@@ -97,11 +98,12 @@ std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_Weldi
 	param.push_back(mode);                         // 0 起弧模式
 	param.push_back(current);                      // 1 起弧电流
 	param.push_back(voltage);                      // 2 起弧电压(修正)
-	param.push_back(arcTime);                      // 3 起弧时间
-	param.push_back(inductance);                   // 4 起弧电感
-	param.push_back(blowTime);                     // 5 引气时间
+	param.push_back(inductance);                   // 3 起弧电感
+	param.push_back(weldCfg.ArcOnJobChannelNum);   // 4 起弧 Job
+	param.push_back(arcTime);                      // 5 起弧时间
+	param.push_back(blowTime);                     // 6 引气时间
 
-	// 收弧参数 11
+	// 收弧参数 13
 	mode = weldCfg.ArcOffWorkMode;
 	current = weldCfg.ArcOffCrt_Spd;
 	voltage = useVtgCorrection ? weldCfg.ArcOffVtg_Correction + 30 : weldCfg.ArcOffVtg_Strth;
@@ -110,9 +112,10 @@ std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_Weldi
 	param.push_back(mode);	                      // 0 收弧模式
 	param.push_back(current);		              // 1 收弧电流
 	param.push_back(voltage); 	                  // 2 收弧电压(修正)
-	param.push_back(arcTime); 		              // 3 收弧时间
-	param.push_back(inductance);                  // 4 收弧电感
-	param.push_back(blowTime);                    // 5 收气时间
+	param.push_back(inductance);                  // 3 收弧电感
+	param.push_back(weldCfg.ArcOffJobChannelNum); // 4 收弧 Job
+	param.push_back(arcTime); 		              // 5 收弧时间
+	param.push_back(blowTime);                    // 6 收气时间
 
 	ans.first = static_cast<int>(AppendixType::WELD_CFG);
 	ans.second = param;
@@ -134,27 +137,30 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	cfg.Id = param[num++];                     // 0 起弧标志
 	cfg.WeldingCrt_Spd   = param[num++];       // 1 焊接电流
 	cfg.WeldingVtg_Strth = param[num];         // 2 焊接电压
-	cfg.VtgUniCorrection = param[num++] - 30;    // 2 焊接电压修正值
+	cfg.VtgUniCorrection = param[num++] - 30;  // 2 焊接电压修正值
 	cfg.WeldingWorkMode  = param[num++];       // 3 焊接工作模式
 	cfg.Inductance       = param[num++];       // 4 焊接电感
+	cfg.WeldJobChannelNum= param[num++];       // 5 焊接 Job
 
 	// 起弧参数 5
 	cfg.ArcOnWorkMode       = param[num++];      // 0 起弧模式
 	cfg.ArcOnCrt_Spd        = param[num++];	     // 1 起弧电流
 	cfg.ArcOnVtg_Strth      = param[num];	     // 2 起弧电压
 	cfg.ArcOnVtg_Correction = param[num++] - 30; // 2 起弧电压修正值
-	cfg.ArcOnTime           = param[num++];	     // 3 起弧时间
-	cfg.Inductance          = param[num++];	     // 4 起弧电感
-	cfg.ArcOnBlowTime       = param[num++];	     // 5 引气时间
+	cfg.ArcOninductance     = param[num++];	     // 3 起弧电感
+	cfg.ArcOnJobChannelNum  = param[num++];      // 4 起弧 Job
+	cfg.ArcOnTime           = param[num++];	     // 5 起弧时间
+	cfg.ArcOnBlowTime       = param[num++];	     // 6 引气时间
 
 	// 收弧参数 11
 	cfg.ArcOffWorkMode       = param[num++];       // 0 收弧模式
 	cfg.ArcOffCrt_Spd        = param[num++];       // 1 收弧电流
-	cfg.ArcOffVtg_Strth      = param[num];       // 2 收弧电压
-	cfg.ArcOffVtg_Correction = param[num++] - 30;    // 2 收弧电压修正值
-	cfg.ArcOffTime           = param[num++];       // 3 收弧时间
-	cfg.Inductance           = param[num++];       // 4 收弧电感
-	cfg.ArcOffBlowTime       = param[num++];       // 5 收气时间
+	cfg.ArcOffVtg_Strth      = param[num];         // 2 收弧电压
+	cfg.ArcOffVtg_Correction = param[num++] - 30;  // 2 收弧电压修正值
+	cfg.ArcOffinductance     = param[num++];       // 3 收弧电感
+	cfg.ArcOffJobChannelNum  = param[num++];       // 4 收弧 Job
+	cfg.ArcOffTime           = param[num++];       // 5 收弧时间
+	cfg.ArcOffBlowTime       = param[num++];       // 6 收气时间
 
 	return cfg;
 }
@@ -175,7 +181,7 @@ std::pair<int, std::vector<float>> serialize_ReArc(const ReArc& cfg) {
 	return ans;
 }
 
-ReArc serialize_ReArc(const std::map<int, std::vector<float>>& appendix) {
+ReArc deserialize_ReArc(const std::map<int, std::vector<float>>& appendix) {
 	ReArc cfg;
 	auto ite = appendix.find(static_cast<int>(AppendixType::REARC_CFG));
 	if (ite == appendix.end())

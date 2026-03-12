@@ -283,7 +283,7 @@ void shawn_test::task_test() {
 	Arc_WeldingParaItem weldCfg;
 	weldCfg.Id = 1;
 	weldCfg.WeldingCrt_Spd = 123;
-	//trajCfg.add_appendix(FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg));
+	trajCfg.add_appendix(FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg));
 
 	Weave waveCfg;
 	waveCfg.Id = 1;
@@ -312,9 +312,7 @@ void shawn_test::task_test() {
 	// 等待
 	//action.actionAfter.push_back({ 1, { -1, 0, 100 } });
 	// 起弧
-	//action.actionBefore.push_back({ 2, FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg).second });
-	// 息弧
-	action.actionAfter.push_back({ 3, {} });
+	action.actionBefore.push_back({ 2, FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg).second });
 	// 寻位
 	//action.actionAfter.push_back({ 5, {869.5140, 255.3090, 659.0740, 10, 879.5140, 255.3090, 659.0740, 10} });
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
@@ -329,6 +327,8 @@ void shawn_test::task_test() {
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Weave(waveCfg));
 	action.actionBefore.clear();
 	action.actionAfter.clear();
+	// 息弧
+	action.actionAfter.push_back({ 3, {} });
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
 	//trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
 	trajCfg.saveSeq = 30;

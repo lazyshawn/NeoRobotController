@@ -589,39 +589,24 @@ int RobotBase::trigger_action(int type, const std::vector<float>& param) {
 
 int RobotBase::rewrie_actioin_param(Move_Action& cfg) {
 	// --- 缓冲前运动
-	for (auto& action : cfg.actionBefore) {
-		auto& type = action.first;
-		auto& param = action.second;
+	//for (auto& action : cfg.actionBefore) {
+	//	auto& type = action.first;
+	//	auto& param = action.second;
 
-		// 2. 起弧
-		if (type == 2) {
-		}
-	}
+	//	// 2. 起弧
+	//	if (type == 2) {
+	//	}
+	//}
 
 	// --- 缓冲后运动
-	for (auto& action : cfg.actionAfter) {
-		auto& type = action.first;
-		auto& param = action.second;
+	//for (auto& action : cfg.actionAfter) {
+	//	auto& type = action.first;
+	//	auto& param = action.second;
 
-		// 息弧
-		if (type == 3) {
-			// 获取当前轨迹
-			auto curTraj = trajectory.get_curTraj();
-			auto preTraj = trajectory.get_preTraj();
-
-			// 息弧参数
-			param.clear();
-			auto weldCfg = deserialize_Arc_WeldingParaItem(curTraj.get_appendix());
-			// 模式，电流，电压，电感，收弧时间，收气时间
-			param.push_back(weldCfg.ArcOffWorkMode);
-			param.push_back(weldCfg.ArcOffCrt_Spd);
-			param.push_back(weldCfg.ArcOffVtg_Strth);
-			param.push_back(weldCfg.ArcOffinductance);
-			param.push_back(weldCfg.ArcOffTime);
-			param.push_back(weldCfg.ArcOffBlowTime);
-
-		}
-	}
+	//	// 息弧
+	//	if (type == 3) {
+	//	}
+	//}
 
 	return 0;
 }
