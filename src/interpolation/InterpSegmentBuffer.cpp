@@ -169,6 +169,7 @@ int InterpBuffer::move(PosData& pos) {
 	// - 插补结果处理
 	// 插补结果
 	pos = interpBuf[num]->interpInfo.dpos;
+	interpStatus.pos = pos;
 	// 插补完成标识
 	bool finish = interpBuf[num]->interpInfo.partId < 0;
 
@@ -597,10 +598,11 @@ int InterpBuffer::cartesian_move() {
 	double swingAdd = 0.0;
 	SwingInterpParam swing;
 	swing.deserialize(taskParam.swing);
+	// 半个摆动周期的时间
 	double singleSwingTime = 0.5 / swing.freq;
 	if (swing.state == 0) {
 		swing.state = 1;
-		curBuf->curve[2].set_condition(0, 2, 0, 0);
+		curBuf->curve[2].set_condition(0, swing.rightWidth, 0, 0);
 		curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime/2, singleSwingTime/10);
 		curBuf->curve[2].plan();
 		swing.time = cycleTime;
@@ -612,24 +614,25 @@ int InterpBuffer::cartesian_move() {
 			swing.state = (swing.state + 1) % 2 + 2;
 
 			// 剩余时间不足一个完整周期
-			double remainSwingTime = curBuf->curve[0].get_duration() - curBuf->curTime - 2;
+			double remainSwingTime = curBuf->curve[0].get_duration() - curBuf->curTime;
+			bool timeReset = remainSwingTime < singleSwingTime * 2;
+			if (timeReset)
+				singleSwingTime = remainSwingTime;
 
 			if (swing.state == 2) {
-				curBuf->curve[2].set_condition(2, remainSwingTime < 0 ? 0 : -2, 0, 0);
+				curBuf->curve[2].set_condition(swing.rightWidth, timeReset ? 0 : -swing.leftWidth, 0, 0);
 			}
 			else {
-				curBuf->curve[2].set_condition(-2, remainSwingTime < 0 ? 0 : 2, 0, 0);
+				curBuf->curve[2].set_condition(-swing.leftWidth, timeReset ? 0 : swing.rightWidth, 0, 0);
 			}
 
-			if (remainSwingTime < 0)
-				curBuf->curve[2].plan_by_duration(remainSwingTime + 2, (remainSwingTime + 2) / 2, (remainSwingTime + 2) / 10);
-			else
-				curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
+			curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
 			swing.time = 0.0;
 		}
 		swing.time += cycleTime;
 	}
 	swing.serialize(taskParam.swing);
+	// 叠加到插补坐标系的Y方向
 	pos.rbtPos[1] += swingAdd;
 
 	// --- 插补状态更新

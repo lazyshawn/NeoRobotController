@@ -108,7 +108,7 @@ int push_trajectory() {
 	SwingInterpParam swingCfg;
 	swingCfg.enable = 1;
 	swingCfg.freq = 1.0;
-	swingCfg.leftWidth = swingCfg.rightWidth = 2;
+	swingCfg.leftWidth = swingCfg.rightWidth = 0.5;
 	moveCmd.set_swing(swingCfg);
 
 	// 点位指令插入缓存区
@@ -116,19 +116,19 @@ int push_trajectory() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	pointInfo.begPos = pointInfo.endPos;
-	pointInfo.endPos.rbtPos[0] += 1000;
+	pointInfo.endPos.rbtPos[0] += 10;
 	pointInfo.endPos.extPos[0] += 100;
-	motionCfg.speed = 20;
+	motionCfg.speed = 2;
 	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
-	//while (!interpBuffer.buffer_ready()) {
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	//}
-	//pointInfo.begPos = pointInfo.endPos;
-	//pointInfo.endPos.rbtPos[1] += 10;
-	//pointInfo.endPos.extPos[0] += 100;
-	//motionCfg.speed = 4;
-	//interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
+	while (!interpBuffer.buffer_ready()) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[1] += 10;
+	pointInfo.endPos.extPos[0] += 100;
+	motionCfg.speed = 4;
+	interpBuffer.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	//while (!interpBuffer.buffer_ready()) {
 	//	std::this_thread::sleep_for(std::chrono::milliseconds(10));

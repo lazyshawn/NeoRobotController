@@ -8,6 +8,15 @@
 
 #include "interpolation/InterpSegment.h"
 
+// 实时插补结果
+struct RTInterpStatus {
+	double dist;
+	double vel;
+	double tan[3];
+
+	PosData pos;
+};
+
 // 插补器缓存数据
 class InterpBuffer {
 	//! 点位指令缓存数组
@@ -23,6 +32,8 @@ class InterpBuffer {
 	//! 队尾缓冲正在使用标识符
 	bool bufOccupied = false;
 
+	// 实时插补状态
+	RTInterpStatus interpStatus;
 	//! 任务参数，独立于单条轨迹的全局轨迹参数，主要包含支持实时修改运动参数
 	TaskParam taskParam;
 

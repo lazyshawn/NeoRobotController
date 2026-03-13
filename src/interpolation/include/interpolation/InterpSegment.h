@@ -21,9 +21,10 @@
  ***********************************************************************/
  // 参数类型
 enum class TaskParamType {
-	SWING,   // 摆焊
+	SWING,     // 摆焊
 };
 
+// 摆焊参数
 struct SwingInterpParam {
 	static TaskParamType type;
 
