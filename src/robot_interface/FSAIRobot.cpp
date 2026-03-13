@@ -385,7 +385,7 @@ namespace FSAIRobotInterface {
 			// 3. 缓冲运动参数写入
 			if (weldCfg.Id > 0) {
 				for (auto& item : actionCfg.actionBefore) {
-					// 起弧动作中添加起弧参数、再起弧参数和焊接参数
+					// --- 起弧动作中添加起弧参数、再起弧参数和焊接参数
 					if (item.first == 2) {
 						std::vector<DT_scale> data;
 						// 起弧参数 0
@@ -410,6 +410,9 @@ namespace FSAIRobotInterface {
 						// 添加起弧参数
 						item.second = data;
 						traj.add_appendix(serialize_Move_Action(actionCfg));
+
+						// 添加起弧等待
+						//traj.waitArcOn = 1;
 						break;
 					}
 

@@ -111,6 +111,8 @@ struct TrajectoryConfig {
 	int notifyEnable = 0;
 	//! 保存编号
 	int saveSeq = -1;
+	// 等待起弧: 当前轨迹下发后，进入等待，起弧成功后才下发后续的轨迹
+	int waitArcOn = 0;
 
 	// 协同段总距离
 	DT_scale syncDist = 0;
@@ -180,8 +182,6 @@ public:
 
 class SingleTrajectory : public TrajectoryPoint, public TrajectoryConfig {
 public:
-	//! 保存编号
-	//int saveSeq = -1;
 	//! 轨迹编号
 	int lineNum = 0;
 	//! 轨迹类型: 指令轨迹(0), 弧坑回填轨迹(1)

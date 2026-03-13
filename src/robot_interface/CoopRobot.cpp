@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         1.0.0\n"
-		<< "Release Date:    260303_0939");
+		<< "Version:         1.0.1\n"
+		<< "Release Date:    260312_1528");
 }
 
 
@@ -623,6 +623,7 @@ int RobotBase::insert_task_traj() {
 	auto pitFillCfg = deserialize_ArcPitBackfill(curTraj.appendix);
 	auto weldCfg = deserialize_Arc_WeldingParaItem(curTraj.appendix);
 	auto weaveCfg = deserialize_Weave(curTraj.appendix);
+	auto rearcCfg = deserialize_ReArc(curTraj.appendix);
 
 	// --- 弧坑回填，原本息弧指令后增加回填运动
 	// 弧坑回填使能
@@ -635,7 +636,7 @@ int RobotBase::insert_task_traj() {
 			if (item.first == 3) {
 				// 构造新轨迹
 				SingleTrajectory pitTraj;
-				pitTraj.trajType = TrajType::Line;
+				pitTraj.trajType = curTraj.get_trajType();
 				pitTraj.taskId = 1;
 
 				// 息弧动作后移
@@ -692,6 +693,43 @@ int RobotBase::insert_task_traj() {
 		}
 	}
 
+	// 刮擦起弧
+	if (rearcCfg.ScrubArc_Enable) {
+		for (auto& item : actionCfg.actionBefore) {
+			// 指令有起弧动作
+			if (item.first == 2) {
+				SingleTrajectory pitTraj;
+				pitTraj.trajType = curTraj.get_trajType();
+
+				// 取消刮擦标志位
+				rearcCfg.ScrubArc_Enable = 0;
+				curTraj.add_appendix(serialize_ReArc(rearcCfg));
+				trajectory.set_curTraj(curTraj);
+
+				// 指向正常焊接轨迹的迭代器，依次往该迭代器前插入刮擦轨迹
+				auto ite = trajectory.trajList.begin();
+				auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), 0, rearcCfg.ScrubArcLengh, 1);
+
+				// 添加刮擦轨迹
+				for (int i = 0; i < 1; ++i) {
+					// 空移前进
+					pitTraj.mainPoint = segment.mainPoint;
+					pitTraj.auxPoint = segment.auxPoint;
+					trajectory.trajList.insert(ite, pitTraj);
+
+					// 起弧回退
+					pitTraj.mainPoint = preTraj.mainPoint;
+					pitTraj.auxPoint = segment.auxPoint;
+					trajectory.trajList.insert(ite, pitTraj);
+				}
+
+				// 最后一条刮擦轨迹添加起弧等待
+
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Scrub Enabled: " << vector_to_string(serialize_ReArc(rearcCfg).second, 2));
+				break;
+			}
+		}
+	}
 
 	return 0;
 }
@@ -1093,6 +1131,16 @@ int RobotBase::modify_point_in_buffer(int id, const std::vector<float>& pos) {
 	return 1;
 }
 
+// 起弧成功检测
+bool RobotBase::check_arc_on() {
+	int idx = get_state_idx_base() + 6;
+	float val;
+	ZController->get_axis_param(idx, "TABLE", val);
+
+	// 焊接标志位为 7 时起弧成功
+	return (val > 6.5);
+}
+
 /* *************************** RobotGroupManager *************************** */
 RobotGroupManager::RobotGroupManager() {
 	cmdThreadDone = true;
@@ -1286,6 +1334,19 @@ void RobotGroupManager::processCommandThread() {
 					set_bit(coopState[i], 2, false);
 				}
 
+				// 起弧等待
+				if (get_bit(coopState[i], 11)) {
+					// 未起弧则跳过下发
+					if (!robotList[i]->check_arc_on()) {
+						break;
+					}
+					else {
+						// 起弧成功取消置位
+						set_bit(coopState[i], 11, 0);
+						LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " arc on, continue to move.");
+					}
+				}
+
 				// 需要等待同步和协同: 空闲 + 同步号相同
 				if (!robot_sync_ready(i)) {
 					if (get_bit(coopState[i], 3) == 0) {
@@ -1343,6 +1404,12 @@ void RobotGroupManager::processCommandThread() {
 
 				// 轨迹下发后的处理
 				robotList[i]->process_after_send_traj();
+
+				// 起弧等待置位
+				if (curTraj.waitArcOn > 0) {
+					set_bit(coopState[i], 11, true);
+					LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " waiting arc on.");
+				}
 
 				// 记录当前轨迹编号，用于轨迹完成后的触发动作
 				curTraj.lineNum = robotList[i]->get_lineNum();
@@ -2220,7 +2287,6 @@ void RobotGroupManager::reset_wait_state(int robotIdx) {
 	}
 
 }
-
 
 std::string vector_to_string(const std::vector<float>& data, int fixed) {
 	std::string str;

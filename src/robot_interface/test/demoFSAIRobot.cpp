@@ -267,7 +267,6 @@ void shawn_test::sync_test() {
 }
 
 void shawn_test::task_test() {
-	group.robotList[0]->move_compensate({0,1,2});
 
 	// 机器人1
 	trajCfg.set_speed(80);
@@ -278,7 +277,6 @@ void shawn_test::task_test() {
 	trajCfg.rewriteId = 1;
 	trajList.moveLABS({ 879.5140, 155.3090, 659.0740, -169.9990, - 44.9990, 179.9990, 0,0,0 }, trajCfg);
 	//trajList.moveCABS({ 979.5140, 55.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, { 1179.5140, 155.3090, 659.0740, -169.9990, -44.9990, 179.9990 }, trajCfg);
-	trajCfg.rewriteId = -1;
 
 	Arc_WeldingParaItem weldCfg;
 	weldCfg.Id = 1;
@@ -308,11 +306,18 @@ void shawn_test::task_test() {
 	pitFillCfg.distance = 10;
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_ArcPitBackfill(pitFillCfg));
 
+	ReArc rearcCfg;
+	rearcCfg.ScrubArc_Enable = 1;
+	rearcCfg.ScrubArcLengh = 10;
+	trajCfg.add_appendix(FSAIRobotInterface::serialize_ReArc(rearcCfg));
+
 	FSAIRobotInterface::Move_Action action;
 	// 等待
 	//action.actionAfter.push_back({ 1, { -1, 0, 100 } });
 	// 起弧
 	action.actionBefore.push_back({ 2, FSAIRobotInterface::serialize_Arc_WeldingParaItem(weldCfg).second });
+	// 息弧
+	action.actionAfter.push_back({ 3, {} });
 	// 寻位
 	//action.actionAfter.push_back({ 5, {869.5140, 255.3090, 659.0740, 10, 879.5140, 255.3090, 659.0740, 10} });
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
@@ -327,12 +332,10 @@ void shawn_test::task_test() {
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Weave(waveCfg));
 	action.actionBefore.clear();
 	action.actionAfter.clear();
-	// 息弧
-	action.actionAfter.push_back({ 3, {} });
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_Move_Action(action));
 	//trajList.moveJABS({ 10,-20,20,0,90,0,0 }, trajCfg);
 	trajCfg.saveSeq = 30;
-	trajList.moveLABS({ 889.5140, 255.3090, 659.0740, -169.9990, -44.9990, 179.9990, 0,0,0 }, trajCfg);
+	//trajList.moveLABS({ 889.5140, 255.3090, 659.0740, -169.9990, -44.9990, 179.9990, 0,0,0 }, trajCfg);
 
 	//trajList.moveLABS({ 911, 0, 1298, 180, 0, 180, 0 }, trajCfg);
 	//trajList.moveCABS({ 911, 100, 1298, 180, 0, 180, 0 }, { 1011, 0, 1298, 180, 0, 180, 0 }, trajCfg);
