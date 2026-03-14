@@ -38,6 +38,7 @@ struct SwingInterpParam {
 	int state;
 	double time;
 	double duration;
+	double pos;
 
 	void clear();
 	int get_type() const;

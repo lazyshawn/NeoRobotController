@@ -83,13 +83,14 @@ int SwingInterpParam::serialize(std::vector<double>& param) const {
 	param.push_back(state);
 	param.push_back(time);
 	param.push_back(duration);
+	param.push_back(pos);
 
 	return static_cast<int>(type);
 }
 
 int SwingInterpParam::deserialize(const std::vector<double>& param) {
 	// 参数不全，使用默认参数
-	if (param.size() < 7) {
+	if (param.size() < 8) {
 		this->clear();
 		return 1;
 	}
@@ -102,6 +103,7 @@ int SwingInterpParam::deserialize(const std::vector<double>& param) {
 	state = static_cast<int>(param[4]);
 	time = param[5];
 	duration = param[6];
+	pos = param[7];
 
 	return 0;
 }

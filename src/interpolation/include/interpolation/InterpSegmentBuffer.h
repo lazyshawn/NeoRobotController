@@ -12,9 +12,11 @@
 struct RTInterpStatus {
 	double dist;
 	double vel;
+	// 主运动位置
+	double cPos[3];
 	double tan[3];
 
-	PosData pos;
+	PosData dpos;
 };
 
 // 插补器缓存数据

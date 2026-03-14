@@ -6,6 +6,7 @@
 
 static const double dim_EPS = 1e-6;
 
+
 /***********************************************************************
  *                        InterpBuffer                                 *
  ***********************************************************************/
@@ -58,9 +59,9 @@ int InterpBuffer::add_move_point(const PointInfo& point, const MotionCfg& cfg, c
 
 	// - 预处理
 	interpBuf[curBuf]->procInfo.procStage = 1;
-	if (cfg.moveType % 2 == 0)
+	if (cfg.moveType == 0)
 		joint_prehandle();
-	else
+	else if(cfg.moveType == 1 || cfg.moveType == 2)
 		cartesian_prehandle();
 	interpBuf[curBuf]->procInfo.procStage = 2;
 
@@ -162,14 +163,13 @@ int InterpBuffer::move(PosData& pos) {
 	if (interpBuf[num]->motionCfg.moveType == 0) {
 		joint_move();
 	}
-	else if (interpBuf[num]->motionCfg.moveType == 1) {
+	else if (interpBuf[num]->motionCfg.moveType == 1 || interpBuf[num]->motionCfg.moveType == 2) {
 		cartesian_move();
 	}
 
 	// - 插补结果处理
 	// 插补结果
 	pos = interpBuf[num]->interpInfo.dpos;
-	interpStatus.pos = pos;
 	// 插补完成标识
 	bool finish = interpBuf[num]->interpInfo.partId < 0;
 
@@ -281,7 +281,7 @@ int InterpBuffer::cartesian_prehandle() {
 
 	// --- 当前段计算轨迹长度
 	// 直线轨迹
-	if ((curBuf->motionCfg.moveType & 2) == 0) {
+	if (curBuf->motionCfg.moveType == 1) {
 		double det[3] = { 0 };
 		for (int i = 0; i < 3; ++i) {
 			det[i] = curBuf->pointInfo.endPos.rbtPos[i] - curBuf->pointInfo.begPos.rbtPos[i];
@@ -297,8 +297,8 @@ int InterpBuffer::cartesian_prehandle() {
 		}
 	}
 	// 圆弧轨迹
-	else {
-
+	else if (curBuf->motionCfg.moveType == 2) {
+		double det[3] = { 0 };
 	}
 
 	// --- 平滑处理
@@ -434,6 +434,14 @@ int InterpBuffer::cartesian_plan() {
 		// 前一条轨迹附加轴规划左移
 		preBuf->curve[6].displacement(preBuf->curTime - cycleTime, 1);
 	}
+	else {
+		// 主运动状态初始化
+		interpStatus.vel = 0.0;
+		for (int i = 0; i < 3; ++i) {
+			interpStatus.tan[i] = 0.0;
+			interpStatus.cPos[i] = curBuf->pointInfo.begPos.rbtPos[i];
+		}
+	}
 
 	// 有后平滑
 	if (curBuf->procInfo.postSmooth > 0) {
@@ -463,12 +471,33 @@ int InterpBuffer::cartesian_plan() {
 		oriAccT = 1.5 * time2;
 	curBuf->curve[6].plan_by_duration(eulerTime, oriAccT, oriAccT / 2);
 
-	// --- 工艺参数赋值
+	// --- 摆焊规划
 	SwingInterpParam swing;
 	curBuf->moveCmd.get_swing(swing);
-	swing.state = 0;
-	swing.time = 0.0;
-	swing.duration = curBuf->curve[0].get_duration();
+	// 有前平滑时，继承前段的规划，
+	if (curBuf->procInfo.preSmooth > 0) {
+		// --- 继承摆焊参数
+		curBuf->curve[2] = preBuf->curve[2];
+
+		// 修改摆焊参数，继承摆焊时间，当前摆焊目标位置
+		SwingInterpParam preSwing;
+		preSwing.deserialize(taskParam.swing);
+		swing.state = preSwing.state;
+		swing.time = preSwing.time;
+		swing.pos = preSwing.pos;
+	}
+	else {
+		swing.state = 0;
+		swing.time = 0.0;
+		swing.pos = 0.0;
+	}
+	// 后平滑决定摆焊运动时间
+	if (curBuf->procInfo.postSmooth > 0) {
+		swing.duration = 2 * (curBuf->curve[0].get_duration() - curBuf->curve[0].get_offset());
+	}
+	else {
+		swing.duration = curBuf->curve[0].get_duration() - curBuf->curve[0].get_offset();
+	}
 	swing.serialize(taskParam.swing);
 
 	// --- 插补状态复位
@@ -602,28 +631,31 @@ int InterpBuffer::cartesian_move() {
 	double singleSwingTime = 0.5 / swing.freq;
 	if (swing.state == 0) {
 		swing.state = 1;
-		curBuf->curve[2].set_condition(0, swing.rightWidth, 0, 0);
+		curBuf->curve[2].set_condition(swing.pos, swing.rightWidth, 0, 0);
 		curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime/2, singleSwingTime/10);
 		curBuf->curve[2].plan();
 		swing.time = cycleTime;
+		swing.pos = swing.rightWidth;
 	}
 	else {
 		swingAdd = curBuf->curve[2].get_pos(swing.time);
 
 		if (curBuf->curve[2].done()) {
-			swing.state = (swing.state + 1) % 2 + 2;
+			swing.state = swing.state % 2 + 1;
 
 			// 剩余时间不足一个完整周期
-			double remainSwingTime = curBuf->curve[0].get_duration() - curBuf->curTime;
+			double remainSwingTime = swing.duration - curBuf->curTime;
 			bool timeReset = remainSwingTime < singleSwingTime * 2;
 			if (timeReset)
 				singleSwingTime = remainSwingTime;
 
 			if (swing.state == 2) {
-				curBuf->curve[2].set_condition(swing.rightWidth, timeReset ? 0 : -swing.leftWidth, 0, 0);
+				curBuf->curve[2].set_condition(swing.pos, timeReset ? 0 : -swing.leftWidth, 0, 0);
+				swing.pos = -swing.leftWidth;
 			}
 			else {
-				curBuf->curve[2].set_condition(-swing.leftWidth, timeReset ? 0 : swing.rightWidth, 0, 0);
+				curBuf->curve[2].set_condition(swing.pos, timeReset ? 0 : swing.rightWidth, 0, 0);
+				swing.pos = swing.rightWidth;
 			}
 
 			curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
@@ -632,8 +664,21 @@ int InterpBuffer::cartesian_move() {
 		swing.time += cycleTime;
 	}
 	swing.serialize(taskParam.swing);
+
+	// 实时状态
+	interpStatus.vel = 0.0;
+	for (int i = 0; i < 3; ++i) {
+		interpStatus.tan[i] = pos.rbtPos[i] - interpStatus.cPos[i];
+		interpStatus.cPos[i] = pos.rbtPos[i];
+		interpStatus.vel += interpStatus.tan[i] * interpStatus.tan[i];
+	}
+	interpStatus.vel = sqrt(interpStatus.vel);
+	for (int i = 0; i < 3; ++i) {
+		interpStatus.tan[i] /= interpStatus.vel;
+	}
 	// 叠加到插补坐标系的Y方向
-	pos.rbtPos[1] += swingAdd;
+	pos.rbtPos[0] += swingAdd * interpStatus.tan[1];
+	pos.rbtPos[1] -= swingAdd * interpStatus.tan[0];
 
 	// --- 插补状态更新
 	// 插补进度
