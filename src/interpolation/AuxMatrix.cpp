@@ -400,6 +400,62 @@ int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans) {
 	return 0;
 }
 
+// 矩阵范数
+double matrix_norm(const MatrixXd *mat) {
+	int num = mat->cols * mat->rows;
+
+	double ans = 0.0;
+	for (int i = 0; i < num; ++i) {
+		ans += mat->data[i] * mat->data[i];
+	}
+	ans = sqrt(ans);
+
+	return ans;
+}
+
+// 矩阵单位化
+int matrix_normalize(MatrixXd *mat) {
+	double norm = matrix_norm(mat);
+
+	for (int i = 0; i < mat->rows; ++i) {
+		for (int j = 0; j < mat->cols; ++j) {
+			mat->data[i*mat->cols + j] /= norm;
+		}
+	}
+
+	return 0;
+}
+
+// 矩阵内积
+double matrix_inner_product(const MatrixXd *matA, const MatrixXd *matB) {
+	// 行列数校验
+	if (matA->cols - matB->cols != 0 || matA->rows - matB->rows != 0)
+		return 0.0;
+
+	double ans = 0.0;
+	for (int i = 0; i < matA->rows; ++i) {
+		for (int j = 0; j < matA->cols; ++j) {
+			ans += matA->data[i*matA->cols + j] * matB->data[i*matB->cols + j];
+		}
+	}
+
+	return 0.0;
+}
+
+// 矩阵外积
+int matrix_outer_product(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans) {
+	if (matA->rows - 3 != 0 || matA->cols - 1 != 0)
+		return 1;
+	if (matA->cols - matB->cols != 0 || matA->rows - matB->rows != 0)
+		return 2;
+
+	ans->data[0] = matA->data[1] * matB->data[2] - matA->data[2] * matB->data[1];
+	ans->data[1] = -(matA->data[0] * matB->data[2] - matA->data[2] * matB->data[0]);
+	ans->data[2] = matA->data[0] * matB->data[1] - matA->data[1] * matB->data[0];
+
+	return 0;
+}
+
 /**
  * @brief  LUP求逆主函数
  * @param  A      原始矩阵
