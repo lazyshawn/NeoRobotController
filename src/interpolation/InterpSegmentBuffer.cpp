@@ -8,6 +8,99 @@ static const double dim_EPS = 1e-6;
 
 
 /***********************************************************************
+ *                        A U X I L I A R Y                            *
+ ***********************************************************************/
+// 计算轨迹参数
+int calc_traj_info(const double *begPnt, const double *midPnt, const double *endPnt, int *mode, double *ans) {
+
+	// 直线拐点位置
+	MatrixXd *begPos = matrix_from_array(3, 1, begPnt, 3), *midPos = matrix_from_array(3, 1, midPnt, 3), *endPos = matrix_from_array(3, 1, endPnt, 3);
+	double knot[3], dir[3], dist;
+	bool isLine = (mode == 0);
+
+	if (*mode == 1) {
+		MatrixXd *a = matrix_new(3, 1, 0), *b = matrix_new(3, 1, 0);
+		matrix_plus(1.0, begPos, -1.0, midPos, a);
+		matrix_plus(1.0, endPos, -1.0, midPos, b);
+		// 当直线处理
+		//if (a.cross(b).squaredNorm() < 1e-9) {
+		//	info.head(3) = (endPos - begPos).normalized();
+		//	info[3] = (endPos - begPos).norm();
+		//	isLine = true;
+		//}
+
+		// 圆心位置
+		MatrixXd *aXb = matrix_new(3, 1, 0);
+		matrix_outer_product(a, b, aXb);
+		double La = matrix_norm(a), Lb = matrix_norm(b), LaXb = matrix_norm(aXb);
+		MatrixXd *tmp = matrix_new(3, 1, 0), *cent = matrix_new(3, 1, 0);
+		matrix_plus(La*La / (2*LaXb*LaXb), b, -Lb*Lb / (2 * LaXb*LaXb), a, tmp);
+		matrix_outer_product(tmp, aXb, cent);
+		matrix_plus(1, cent, 1, midPos, cent);
+
+		// 半径方向
+		MatrixXd *op1 = matrix_new(3, 1, 0), *op2 = matrix_new(3, 1, 0), *op3 = matrix_new(3, 1, 0);
+
+		//// 圆心位置
+		//Eigen::Matrix<DT_scale, 3, 1> cent = (a.squaredNorm()*b - b.squaredNorm()*a).cross(a.cross(b)) / (2 * (a.cross(b)).squaredNorm()) + midPos;
+		//// 半径方向
+		//Eigen::Matrix<DT_scale, 3, 1> op1 = (begPos - cent).normalized(), op2 = (midPos - cent).normalized(), op3 = (endPos - cent).normalized();
+		//// 法线方向
+		//Eigen::Matrix<DT_scale, 3, 1> n12 = op1.cross(op2), n13 = op1.cross(op3);
+		//// 圆弧运动平面的法线方向
+		//Eigen::Matrix<DT_scale, 3, 1> normal = op1.cross(op3);
+		//// 半径夹角
+		//DT_scale q12 = std::acos(op1.dot(op2)), q13 = std::acos(op1.dot(op3));
+		//// 圆心角度
+		//DT_scale theta = std::acos(op1.dot(op3));
+
+		//// 修正圆心角和法向量
+		//// 2,3 在 1 的两侧
+		//if (n12.dot(n13) < 0) {
+		//	normal = -n13;
+		//	theta = 2 * DT_PI - theta;
+		//}
+		//// q12 > q13
+		//else if (q12 > q13) {
+		//	normal = -n13;
+		//	theta = 2 * DT_PI - theta;
+		//}
+		//else if (q13 > q12) {
+		//	normal = n12;
+		//}
+
+		//normal.normalize();
+		//normal *= theta;
+		//knot.assign(cent.data(), cent.data() + 3);
+		//dist = (begPos - cent).norm() * theta;
+		//dir.assign(normal.data(), normal.data() + 3);
+	}
+
+	if (isLine) {
+		//Eigen::Matrix<DT_scale, 3, 1> lineDir = (endPos - begPos).normalized();
+
+		//// 计算轨迹信息
+		//knot.assign(begPos.data(), begPos.data() + 3);
+		//dist = (endPos - begPos).norm();
+		//dir.assign(lineDir.data(), lineDir.data() + 3);
+	}
+
+	for (size_t i = 0; i < 3; ++i) {
+		ans[i] = knot[i];
+		ans[i + 4] = dir[i];
+	}
+	ans[3] = dist;
+
+	// 释放资源
+	matrix_delete(begPos);
+	matrix_delete(midPos);
+	matrix_delete(endPos);
+
+	return 0;
+}
+
+
+/***********************************************************************
  *                        InterpBuffer                                 *
  ***********************************************************************/
 InterpBuffer::InterpBuffer() {
