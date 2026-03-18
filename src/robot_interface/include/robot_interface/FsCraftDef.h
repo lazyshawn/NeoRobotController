@@ -46,7 +46,7 @@ public:
 class ReArc {
 public :
 
-	int ReArc_Enable = 1;								//启用再起弧
+	int ReArc_Enable = 0;								//启用再起弧
 	int ReArcCount = 0;									//再起弧次数
 	double ReArcTime = 0.0;								//再起弧时间
 	double ReArcSnagTime = 0.0;						//再起弧抽丝时间
@@ -54,7 +54,7 @@ public :
 	int  JobNum = 0;          //JOB模式下job号
 	//
 
-	int ScrubArc_Enable = 1;							//启用刮擦起弧	
+	int ScrubArc_Enable = 0;							//启用刮擦起弧	
 	double ScrubArcCrt = 0.0;								//刮擦电流
 	double ScrubArcVtg = 0.0;										//刮擦电压
 	double ScrubArcVtgCorrect = 0.0;					//刮擦电压修正值

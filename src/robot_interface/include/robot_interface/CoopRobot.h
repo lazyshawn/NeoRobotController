@@ -374,6 +374,9 @@ public:
 	*/
 	int modify_point_in_buffer(int id, const std::vector<float>& pos);
 
+	// 起弧成功检测
+	bool check_arc_on();
+
 	/* *************************** 底层可修改接口 *************************** */
 	/**
 	* @brief  缓冲中执行底层封装好的运动指令

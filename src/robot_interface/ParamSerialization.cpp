@@ -176,6 +176,25 @@ std::pair<int, std::vector<float>> serialize_ReArc(const ReArc& cfg) {
 	param.push_back(cfg.ReArcTime);	     // 2 再起弧时间
 	param.push_back(cfg.ReArcSnagTime);  // 3 再起弧抽丝时间
 
+	param.push_back(cfg.ScrubArc_Enable); // 4 刮擦使能
+	param.push_back(cfg.ScrubArcLengh);   // 5 刮擦距离
+
+	// 刮擦电流 6
+	param.push_back(cfg.ScrubArcCrt);
+	param.push_back(cfg.ScrubArcVtg);
+	
+	// 刮擦摆形 8
+	param.push_back(cfg.Weave_Enable);
+	param.push_back(cfg.Shape);
+	param.push_back(cfg.LeftWidth);
+	param.push_back(cfg.RightWidth);
+	param.push_back(cfg.Freq);
+	param.push_back(cfg.L_StayTime);
+	param.push_back(cfg.R_StayTime);
+	param.push_back(cfg.StayMode);
+
+	param.push_back(cfg.SnagTime);
+
 	ans.first = static_cast<int>(AppendixType::REARC_CFG);
 	ans.second = param;
 	return ans;
@@ -193,6 +212,25 @@ ReArc deserialize_ReArc(const std::map<int, std::vector<float>>& appendix) {
 	cfg.ReArcCount = param[num++];     // 1 再起弧次数
 	cfg.ReArcTime = param[num++];	   // 2 再起弧时间
 	cfg.ReArcSnagTime =param[num++];   // 3 再起弧抽丝时间
+
+	cfg.ScrubArc_Enable = param[num++]; // 4 刮擦使能
+	cfg.ScrubArcLengh = param[num++];   // 5 刮擦距离
+
+	// 刮擦电流 6
+	cfg.ScrubArcCrt = param[num++];
+	cfg.ScrubArcVtg = param[num++];
+
+	// 刮擦摆形 8
+	cfg.Weave_Enable = param[num++];
+	cfg.Shape = param[num++];
+	cfg.LeftWidth = param[num++];
+	cfg.RightWidth = param[num++];
+	cfg.Freq = param[num++];
+	cfg.L_StayTime = param[num++];
+	cfg.R_StayTime = param[num++];
+	cfg.StayMode = param[num++];
+
+	cfg.SnagTime = param[num++];
 
 	return cfg;
 }
