@@ -377,66 +377,6 @@ namespace FSAIRobotInterface {
 				traj.auxPoint[5] = tmp;
 			}
 
-			// 2. 焊接参数修正, 电压与电压修正
-			auto weldCfg = deserialize_Arc_WeldingParaItem(traj.appendix);
-			auto rearcCfg = deserialize_ReArc(traj.appendix);
-			auto actionCfg = deserialize_Move_Action(traj.appendix);
-
-			// 3. 缓冲运动参数写入
-			if (weldCfg.Id > 0) {
-				for (auto& item : actionCfg.actionBefore) {
-					// --- 起弧动作中添加起弧参数、再起弧参数和焊接参数
-					if (item.first == 2) {
-						std::vector<DT_scale> data;
-						// 起弧参数 0
-						data.push_back(weldCfg.ArcOnWorkMode);
-						data.push_back(weldCfg.ArcOnCrt_Spd);
-						data.push_back(weldCfg.ArcOnVtg_Strth);
-						data.push_back(weldCfg.ArcOninductance);
-						data.push_back(weldCfg.ArcOnJobChannelNum);
-						data.push_back(weldCfg.ArcOnTime);
-						data.push_back(weldCfg.ArcOnBlowTime);
-						// 再起弧参数 7
-						data.push_back(rearcCfg.ReArc_Enable);
-						data.push_back(rearcCfg.ReArcTime);
-						data.push_back(rearcCfg.ReArcSnagTime);
-						// 焊接参数 10
-						data.push_back(weldCfg.WeldingWorkMode);
-						data.push_back(weldCfg.WeldingCrt_Spd);
-						data.push_back(weldCfg.WeldingVtg_Strth);
-						data.push_back(weldCfg.Weldinductance);
-						data.push_back(weldCfg.WeldJobChannelNum);
-
-						// 添加起弧参数
-						item.second = data;
-						traj.add_appendix(serialize_Move_Action(actionCfg));
-
-						// 添加起弧等待
-						//traj.waitArcOn = 1;
-						break;
-					}
-
-				}
-
-				for (auto& item : actionCfg.actionAfter) {
-					// 息弧动作中添加息弧参数
-					if (item.first == 3) {
-						std::vector<DT_scale> data;
-
-						// 模式，电流，电压，电感，收弧Job，收弧时间，收气时间
-						data.push_back(weldCfg.ArcOffWorkMode);
-						data.push_back(weldCfg.ArcOffCrt_Spd);
-						data.push_back(weldCfg.ArcOffVtg_Strth);
-						data.push_back(weldCfg.ArcOffinductance);
-						data.push_back(weldCfg.ArcOffJobChannelNum);
-						data.push_back(weldCfg.ArcOffTime);
-						data.push_back(weldCfg.ArcOffBlowTime);
-
-						item.second = data;
-						traj.add_appendix(serialize_Move_Action(actionCfg));
-					}
-				}
-			}
 		}
 
 		std::unique_lock<std::mutex> lock(mtxMotion);
@@ -836,7 +776,7 @@ namespace FSAIRobotInterface {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " MoveLABS: " << vector_to_string(curPoint));
 		}
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
-			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth()
+			<< " Trajectory config: " << curTraj.get_speed() << ", " << curTraj.get_smooth() << ", " << curTraj.taskId
 			<< (maskF.size() > 0 ? (". Axis mask: " + vector_to_string(maskF)) : "")     // 轴掩码
 			<< ". traj dist: " << trajectory.get_dist() << ", notifyEnable: " << curTraj.notifyEnable << ", rewriteId: " << curTraj.rewriteId
 		);

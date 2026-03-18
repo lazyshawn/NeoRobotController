@@ -20,8 +20,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         1.0.1\n"
-		<< "Release Date:    260312_1528");
+		<< "Version:         1.0.2\n"
+		<< "Release Date:    260317_1505");
 }
 
 
@@ -587,26 +587,70 @@ int RobotBase::trigger_action(int type, const std::vector<float>& param) {
 	return 0;
 }
 
-int RobotBase::rewrie_actioin_param(Move_Action& cfg) {
-	// --- 缓冲前运动
-	//for (auto& action : cfg.actionBefore) {
-	//	auto& type = action.first;
-	//	auto& param = action.second;
+int RobotBase::rewrie_actioin_param(Move_Action& actionCfg) {
 
-	//	// 2. 起弧
-	//	if (type == 2) {
-	//	}
-	//}
+	auto traj = trajectory.get_curTraj();
 
-	// --- 缓冲后运动
-	//for (auto& action : cfg.actionAfter) {
-	//	auto& type = action.first;
-	//	auto& param = action.second;
+	// 2. 焊接参数修正, 电压与电压修正
+	auto weldCfg = deserialize_Arc_WeldingParaItem(traj.appendix);
+	auto rearcCfg = deserialize_ReArc(traj.appendix);
+	//auto actionCfg = deserialize_Move_Action(traj.appendix);
 
-	//	// 息弧
-	//	if (type == 3) {
-	//	}
-	//}
+	// 3. 缓冲运动参数写入
+	if (weldCfg.Id > 0) {
+		for (auto& item : actionCfg.actionBefore) {
+			// --- 起弧动作中添加起弧参数、再起弧参数和焊接参数
+			if (item.first == 2) {
+				std::vector<DT_scale> data;
+				// 起弧参数 0
+				data.push_back(weldCfg.ArcOnWorkMode);
+				data.push_back(weldCfg.ArcOnCrt_Spd);
+				data.push_back(weldCfg.ArcOnVtg_Strth);
+				data.push_back(weldCfg.ArcOninductance);
+				data.push_back(weldCfg.ArcOnJobChannelNum);
+				data.push_back(weldCfg.ArcOnTime);
+				data.push_back(weldCfg.ArcOnBlowTime);
+				// 再起弧参数 7
+				data.push_back(rearcCfg.ReArc_Enable);
+				data.push_back(rearcCfg.ReArcCount);
+				data.push_back(rearcCfg.ReArcSnagTime);
+				// 焊接参数 10
+				data.push_back(weldCfg.WeldingWorkMode);
+				data.push_back(weldCfg.WeldingCrt_Spd);
+				data.push_back(weldCfg.WeldingVtg_Strth);
+				data.push_back(weldCfg.Weldinductance);
+				data.push_back(weldCfg.WeldJobChannelNum);
+				// 刮擦起弧 15
+				data.push_back(rearcCfg.ScrubArc_Enable);
+
+				// 添加起弧参数
+				item.second = data;
+				//traj.add_appendix(serialize_Move_Action(actionCfg));
+
+				break;
+			}
+
+		}
+
+		for (auto& item : actionCfg.actionAfter) {
+			// 息弧动作中添加息弧参数
+			if (item.first == 3) {
+				std::vector<DT_scale> data;
+
+				// 模式，电流，电压，电感，收弧Job，收弧时间，收气时间
+				data.push_back(weldCfg.ArcOffWorkMode);
+				data.push_back(weldCfg.ArcOffCrt_Spd);
+				data.push_back(weldCfg.ArcOffVtg_Strth);
+				data.push_back(weldCfg.ArcOffinductance);
+				data.push_back(weldCfg.ArcOffJobChannelNum);
+				data.push_back(weldCfg.ArcOffTime);
+				data.push_back(weldCfg.ArcOffBlowTime);
+
+				item.second = data;
+				//traj.add_appendix(serialize_Move_Action(actionCfg));
+			}
+		}
+	}
 
 	return 0;
 }
@@ -627,7 +671,7 @@ int RobotBase::insert_task_traj() {
 
 	// --- 弧坑回填，原本息弧指令后增加回填运动
 	// 弧坑回填使能
-	if (pitFillCfg.enable && curTraj.taskId == 0) {
+	if (pitFillCfg.enable && curTraj.taskId != 1) {
 		bool remove = false;
 		for (auto& item : actionCfg.actionAfter) {
 			remove = true;
@@ -679,7 +723,7 @@ int RobotBase::insert_task_traj() {
 				break;
 			}
 		}
-		// 移除起弧动作
+		// 移除原始起弧动作
 		if (remove) {
 			// 删除当前轨迹中的参数
 			pitFillCfg.enable = false;
@@ -693,43 +737,103 @@ int RobotBase::insert_task_traj() {
 		}
 	}
 
+	actionCfg = deserialize_Move_Action(curTraj.appendix);
+	pitFillCfg = deserialize_ArcPitBackfill(curTraj.appendix);
+	weldCfg = deserialize_Arc_WeldingParaItem(curTraj.appendix);
+	weaveCfg = deserialize_Weave(curTraj.appendix);
+	rearcCfg = deserialize_ReArc(curTraj.appendix);
 	// 刮擦起弧
-	if (rearcCfg.ScrubArc_Enable) {
+	if (rearcCfg.ScrubArc_Enable && curTraj.taskId != 2) {
 		for (auto& item : actionCfg.actionBefore) {
 			// 指令有起弧动作
 			if (item.first == 2) {
 				SingleTrajectory pitTraj;
 				pitTraj.trajType = curTraj.get_trajType();
 
-				// 取消刮擦标志位
-				rearcCfg.ScrubArc_Enable = 0;
-				curTraj.add_appendix(serialize_ReArc(rearcCfg));
+				// 当前轨迹取消刮擦标志位
+				curTraj.taskId = 2;
+				// 取消起弧动作
+				actionCfg.actionBefore.clear();
+				curTraj.add_appendix(serialize_Move_Action(actionCfg));
 				trajectory.set_curTraj(curTraj);
 
 				// 指向正常焊接轨迹的迭代器，依次往该迭代器前插入刮擦轨迹
 				auto ite = trajectory.trajList.begin();
 				auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), 0, rearcCfg.ScrubArcLengh, 1);
 
+				// 刮擦摆形
+				weaveCfg.Id = rearcCfg.Weave_Enable;
+				weaveCfg.Shape = 0;
+				weaveCfg.LeftWidth = rearcCfg.LeftWidth;
+				weaveCfg.RightWidth = rearcCfg.RightWidth;
+				weaveCfg.Freq = rearcCfg.Freq;
+				weaveCfg.Dwell_left = rearcCfg.L_StayTime;
+				weaveCfg.Dwell_right = rearcCfg.R_StayTime;
+				weaveCfg.Dwell_type = rearcCfg.StayMode;
+				
 				// 添加刮擦轨迹
-				for (int i = 0; i < 1; ++i) {
-					// 空移前进
+				int scrubNum = rearcCfg.ScrubArcCount;
+				scrubNum = 2;
+				for (int i = 0; i < scrubNum; ++i) {
+					// --- 空移前进
+					Arc_WeldingParaItem nextWeldCfg = weldCfg;
+					nextWeldCfg.Id = 0;
+					pitTraj.add_appendix(serialize_Arc_WeldingParaItem(nextWeldCfg));
+					rearcCfg.ScrubArc_Enable = 0;
+					pitTraj.add_appendix(serialize_ReArc(rearcCfg));
+					Move_Action nextActionCfg;
+					pitTraj.add_appendix(serialize_Move_Action(nextActionCfg));
+					pitTraj.taskId = 2;
+					pitTraj.set_speed(20.0);
+					// 第一条需要起弧并等待
+					if (i == 0) {
+						// 刮擦起弧, 需要等待
+						rearcCfg.ScrubArc_Enable = 3;
+						pitTraj.add_appendix(serialize_ReArc(rearcCfg));
+						nextWeldCfg.Id = 1;
+						pitTraj.add_appendix(serialize_Arc_WeldingParaItem(nextWeldCfg));
+						nextActionCfg.actionBefore.push_back({ 2, {} });
+						pitTraj.add_appendix(serialize_Move_Action(nextActionCfg));
+
+						// 刮擦电流、电压设为起弧电流、电压
+						weldCfg.ArcOnCrt_Spd = rearcCfg.ScrubArcCrt;
+						weldCfg.ArcOnVtg_Strth = rearcCfg.ScrubArcVtg;
+						// 抽丝时间
+						rearcCfg.ReArcSnagTime = rearcCfg.SnagTime;
+					}
+
 					pitTraj.mainPoint = segment.mainPoint;
 					pitTraj.auxPoint = segment.auxPoint;
 					trajectory.trajList.insert(ite, pitTraj);
 
-					// 起弧回退
+					// --- 起弧回退
+					nextWeldCfg.Id = 1;
+					pitTraj.add_appendix(serialize_Arc_WeldingParaItem(nextWeldCfg));
+					rearcCfg.ScrubArc_Enable = 1;
+					pitTraj.add_appendix(serialize_ReArc(rearcCfg));
+					nextActionCfg.actionBefore.clear();
+					nextActionCfg.actionBefore.push_back({ 2, {} });
+					pitTraj.add_appendix(serialize_Move_Action(nextActionCfg));
+					pitTraj.add_appendix(serialize_Weave(weaveCfg));
+					pitTraj.taskId = 2;
+					pitTraj.set_speed(rearcCfg.ScrubArcSpeed);
+					// 最后一条刮擦轨迹添加起弧等待
+					if (i == scrubNum - 1) {
+						pitTraj.waitArcOn = 1;
+					}
+
 					pitTraj.mainPoint = preTraj.mainPoint;
 					pitTraj.auxPoint = segment.auxPoint;
 					trajectory.trajList.insert(ite, pitTraj);
 				}
 
-				// 最后一条刮擦轨迹添加起弧等待
 
 				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Scrub Enabled: " << vector_to_string(serialize_ReArc(rearcCfg).second, 2));
 				break;
 			}
 		}
 	}
+
 
 	return 0;
 }
@@ -1336,15 +1440,16 @@ void RobotGroupManager::processCommandThread() {
 
 				// 起弧等待
 				if (get_bit(coopState[i], 11)) {
-					// 未起弧则跳过下发
-					if (!robotList[i]->check_arc_on()) {
-						break;
-					}
-					else {
-						// 起弧成功取消置位
+					// 起弧成功取消置位
+					if (robotList[i]->check_arc_on()) {
 						set_bit(coopState[i], 11, 0);
+						// 重设起点
+						preTraj.set_trajType(TrajType::None);
+						robotList[i]->trajectory.set_preTraj(preTraj);
 						LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " arc on, continue to move.");
 					}
+					// 未起弧则跳过下发
+					break;
 				}
 
 				// 需要等待同步和协同: 空闲 + 同步号相同
@@ -2252,7 +2357,8 @@ int RobotGroupManager::robot_group_update_saved_pos(const std::vector<int>& idxL
 
 int RobotGroupManager::robot_group_clear_task(int idx) {
 	// 暂停触发标志复位
-	set_bit(coopState[idx], 8, false);
+	//set_bit(coopState[idx], 8, false);
+	coopState[idx] = 0;
 
 	robotList[idx]->task_stop();
 
