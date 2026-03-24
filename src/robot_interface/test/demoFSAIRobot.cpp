@@ -310,6 +310,7 @@ void shawn_test::task_test() {
 	rearcCfg.ScrubArc_Enable = 1;
 	rearcCfg.ScrubArcLengh = 10;
 	rearcCfg.ScrubArcSpeed = 20;
+	rearcCfg.ScrubArcCount = 2;
 	trajCfg.add_appendix(FSAIRobotInterface::serialize_ReArc(rearcCfg));
 
 	FSAIRobotInterface::Move_Action action;

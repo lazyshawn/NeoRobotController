@@ -178,12 +178,13 @@ std::pair<int, std::vector<float>> serialize_ReArc(const ReArc& cfg) {
 
 	param.push_back(cfg.ScrubArc_Enable); // 4 刮擦使能
 	param.push_back(cfg.ScrubArcLengh);   // 5 刮擦距离
+	param.push_back(cfg.ScrubArcCount);   // 6 刮擦刮擦次数
 
-	// 刮擦电流 6
+	// 刮擦电流 7
 	param.push_back(cfg.ScrubArcCrt);
 	param.push_back(cfg.ScrubArcVtg);
 	
-	// 刮擦摆形 8
+	// 刮擦摆形 9
 	param.push_back(cfg.Weave_Enable);
 	param.push_back(cfg.Shape);
 	param.push_back(cfg.LeftWidth);
@@ -215,6 +216,7 @@ ReArc deserialize_ReArc(const std::map<int, std::vector<float>>& appendix) {
 
 	cfg.ScrubArc_Enable = param[num++]; // 4 刮擦使能
 	cfg.ScrubArcLengh = param[num++];   // 5 刮擦距离
+	cfg.ScrubArcCount = param[num++];   // 6 刮擦次数
 
 	// 刮擦电流 6
 	cfg.ScrubArcCrt = param[num++];
