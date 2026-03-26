@@ -117,6 +117,10 @@ std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_Weldi
 	param.push_back(arcTime); 		              // 5 收弧时间
 	param.push_back(blowTime);                    // 6 收气时间
 
+	// 缓升缓降 19
+	param.push_back(weldCfg.SlowUpTime);          // 1 缓升时间
+	param.push_back(weldCfg.SlowDownTime);        // 2 缓降时间
+
 	ans.first = static_cast<int>(AppendixType::WELD_CFG);
 	ans.second = param;
 
@@ -162,6 +166,10 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	cfg.ArcOffTime           = param[num++];       // 5 收弧时间
 	cfg.ArcOffBlowTime       = param[num++];       // 6 收气时间
 
+	// 19
+	cfg.SlowUpTime          = param[num++];        // 缓升时间
+	cfg.SlowDownTime        = param[num++];        // 缓降时间
+
 	return cfg;
 }
 
@@ -178,12 +186,13 @@ std::pair<int, std::vector<float>> serialize_ReArc(const ReArc& cfg) {
 
 	param.push_back(cfg.ScrubArc_Enable); // 4 刮擦使能
 	param.push_back(cfg.ScrubArcLengh);   // 5 刮擦距离
+	param.push_back(cfg.ScrubArcCount);   // 6 刮擦刮擦次数
 
-	// 刮擦电流 6
+	// 刮擦电流 7
 	param.push_back(cfg.ScrubArcCrt);
 	param.push_back(cfg.ScrubArcVtg);
 	
-	// 刮擦摆形 8
+	// 刮擦摆形 9
 	param.push_back(cfg.Weave_Enable);
 	param.push_back(cfg.Shape);
 	param.push_back(cfg.LeftWidth);
@@ -215,6 +224,7 @@ ReArc deserialize_ReArc(const std::map<int, std::vector<float>>& appendix) {
 
 	cfg.ScrubArc_Enable = param[num++]; // 4 刮擦使能
 	cfg.ScrubArcLengh = param[num++];   // 5 刮擦距离
+	cfg.ScrubArcCount = param[num++];   // 6 刮擦次数
 
 	// 刮擦电流 6
 	cfg.ScrubArcCrt = param[num++];

@@ -1,4 +1,5 @@
 ﻿
+
 add_library(task_plan
   collision.cpp
 )
@@ -11,11 +12,20 @@ target_include_directories(task_plan PUBLIC
 #message("Link directories: ${LINK_DIRS}")
 
 # Then, link libraries
+#[[
 find_package(ccd PATHS "${CMAKE_SOURCE_DIR}/extern/libccd/lib/ccd" REQUIRED)
 find_package(fcl PATHS "${CMAKE_SOURCE_DIR}/extern/fcl/CMake" REQUIRED)
 target_link_libraries(task_plan PUBLIC
   ccd
   fcl
+)
+]]
+set(Boost_INCLUDE_DIR "D:/CIMC/FSAI_Teaching_Free_Weld_System/libraries_test/Boost-gd/include/boost-1_88")
+find_package(coal PATHS "${CMAKE_SOURCE_DIR}/extern/coal-b/lib/cmake/coal" REQUIRED)
+find_package(ompl PATHS "${CMAKE_SOURCE_DIR}/extern/ompl-d/share/ompl/cmake" REQUIRED)
+target_link_libraries(task_plan PUBLIC
+  coal::coal
+  ompl::ompl
 )
 
 # Install headers

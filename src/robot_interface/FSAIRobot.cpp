@@ -376,7 +376,6 @@ namespace FSAIRobotInterface {
 				traj.auxPoint[3] = traj.auxPoint[5];
 				traj.auxPoint[5] = tmp;
 			}
-
 		}
 
 		std::unique_lock<std::mutex> lock(mtxMotion);
@@ -1267,7 +1266,9 @@ namespace FSAIRobotInterface {
 	int FSAIRobot::update_welder_config() {
 
 		auto curTraj = trajectory.get_curTraj();
+		auto preTraj = trajectory.get_preTraj();
 		Arc_WeldingParaItem weldCfg = deserialize_Arc_WeldingParaItem(curTraj.get_appendix());
+		Arc_WeldingParaItem preWeldCfg = deserialize_Arc_WeldingParaItem(preTraj.get_appendix());
 
 		// 不起弧，无需修改焊接参数
 		if (weldCfg.Id <= 0)
@@ -1292,12 +1293,6 @@ namespace FSAIRobotInterface {
 		// - Job号
 		jobId = weldCfg.WeldJobChannelNum;
 
-		int stateBase = get_state_idx_base();
-		std::vector<int> tableList(5, stateBase + 171);
-		for (size_t i = 0; i < tableList.size(); ++i) {
-			tableList[i] += i;
-		}
-
 		std::vector<float> data;
 		data.push_back(modeCmd);
 		data.push_back(current);
@@ -1305,9 +1300,23 @@ namespace FSAIRobotInterface {
 		data.push_back(inductance);
 		data.push_back(jobId);
 
+		//if (preWeldCfg.Id > 0) {
+		//	// 开始电流
+		//	data.push_back(preWeldCfg.WeldingCrt_Spd);
+		//	// 渐变时间
+		//	data.push_back(2000);
+		//}
+
+		int stateBase = get_state_idx_base();
+		std::vector<int> tableList(data.size(), stateBase + 171);
+		for (size_t i = 0; i < tableList.size(); ++i) {
+			tableList[i] += i;
+		}
+
 		// 写入变工艺参数
 		begRegister.add_buffer(tableList, data);
 		// 变工艺使能
+		//begRegister.add_buffer(stateBase + 170, preWeldCfg.Id > 0 ? 2 : 1);
 		begRegister.add_buffer(stateBase + 170, 1);
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " Update welder config: " << vector_to_string(data, 2));

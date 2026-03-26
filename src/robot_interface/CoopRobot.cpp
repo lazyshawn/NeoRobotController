@@ -1,4 +1,4 @@
-﻿
+
 #include "robot_interface/CoopRobot.h"
 
 #include "RobotLogger.h"
@@ -21,7 +21,7 @@ RobotLog::RobotLog() {
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
 		<< "Version:         1.0.2\n"
-		<< "Release Date:    260317_1505");
+		<< "Release Date:    260325_0945");
 }
 
 
@@ -622,6 +622,9 @@ int RobotBase::rewrie_actioin_param(Move_Action& actionCfg) {
 				data.push_back(weldCfg.WeldJobChannelNum);
 				// 刮擦起弧 15
 				data.push_back(rearcCfg.ScrubArc_Enable);
+				// 缓升时间 16
+				data.push_back(weldCfg.SlowUpTime);
+
 
 				// 添加起弧参数
 				item.second = data;
@@ -645,6 +648,9 @@ int RobotBase::rewrie_actioin_param(Move_Action& actionCfg) {
 				data.push_back(weldCfg.ArcOffJobChannelNum);
 				data.push_back(weldCfg.ArcOffTime);
 				data.push_back(weldCfg.ArcOffBlowTime);
+
+				// 缓降时间
+				data.push_back(weldCfg.SlowDownTime);
 
 				item.second = data;
 				//traj.add_appendix(serialize_Move_Action(actionCfg));
@@ -747,9 +753,6 @@ int RobotBase::insert_task_traj() {
 		for (auto& item : actionCfg.actionBefore) {
 			// 指令有起弧动作
 			if (item.first == 2) {
-				SingleTrajectory pitTraj;
-				pitTraj.trajType = curTraj.get_trajType();
-
 				// 当前轨迹取消刮擦标志位
 				curTraj.taskId = 2;
 				// 取消起弧动作
@@ -761,70 +764,87 @@ int RobotBase::insert_task_traj() {
 				auto ite = trajectory.trajList.begin();
 				auto segment = partition_trajectory(preTraj.get_point(), curTraj.get_point(), 0, rearcCfg.ScrubArcLengh, 1);
 
-				// 刮擦摆形
-				weaveCfg.Id = rearcCfg.Weave_Enable;
-				weaveCfg.Shape = 0;
-				weaveCfg.LeftWidth = rearcCfg.LeftWidth;
-				weaveCfg.RightWidth = rearcCfg.RightWidth;
-				weaveCfg.Freq = rearcCfg.Freq;
-				weaveCfg.Dwell_left = rearcCfg.L_StayTime;
-				weaveCfg.Dwell_right = rearcCfg.R_StayTime;
-				weaveCfg.Dwell_type = rearcCfg.StayMode;
-				
+				// 刮擦次数
+				const int scrubNum = (rearcCfg.ScrubArcCount > 0) ? rearcCfg.ScrubArcCount : 1;
+
+				// 回退过程中的刮擦摆形
+				auto bWeaveCfg = weaveCfg;
+				bWeaveCfg.Id = rearcCfg.Weave_Enable;
+				bWeaveCfg.Shape = 0;
+				bWeaveCfg.LeftWidth = rearcCfg.LeftWidth;
+				bWeaveCfg.RightWidth = rearcCfg.RightWidth;
+				bWeaveCfg.Freq = rearcCfg.Freq;
+				bWeaveCfg.Dwell_left = rearcCfg.L_StayTime;
+				bWeaveCfg.Dwell_right = rearcCfg.R_StayTime;
+				bWeaveCfg.Dwell_type = rearcCfg.StayMode;
+
 				// 添加刮擦轨迹
-				int scrubNum = rearcCfg.ScrubArcCount;
-				scrubNum = 2;
 				for (int i = 0; i < scrubNum; ++i) {
 					// --- 空移前进
-					Arc_WeldingParaItem nextWeldCfg = weldCfg;
-					nextWeldCfg.Id = 0;
-					pitTraj.add_appendix(serialize_Arc_WeldingParaItem(nextWeldCfg));
-					rearcCfg.ScrubArc_Enable = 0;
-					pitTraj.add_appendix(serialize_ReArc(rearcCfg));
-					Move_Action nextActionCfg;
-					pitTraj.add_appendix(serialize_Move_Action(nextActionCfg));
-					pitTraj.taskId = 2;
-					pitTraj.set_speed(20.0);
+					SingleTrajectory forwardTraj;
+					forwardTraj.trajType = curTraj.get_trajType();
+					forwardTraj.taskId = 2;
+					forwardTraj.waitArcOn = 0;
+					forwardTraj.set_speed(20.0);
+
+					auto fWeldCfg = weldCfg;
+					fWeldCfg.Id = 0;
+					forwardTraj.add_appendix(serialize_Arc_WeldingParaItem(fWeldCfg));
+
+					auto fRearcCfg = rearcCfg;
+					fRearcCfg.ScrubArc_Enable = 0;
+
+					// todo: 第一段保留缓冲前动作
+					Move_Action fActionCfg;
+
 					// 第一条需要起弧并等待
 					if (i == 0) {
 						// 刮擦起弧, 需要等待
-						rearcCfg.ScrubArc_Enable = 3;
-						pitTraj.add_appendix(serialize_ReArc(rearcCfg));
-						nextWeldCfg.Id = 1;
-						pitTraj.add_appendix(serialize_Arc_WeldingParaItem(nextWeldCfg));
-						nextActionCfg.actionBefore.push_back({ 2, {} });
-						pitTraj.add_appendix(serialize_Move_Action(nextActionCfg));
+						fRearcCfg.ScrubArc_Enable = 3;
 
 						// 刮擦电流、电压设为起弧电流、电压
-						weldCfg.ArcOnCrt_Spd = rearcCfg.ScrubArcCrt;
-						weldCfg.ArcOnVtg_Strth = rearcCfg.ScrubArcVtg;
-						// 抽丝时间
-						rearcCfg.ReArcSnagTime = rearcCfg.SnagTime;
+						fWeldCfg.Id = 1;
+						fWeldCfg.ArcOnCrt_Spd = fRearcCfg.ScrubArcCrt;
+						fWeldCfg.ArcOnVtg_Strth = fRearcCfg.ScrubArcVtg;
+
+						fActionCfg.actionBefore.push_back({ 2, {} });
 					}
 
-					pitTraj.mainPoint = segment.mainPoint;
-					pitTraj.auxPoint = segment.auxPoint;
-					trajectory.trajList.insert(ite, pitTraj);
+					forwardTraj.add_appendix(serialize_ReArc(fRearcCfg));
+					forwardTraj.add_appendix(serialize_Arc_WeldingParaItem(fWeldCfg));
+					forwardTraj.add_appendix(serialize_Move_Action(fActionCfg));
+
+					forwardTraj.mainPoint = segment.mainPoint;
+					forwardTraj.auxPoint = segment.auxPoint;
+					trajectory.trajList.insert(ite, forwardTraj);
 
 					// --- 起弧回退
-					nextWeldCfg.Id = 1;
-					pitTraj.add_appendix(serialize_Arc_WeldingParaItem(nextWeldCfg));
-					rearcCfg.ScrubArc_Enable = 1;
-					pitTraj.add_appendix(serialize_ReArc(rearcCfg));
-					nextActionCfg.actionBefore.clear();
-					nextActionCfg.actionBefore.push_back({ 2, {} });
-					pitTraj.add_appendix(serialize_Move_Action(nextActionCfg));
-					pitTraj.add_appendix(serialize_Weave(weaveCfg));
-					pitTraj.taskId = 2;
-					pitTraj.set_speed(rearcCfg.ScrubArcSpeed);
+					SingleTrajectory backTraj;
+					backTraj.trajType = curTraj.get_trajType();
+					backTraj.taskId = 2;
 					// 最后一条刮擦轨迹添加起弧等待
-					if (i == scrubNum - 1) {
-						pitTraj.waitArcOn = 1;
-					}
+					backTraj.waitArcOn = (i == scrubNum - 1) ? 1 : 0;
+					backTraj.set_speed(rearcCfg.ScrubArcSpeed);
 
-					pitTraj.mainPoint = preTraj.mainPoint;
-					pitTraj.auxPoint = segment.auxPoint;
-					trajectory.trajList.insert(ite, pitTraj);
+					auto bWeldCfg = weldCfg;
+					bWeldCfg.Id = 1;
+					backTraj.add_appendix(serialize_Arc_WeldingParaItem(bWeldCfg));
+
+					auto bRearcCfg = rearcCfg;
+					bRearcCfg.ScrubArc_Enable = 1;
+					bRearcCfg.ReArcSnagTime = rearcCfg.SnagTime;
+					backTraj.add_appendix(serialize_ReArc(bRearcCfg));
+
+					// todo: 最后一段保留缓冲后动作
+					Move_Action bActionCfg;
+					bActionCfg.actionBefore.push_back({ 2, {} });
+					backTraj.add_appendix(serialize_Move_Action(bActionCfg));
+
+					backTraj.add_appendix(serialize_Weave(bWeaveCfg));
+
+					backTraj.mainPoint = preTraj.mainPoint;
+					backTraj.auxPoint = segment.auxPoint;
+					trajectory.trajList.insert(ite, backTraj);
 				}
 
 
