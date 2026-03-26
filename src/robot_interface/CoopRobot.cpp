@@ -21,7 +21,7 @@ RobotLog::RobotLog() {
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
 		<< "Version:         1.0.2\n"
-		<< "Release Date:    260317_1505");
+		<< "Release Date:    260325_0945");
 }
 
 
@@ -622,6 +622,9 @@ int RobotBase::rewrie_actioin_param(Move_Action& actionCfg) {
 				data.push_back(weldCfg.WeldJobChannelNum);
 				// 刮擦起弧 15
 				data.push_back(rearcCfg.ScrubArc_Enable);
+				// 缓升时间 16
+				data.push_back(weldCfg.SlowUpTime);
+
 
 				// 添加起弧参数
 				item.second = data;
@@ -645,6 +648,9 @@ int RobotBase::rewrie_actioin_param(Move_Action& actionCfg) {
 				data.push_back(weldCfg.ArcOffJobChannelNum);
 				data.push_back(weldCfg.ArcOffTime);
 				data.push_back(weldCfg.ArcOffBlowTime);
+
+				// 缓降时间
+				data.push_back(weldCfg.SlowDownTime);
 
 				item.second = data;
 				//traj.add_appendix(serialize_Move_Action(actionCfg));

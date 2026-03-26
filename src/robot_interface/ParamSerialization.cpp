@@ -117,6 +117,10 @@ std::pair<int, std::vector<float>> serialize_Arc_WeldingParaItem(const Arc_Weldi
 	param.push_back(arcTime); 		              // 5 收弧时间
 	param.push_back(blowTime);                    // 6 收气时间
 
+	// 缓升缓降 19
+	param.push_back(weldCfg.SlowUpTime);          // 1 缓升时间
+	param.push_back(weldCfg.SlowDownTime);        // 2 缓降时间
+
 	ans.first = static_cast<int>(AppendixType::WELD_CFG);
 	ans.second = param;
 
@@ -161,6 +165,10 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	cfg.ArcOffJobChannelNum  = param[num++];       // 4 收弧 Job
 	cfg.ArcOffTime           = param[num++];       // 5 收弧时间
 	cfg.ArcOffBlowTime       = param[num++];       // 6 收气时间
+
+	// 19
+	cfg.SlowUpTime          = param[num++];        // 缓升时间
+	cfg.SlowDownTime        = param[num++];        // 缓降时间
 
 	return cfg;
 }
