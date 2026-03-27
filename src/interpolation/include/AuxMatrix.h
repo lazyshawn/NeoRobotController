@@ -88,6 +88,18 @@ extern "C" {
 	// 矩阵乘法
 	int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans);
 
+	// 矩阵范数
+	double matrix_norm(const MatrixXd *mat);
+
+	// 矩阵单位化
+	int matrix_normalize(MatrixXd *mat);
+
+	// 矩阵内积
+	double matrix_inner_product(const MatrixXd *matA, const MatrixXd *matB);
+
+	// 矩阵外积
+	int matrix_outer_product(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans);
+
 	// 矩阵求逆
 	int matrix_LUP_inverse(const MatrixXd* A, MatrixXd* A_inv);
 

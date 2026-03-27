@@ -531,7 +531,7 @@ double DoubleSCurve::calc_time_PiTPe(double ds) {
 		solShift = T - Td;
 	}
 	else if (s < q1 - q0) {
-		double coeff[4] = { s, v1, 0, jmax / 6 };
+		double coeff[4] = { -s, v1, 0, jmax / 6 };
 		solve_cubic_eqution(coeff, sol);
 		solNum = 3;
 		solShift = -T;

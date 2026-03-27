@@ -83,13 +83,14 @@ int SwingInterpParam::serialize(std::vector<double>& param) const {
 	param.push_back(state);
 	param.push_back(time);
 	param.push_back(duration);
+	param.push_back(pos);
 
 	return static_cast<int>(type);
 }
 
 int SwingInterpParam::deserialize(const std::vector<double>& param) {
 	// 参数不全，使用默认参数
-	if (param.size() < 7) {
+	if (param.size() < 8) {
 		this->clear();
 		return 1;
 	}
@@ -102,6 +103,7 @@ int SwingInterpParam::deserialize(const std::vector<double>& param) {
 	state = static_cast<int>(param[4]);
 	time = param[5];
 	duration = param[6];
+	pos = param[7];
 
 	return 0;
 }
@@ -183,14 +185,10 @@ double bezier_dist(int m, const double ctr[][3], double a, double b, int n) {
 }
 
 // 贝塞尔曲线插补
-double bezier_interp(int m, const double ctr[][3], double curU, double detS) {
+double bezier_interp(int m, const double ctr[][3], double curU, double detS, int num) {
 	// 二分法
 	double beg = curU, end = 1.0;
-	int maxIteNum = 30;
-
-	// 当前位置
-	double curPos[3];
-	bezier_positioin(m, ctr, curU, curPos);
+	int maxIteNum = 20;
 
 	// 最大迭代次数
 	double lastU = 1.0;
@@ -198,17 +196,7 @@ double bezier_interp(int m, const double ctr[][3], double curU, double detS) {
 		// 中点参数
 		double U = (beg + end) / 2;
 
-		// 迭代位置
-		double itePos[3];
-		bezier_positioin(m, ctr, U, itePos);
-
-		for (int k = 0; k < 3; ++k)
-			itePos[k] -= curPos[k];
-		double dis = sqrt(itePos[0]*itePos[0] + itePos[1] * itePos[1] + itePos[2] * itePos[2]);
-
-		//if (fabs(dis - detS) < 1e-6)
-		if (fabs(lastU - U) < 1e-2 * U && fabs(dis - detS) < 1e-6)
-			return U;
+		double dis = bezier_dist(m, ctr, curU, U, num);
 
 		// 更新区间端点
 		if (dis > detS)

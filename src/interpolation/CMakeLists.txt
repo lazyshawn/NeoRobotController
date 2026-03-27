@@ -1,6 +1,6 @@
 ﻿
 add_library(interpolation
-  AuxMatrix.cpp
+  AuxMatrix.c
   InterpCurve.cpp
   InterpDispatch.cpp
   InterpSegment.cpp

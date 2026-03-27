@@ -21,9 +21,10 @@
  ***********************************************************************/
  // 参数类型
 enum class TaskParamType {
-	SWING,   // 摆焊
+	SWING,     // 摆焊
 };
 
+// 摆焊参数
 struct SwingInterpParam {
 	static TaskParamType type;
 
@@ -37,6 +38,7 @@ struct SwingInterpParam {
 	int state;
 	double time;
 	double duration;
+	double pos;
 
 	void clear();
 	int get_type() const;
@@ -86,6 +88,7 @@ struct PointInfo {
 
 // 基础运动参数: 如运动类型、速度、平滑度、轴屏蔽等
 struct MotionCfg {
+	//! 运动类型: 0 关节, 1 直线, 2 圆弧
 	int moveType;
 	double speed = 0.0;
 	double accel;
@@ -134,7 +137,7 @@ struct ProcessInfo {
 	// - 笛卡尔空间参数
 	// 直线起点/圆弧圆心
 	double knot[3];
-	// 直线方向/圆弧旋转矢量
+	// 直线方向(1)/圆弧旋转矢量(theta)
 	double dir[3];
 	// 直线长度/圆弧弧长
 	double dist;
@@ -251,4 +254,4 @@ double bezier_dist(int m, const double ctr[][3], double a, double b, int n);
 @param  curU   待获取点位的参数值
 @param  detS   步进距离，需要足够小(detS << dist)
 ******************************************/
-double bezier_interp(int m, const double ctr[][3], double curU, double detS);
+double bezier_interp(int m, const double ctr[][3], double curU, double detS, int num);
