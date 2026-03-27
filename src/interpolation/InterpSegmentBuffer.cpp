@@ -11,15 +11,26 @@ static const double dim_EPS = 1e-6;
  *                        A U X I L I A R Y                            *
  ***********************************************************************/
 // 计算轨迹参数
-int calc_traj_info(const double *begPnt, const double *midPnt, const double *endPnt, int *mode, double *ans) {
+int calc_traj_info(const double *begPnt, const double *midPnt, const double *endPnt, int mode, double *ans) {
+	// 预声明所有资源并初始化为NULL
+	MatrixXd *begPos = matrix_new(3, 1, 0), *midPos = matrix_new(3, 1, 0), *endPos = matrix_new(3, 1, 0);
+	MatrixXd *a = matrix_new(3, 1, 0), *b = matrix_new(3, 1, 0), *aXb = matrix_new(3, 1, 0);
+	MatrixXd *tmp = matrix_new(3, 1, 0), *cent = matrix_new(3, 1, 0);
+	MatrixXd *op1 = matrix_new(3, 1, 0), *op2 = matrix_new(3, 1, 0), *op3 = matrix_new(3, 1, 0);
+	MatrixXd *n12 = matrix_new(3, 1, 0), *n13 = matrix_new(3, 1, 0), *normal = matrix_new(3, 1, 0);
+	MatrixXd *radius = matrix_new(3, 1, 0), *lineDir = matrix_new(3, 1, 0);
 
 	// 直线拐点位置
-	MatrixXd *begPos = matrix_from_array(3, 1, begPnt, 3), *midPos = matrix_from_array(3, 1, midPnt, 3), *endPos = matrix_from_array(3, 1, endPnt, 3);
-	double knot[3], dir[3], dist;
-	bool isLine = (mode == 0);
+	begPos = matrix_from_array(3, 1, begPnt, 3);
+	midPos = matrix_from_array(3, 1, midPnt, 3);
+	endPos = matrix_from_array(3, 1, endPnt, 3);
 
-	if (*mode == 1) {
-		MatrixXd *a = matrix_new(3, 1, 0), *b = matrix_new(3, 1, 0);
+	double knot[3], dir[3], dist;
+	int isLine = (mode == 0) ? 1 : 0;
+
+	if (mode == 1) {
+		a = matrix_new(3, 1, 0);
+		b = matrix_new(3, 1, 0);
 		matrix_plus(1.0, begPos, -1.0, midPos, a);
 		matrix_plus(1.0, endPos, -1.0, midPos, b);
 		// 当直线处理
@@ -30,75 +41,251 @@ int calc_traj_info(const double *begPnt, const double *midPnt, const double *end
 		//}
 
 		// 圆心位置
-		MatrixXd *aXb = matrix_new(3, 1, 0);
+		aXb = matrix_new(3, 1, 0);
 		matrix_outer_product(a, b, aXb);
 		double La = matrix_norm(a), Lb = matrix_norm(b), LaXb = matrix_norm(aXb);
-		MatrixXd *tmp = matrix_new(3, 1, 0), *cent = matrix_new(3, 1, 0);
+		tmp = matrix_new(3, 1, 0);
+		cent = matrix_new(3, 1, 0);
 		matrix_plus(La*La / (2*LaXb*LaXb), b, -Lb*Lb / (2 * LaXb*LaXb), a, tmp);
 		matrix_outer_product(tmp, aXb, cent);
 		matrix_plus(1, cent, 1, midPos, cent);
 
 		// 半径方向
-		MatrixXd *op1 = matrix_new(3, 1, 0), *op2 = matrix_new(3, 1, 0), *op3 = matrix_new(3, 1, 0);
+		op1 = matrix_new(3, 1, 0);
+		op2 = matrix_new(3, 1, 0);
+		op3 = matrix_new(3, 1, 0);
 
-		//// 圆心位置
-		//Eigen::Matrix<DT_scale, 3, 1> cent = (a.squaredNorm()*b - b.squaredNorm()*a).cross(a.cross(b)) / (2 * (a.cross(b)).squaredNorm()) + midPos;
-		//// 半径方向
-		//Eigen::Matrix<DT_scale, 3, 1> op1 = (begPos - cent).normalized(), op2 = (midPos - cent).normalized(), op3 = (endPos - cent).normalized();
-		//// 法线方向
-		//Eigen::Matrix<DT_scale, 3, 1> n12 = op1.cross(op2), n13 = op1.cross(op3);
-		//// 圆弧运动平面的法线方向
-		//Eigen::Matrix<DT_scale, 3, 1> normal = op1.cross(op3);
-		//// 半径夹角
-		//DT_scale q12 = std::acos(op1.dot(op2)), q13 = std::acos(op1.dot(op3));
-		//// 圆心角度
-		//DT_scale theta = std::acos(op1.dot(op3));
+		// 计算半径方向向量
+		matrix_plus(1.0, begPos, -1.0, cent, op1);
+		matrix_plus(1.0, midPos, -1.0, cent, op2);
+		matrix_plus(1.0, endPos, -1.0, cent, op3);
+		// 单位化
+		matrix_normalize(op1);
+		matrix_normalize(op2);
+		matrix_normalize(op3);
 
-		//// 修正圆心角和法向量
-		//// 2,3 在 1 的两侧
-		//if (n12.dot(n13) < 0) {
-		//	normal = -n13;
-		//	theta = 2 * DT_PI - theta;
-		//}
-		//// q12 > q13
-		//else if (q12 > q13) {
-		//	normal = -n13;
-		//	theta = 2 * DT_PI - theta;
-		//}
-		//else if (q13 > q12) {
-		//	normal = n12;
-		//}
+		// 法线方向
+		n12 = matrix_new(3, 1, 0);
+		n13 = matrix_new(3, 1, 0);
+		matrix_outer_product(op1, op2, n12);
+		matrix_outer_product(op1, op3, n13);
 
-		//normal.normalize();
-		//normal *= theta;
-		//knot.assign(cent.data(), cent.data() + 3);
-		//dist = (begPos - cent).norm() * theta;
-		//dir.assign(normal.data(), normal.data() + 3);
+		// 圆弧运动平面的法线方向
+		normal = matrix_new(3, 1, 0);
+		matrix_outer_product(op1, op3, normal);
+
+		// 半径夹角
+		double q12 = acos(matrix_inner_product(op1, op2));
+		double q13 = acos(matrix_inner_product(op1, op3));
+
+		// 圆心角度
+		double theta = acos(matrix_inner_product(op1, op3));
+
+		// 修正圆心角和法向量
+		// 2,3 在 1 的两侧
+		if (matrix_inner_product(n12, n13) < 0) {
+			matrix_scale(normal, -1.0);
+			theta = 2 * M_PI - theta;
+		}
+		// q12 > q13
+		else if (q12 > q13) {
+			matrix_scale(normal, -1.0);
+			theta = 2 * M_PI - theta;
+		}
+		else if (q13 > q12) {
+			matrix_delete(normal);
+			normal = matrix_copy(n12);
+		}
+
+		// 单位化法线方向并乘以圆心角度
+		matrix_normalize(normal);
+		matrix_scale(normal, theta);
+
+		// 计算圆弧长度
+		radius = matrix_new(3, 1, 0);
+		matrix_plus(1.0, begPos, -1.0, cent, radius);
+		double radius_len = matrix_norm(radius);
+		dist = radius_len * theta;
+
+		// 将cent的值赋给knot数组
+		matrix_to_array(cent, knot, 3);
+		// 将normal的值赋给dir数组
+		matrix_to_array(normal, dir, 3);
 	}
 
 	if (isLine) {
-		//Eigen::Matrix<DT_scale, 3, 1> lineDir = (endPos - begPos).normalized();
+		// 计算直线方向向量
+		matrix_plus(1.0, endPos, -1.0, begPos, lineDir);
+		// 计算直线长度
+		dist = matrix_norm(lineDir);
+		// 单位化直线方向向量
+		matrix_normalize(lineDir);
 
-		//// 计算轨迹信息
-		//knot.assign(begPos.data(), begPos.data() + 3);
-		//dist = (endPos - begPos).norm();
-		//dir.assign(lineDir.data(), lineDir.data() + 3);
+		// 计算轨迹信息
+		matrix_to_array(begPos, knot, 3);
+		matrix_to_array(lineDir, dir, 3);
 	}
 
-	for (size_t i = 0; i < 3; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		ans[i] = knot[i];
 		ans[i + 4] = dir[i];
 	}
 	ans[3] = dist;
 
-	// 释放资源
+	// 集中释放所有资源
 	matrix_delete(begPos);
 	matrix_delete(midPos);
 	matrix_delete(endPos);
+	matrix_delete(a);
+	matrix_delete(b);
+	matrix_delete(aXb);
+	matrix_delete(tmp);
+	matrix_delete(cent);
+	matrix_delete(op1);
+	matrix_delete(op2);
+	matrix_delete(op3);
+	matrix_delete(n12);
+	matrix_delete(n13);
+	matrix_delete(normal);
+	matrix_delete(radius);
+	matrix_delete(lineDir);
 
 	return 0;
 }
 
+// 计算平滑控制点
+int calc_smooth_ctrl_pnt(const InterpSegment *preBuf, const InterpSegment *curBuf, double smoothDist, double ctrlPnt[6][3]) {
+
+	MatrixXd *preDir = matrix_from_array(3, 1, preBuf->procInfo.dir, 3), *prePos = matrix_new(3, 1, 0);
+	MatrixXd *curDir = matrix_from_array(3, 1, curBuf->procInfo.dir, 3), *curPos = matrix_new(3, 1, 0);
+	MatrixXd *corner = matrix_from_array(3, 1, curBuf->pointInfo.begPos.rbtPos.data(), 3);
+	MatrixXd *ctrl = matrix_copy(corner);
+
+	// 前段轨迹平滑起点和切向量
+	if (preBuf->motionCfg.moveType == 1) {
+		matrix_plus(1.0, corner, -smoothDist, preDir, prePos);
+	}
+	else if (preBuf->motionCfg.moveType == 2) {
+		// 终点半径向量
+		MatrixXd *radius = matrix_new(3, 1, 0), *center = matrix_from_array(3, 1, preBuf->procInfo.knot, 3);
+		MatrixXd *rotDir = matrix_from_array(3, 1, preBuf->procInfo.dir, 3), *uxv = matrix_new(3, 1, 0);
+		MatrixXd *tanDir = matrix_new(3, 1, 0);
+		matrix_plus(1.0, corner, -1.0, center, radius);
+		matrix_normalize(rotDir);
+
+		// 旋转后的半径向量
+		double theta = - smoothDist / matrix_norm(radius), cq = cos(theta), sq = sin(theta);
+		// 平滑开始点
+		matrix_outer_product(rotDir, radius, uxv);
+		matrix_plus(cq, radius, (1.0 - cq) * matrix_inner_product(rotDir, radius), rotDir, prePos);
+		matrix_plus(1.0, prePos, sq, uxv, prePos);
+		matrix_plus(1.0, prePos, 1.0, center, prePos);
+
+		// 切向量
+		tanDir = matrix_copy(uxv);
+		matrix_outer_product(rotDir, tanDir, uxv);
+		matrix_plus(cq, tanDir, (1.0 - cq) * matrix_inner_product(rotDir, tanDir), rotDir, preDir);
+		matrix_plus(1.0, preDir, sq, uxv, preDir);
+		matrix_normalize(preDir);
+
+		matrix_delete(radius);
+		matrix_delete(center);
+		matrix_delete(rotDir);
+		matrix_delete(tanDir);
+		matrix_delete(uxv);
+	}
+
+	// 当前轨迹平滑终点和切向量
+	if (curBuf->motionCfg.moveType == 1) {
+		matrix_plus(1.0, corner, smoothDist, curDir, curPos);
+	}
+	else if (curBuf->motionCfg.moveType == 2) {
+		// 终点半径向量
+		MatrixXd *radius = matrix_new(3, 1, 0), *center = matrix_from_array(3, 1, curBuf->procInfo.knot, 3);
+		MatrixXd *rotDir = matrix_from_array(3, 1, curBuf->procInfo.dir, 3), *uxv = matrix_new(3, 1, 0);
+		MatrixXd *tanDir = matrix_new(3, 1, 0);
+		matrix_plus(1.0, corner, -1.0, center, radius);
+		matrix_normalize(rotDir);
+
+		// 旋转后的半径向量
+		double theta = smoothDist / matrix_norm(radius), cq = cos(theta), sq = sin(theta);
+		// 平滑结束点
+		matrix_outer_product(rotDir, radius, uxv);
+		matrix_plus(cq, radius, (1.0 - cq) * matrix_inner_product(rotDir, radius), rotDir, curPos);
+		matrix_plus(1.0, curPos, sq, uxv, curPos);
+		matrix_plus(1.0, curPos, 1.0, center, curPos);
+
+		// 切向量
+		tanDir = matrix_copy(uxv);
+		matrix_outer_product(rotDir, tanDir, uxv);
+		matrix_plus(cq, tanDir, (1.0 - cq) * matrix_inner_product(rotDir, tanDir), rotDir, curDir);
+		matrix_plus(1.0, curDir, sq, uxv, curDir);
+		matrix_normalize(curDir);
+
+		matrix_delete(radius);
+		matrix_delete(center);
+		matrix_delete(rotDir);
+		matrix_delete(tanDir);
+		matrix_delete(uxv);
+	}
+
+	double detK = 1.0 / 3;
+	for (int i = 0; i < 3; ++i) {
+		// 前半段 (u: 0 -> 0.5)
+		matrix_plus(1.0, prePos, detK * i * smoothDist, preDir, ctrl);
+		matrix_to_array(ctrl, ctrlPnt[i], 3);
+		// 后半段 (u: 1 -> 0.5)
+		matrix_plus(1.0, curPos, -detK * i * smoothDist, curDir, ctrl);
+		matrix_to_array(ctrl, ctrlPnt[5 - i], 3);
+	}
+
+	matrix_delete(preDir);
+	matrix_delete(prePos);
+	matrix_delete(curDir);
+	matrix_delete(curPos);
+	matrix_delete(corner);
+	matrix_delete(ctrl);
+	return 0;
+}
+
+// 计算空间轨迹比例分割点
+int calc_cartesian_breakpoint(const InterpSegment *curBuf, double lambda, int mode, double *dpos) {
+	// 直线
+	if (mode == 0) {
+		for (int i = 0; i < 3; ++i) {
+			dpos[i] = curBuf->pointInfo.begPos.rbtPos[i] * (1.0 - lambda) + curBuf->pointInfo.endPos.rbtPos[i] * lambda;
+		}
+	}
+	// 圆弧
+	else if (mode == 1) {
+		// 终点半径向量
+		MatrixXd *corner = matrix_from_array(3, 1, curBuf->pointInfo.begPos.rbtPos.data(), 3);
+		MatrixXd *radius = matrix_new(3, 1, 0), *center = matrix_from_array(3, 1, curBuf->procInfo.knot, 3);
+		MatrixXd *rotDir = matrix_from_array(3, 1, curBuf->procInfo.dir, 3), *uxv = matrix_new(3, 1, 0);
+		matrix_plus(1.0, corner, -1.0, center, radius);
+		matrix_normalize(rotDir);
+
+		// 旋转后的半径向量
+		double theta = lambda * curBuf->procInfo.dist / matrix_norm(radius), cq = cos(theta), sq = sin(theta);
+		matrix_outer_product(rotDir, radius, uxv);
+		matrix_plus(cq, radius, (1.0 - cq) * matrix_inner_product(rotDir, radius), rotDir, corner);
+		matrix_plus(1.0, corner, sq, uxv, corner);
+
+		// 平滑结束
+		matrix_plus(1.0, corner, 1.0, center, corner);
+		for (int i = 0; i < 3; ++i) {
+			dpos[i] = corner->data[i];
+		}
+
+		matrix_delete(corner);
+		matrix_delete(radius);
+		matrix_delete(center);
+		matrix_delete(rotDir);
+		matrix_delete(uxv);
+	}
+
+	return 0;
+}
 
 /***********************************************************************
  *                        InterpBuffer                                 *
@@ -247,7 +434,7 @@ int InterpBuffer::move(PosData& pos) {
 		interpBuf[num]->procInfo.procStage = 3;
 		if (interpBuf[num]->motionCfg.moveType == 0)
 			joint_plane();
-		else if (interpBuf[num]->motionCfg.moveType == 1)
+		else if (interpBuf[num]->motionCfg.moveType > 0)
 			cartesian_plan();
 		interpBuf[num]->procInfo.procStage = 4;
 	}
@@ -391,7 +578,14 @@ int InterpBuffer::cartesian_prehandle() {
 	}
 	// 圆弧轨迹
 	else if (curBuf->motionCfg.moveType == 2) {
-		double det[3] = { 0 };
+		double det[7] = { 0 };
+		calc_traj_info(curBuf->pointInfo.begPos.rbtPos.data(), curBuf->pointInfo.midPos.rbtPos.data(), curBuf->pointInfo.endPos.rbtPos.data(), 1, det);
+
+		for (int i = 0; i < 3; ++i) {
+			curBuf->procInfo.knot[i] = det[i];
+			curBuf->procInfo.dir[i] = det[i + 4];
+		}
+		curBuf->procInfo.dist = det[3];
 	}
 
 	// --- 平滑处理
@@ -422,28 +616,10 @@ int InterpBuffer::cartesian_prehandle() {
 			// 前段后平滑
 			preBuf->procInfo.postSmoothK = 1.0 - smoothDist / preBuf->procInfo.dist;
 
-			// 直线拐点位置
-			MatrixXd *corner = matrix_from_array(3, 1, curBuf->pointInfo.begPos.rbtPos.data(), 3);
-			// 始末点切线方向
-			MatrixXd *preDir = matrix_from_array(3, 1, preBuf->procInfo.dir, 3);
-			MatrixXd *curDir = matrix_from_array(3, 1, curBuf->procInfo.dir, 3);
-			// 计算当前段前平滑控制点
-			MatrixXd *ctrl = matrix_copy(corner);
-			double detK = 1.0 / 3;
-			for (int i = 0; i < 3; ++i) {
-				// 前半段 (u: 0 -> 0.5)
-				matrix_plus(1, corner, -(1.0 - detK * i) * smoothDist, preDir, ctrl);
-				matrix_to_array(ctrl, curBuf->procInfo.preCtrlPnt[i], 3);
-				// 后半段 (u: 1 -> 0.5)
-				matrix_plus(1, corner, (1.0 - detK * i) * smoothDist, curDir, ctrl);
-				matrix_to_array(ctrl, curBuf->procInfo.preCtrlPnt[5 - i], 3);
-			}
+			calc_smooth_ctrl_pnt(preBuf, curBuf, smoothDist, curBuf->procInfo.preCtrlPnt);
+
 			// 前段后平滑控制点
 			memcpy(preBuf->procInfo.postCtrlPnt, curBuf->procInfo.preCtrlPnt, 18 * sizeof(double));
-
-			matrix_delete(preDir);
-			matrix_delete(curDir);
-			matrix_delete(ctrl);
 		}
 	}
 
@@ -521,8 +697,6 @@ int InterpBuffer::cartesian_plan() {
 
 		// 前一条轨迹规划曲线左移: 前平滑大于零开始(curve.offset) -> 后平滑从零开始(curTime)
 		preBuf->curve[0].displacement((preBuf->curTime - cycleTime) + preBuf->curve[0].get_offset(), 1);
-		// 保留时间清零
-		//preBuf->curve.set_reserve_time(0);
 
 		// 前一条轨迹附加轴规划左移
 		preBuf->curve[6].displacement(preBuf->curTime - cycleTime, 1);
@@ -643,7 +817,7 @@ int InterpBuffer::cartesian_move() {
 			curBuf->interpInfo.partId = 1;
 		}
 		double curPos[3];
-		curU = bezier_interp(5, curBuf->procInfo.preCtrlPnt, curBuf->interpInfo.curU, detS);
+		curU = bezier_interp(5, curBuf->procInfo.preCtrlPnt, curBuf->interpInfo.curU, detS, 2);
 		bezier_positioin(5, curBuf->procInfo.preCtrlPnt, curU, curPos);
 
 		for (int i = 0; i < 3; ++i) {
@@ -661,7 +835,7 @@ int InterpBuffer::cartesian_move() {
 			// 切换到直线段速度不突变: 规划比实际多走的距离，计算直线时起点往后偏移即可补偿回来，但是实际终点位置会超出给定终点位置
 			double error = curBuf->interpInfo.curMoveS - realDist;
 			// 保证moveS走完后正好停在结束点: moveS = (preS - pre.doneS) + pre.remainS + preBlendDist + mainDist
-			error = preBuf->procInfo.remainS + (preS - preBuf->procInfo.doneS) + curBuf->procInfo.preBlendDist - curBuf->procInfo.segmBegDist;
+			//error = preBuf->procInfo.remainS + (preS - preBuf->procInfo.doneS) + curBuf->procInfo.preBlendDist - curBuf->procInfo.segmBegDist;
 
 			curBuf->procInfo.segmBegDist += error;
 			curBuf->procInfo.segmEndDist += error;
@@ -681,7 +855,7 @@ int InterpBuffer::cartesian_move() {
 			}
 
 			double curPos[3];
-			curU = bezier_interp(5, curBuf->procInfo.postCtrlPnt, curBuf->interpInfo.curU, dis);
+			curU = bezier_interp(5, curBuf->procInfo.postCtrlPnt, curBuf->interpInfo.curU, dis, 2);
 			bezier_positioin(5, curBuf->procInfo.postCtrlPnt, curU, curPos);
 
 			for (int i = 0; i < 3; ++i) {
@@ -693,7 +867,7 @@ int InterpBuffer::cartesian_move() {
 		}
 		// 无平滑段
 		else {
-			// 直线段长度
+			// 无平滑段长度
 			double dis = moveS - curBuf->procInfo.segmBegDist + curBuf->procInfo.preSmoothK * curBuf->procInfo.dist;
 			double lambda = (curBuf->procInfo.dist < dim_EPS) ? 0.0 : dis / curBuf->procInfo.dist;
 
@@ -701,9 +875,7 @@ int InterpBuffer::cartesian_move() {
 				curBuf->interpInfo.partId = 2;
 			}
 
-			for (int i = 0; i < 3; ++i) {
-				pos.rbtPos[i] = curBuf->pointInfo.begPos.rbtPos[i] * (1.0 - lambda) + curBuf->pointInfo.endPos.rbtPos[i] * lambda;
-			}
+			calc_cartesian_breakpoint(curBuf, lambda, curBuf->motionCfg.moveType - 1, pos.rbtPos.data());
 		}
 	}
 

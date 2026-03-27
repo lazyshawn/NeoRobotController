@@ -1,4 +1,4 @@
-﻿
+
 #include "AuxMatrix.h"
 
 static const double dim_EPS = 1e-6;
@@ -196,7 +196,8 @@ MatrixXd *matrix_from_array(int rows, int cols, const double *val, int num) {
 	if (!q)
 		return NULL;
 
-	q->rows = q->cols = rows;
+	q->rows = rows;
+	q->cols = cols;
 	if (!(q->data = (double *)malloc(sizeof(double) * q->rows * q->cols))) {
 		free(q);
 		return NULL;
@@ -439,7 +440,7 @@ double matrix_inner_product(const MatrixXd *matA, const MatrixXd *matB) {
 		}
 	}
 
-	return 0.0;
+	return ans;
 }
 
 // 矩阵外积

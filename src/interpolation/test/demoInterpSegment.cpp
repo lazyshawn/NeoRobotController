@@ -126,6 +126,9 @@ int push_trajectory() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	pointInfo.begPos = pointInfo.endPos;
+	motionCfg.moveType = 2;
+	pointInfo.midPos.rbtPos[0] = pointInfo.endPos.rbtPos[0] + 8;
+	pointInfo.midPos.rbtPos[1] = pointInfo.endPos.rbtPos[1] + 8;
 	pointInfo.endPos.rbtPos[1] += 10;
 	pointInfo.endPos.extPos[0] += 100;
 	motionCfg.speed = 2;
@@ -135,6 +138,7 @@ int push_trajectory() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	pointInfo.begPos = pointInfo.endPos;
+	motionCfg.moveType = 1;
 	pointInfo.endPos.rbtPos[0] -= 10;
 	pointInfo.endPos.extPos[0] += 100;
 	motionCfg.speed = 2;
