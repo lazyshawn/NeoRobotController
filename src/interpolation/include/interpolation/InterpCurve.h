@@ -44,6 +44,7 @@ class DoubleSCurve {
 public:
 	// 曲线初始化
 	DoubleSCurve();
+	void clear();
 	/**
 	* @brief  设置曲线参数
 	*/

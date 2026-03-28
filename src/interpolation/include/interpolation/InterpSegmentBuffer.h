@@ -4,7 +4,11 @@
 *															    *
 * 主要功能如下：											    *
 * 1. 提供管理插补轨迹缓存的对象                      	        *
+* 2. 提供调度器操作缓存数据的接口                               *
 * ************************************************************* */
+
+#include <memory>
+#include <algorithm>
 
 #include "interpolation/InterpSegment.h"
 
@@ -37,7 +41,13 @@ class InterpBuffer {
 	// 实时插补状态
 	RTInterpStatus interpStatus;
 	//! 任务参数，独立于单条轨迹的全局轨迹参数，主要包含支持实时修改运动参数
-	TaskParam taskParam;
+	MotionCfg rtMotionCfg;
+
+	//! 各轴插补的 S 曲线
+	// 关节: 机械臂(6) + 附加轴(3) + 变位机(3)
+	// 空间: 位置(1) + 姿态(1) + 摆焊(1) + 保留(3) + 附加轴(3) + 变位机(3)
+	DoubleSCurve curve[9];
+	DoubleSCurve curvePre[9];
 
 	// 插补周期(s)
 	double cycleTime = 4e-3;

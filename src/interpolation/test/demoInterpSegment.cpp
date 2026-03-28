@@ -110,7 +110,7 @@ int push_trajectory() {
 	swingCfg.enable = 1;
 	swingCfg.freq = 1.0;
 	swingCfg.leftWidth = swingCfg.rightWidth = 0.5;
-	moveCmd.set_swing(swingCfg);
+	motionCfg.swingParam = swingCfg;
 
 	// 点位指令插入缓存区
 	while (!interpBuffer.buffer_ready()) {

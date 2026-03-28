@@ -1,10 +1,10 @@
 .vs
-build
+.vscode
+.cache
+build*/
 out
 CMakeSettings.json
-.cache
 compile_commands.json
-build*
 
 lib
 extern

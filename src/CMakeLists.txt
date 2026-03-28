@@ -1,4 +1,5 @@
 ﻿
+add_subdirectory(common)
 add_subdirectory(robot_interface)
 add_subdirectory(robot_webservice)
 add_subdirectory(seam_tracker)

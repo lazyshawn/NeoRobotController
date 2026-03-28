@@ -300,6 +300,7 @@ InterpBuffer::InterpBuffer() {
 		interpBuf.push_back(std::shared_ptr<InterpSegment>(new InterpSegment));
 	}
 }
+
 InterpBuffer::~InterpBuffer() {
 
 }
@@ -480,10 +481,16 @@ int InterpBuffer::joint_plane() {
 	InterpSegment *preBuf = nullptr, *curBuf = nullptr, *nextBuf = nullptr;
 	get_neighbor_buffer(bufBeg, preBuf, curBuf, nextBuf);
 
+	// 插补曲线更新
+	for (int i = 0; i < 9; ++i) {
+		curvePre[i] = curve[i];
+		curve[i].clear();
+	}
+
 	// - 插补曲线规划
 	// 当前段曲线规划
-	curBuf->curve[0].set_condition(curBuf->pointInfo.begPos.rbtPos[0], curBuf->pointInfo.endPos.rbtPos[0], 0, 0);
-	curBuf->curve[0].plan();
+	curve[0].set_condition(curBuf->pointInfo.begPos.rbtPos[0], curBuf->pointInfo.endPos.rbtPos[0], 0, 0);
+	curve[0].plan();
 
 	double moveEndTime = 0.0;
 	// 有后平滑，且下一段轨迹已插入
@@ -494,25 +501,25 @@ int InterpBuffer::joint_plane() {
 		nextCurve.plan();
 
 		// 当前段结束时间即平滑开始时间
-		double smoothTime = std::min(nextCurve.get_Ta(), curBuf->curve[0].get_Td()) * curBuf->motionCfg.smooth * 1e-2;
-		moveEndTime = curBuf->curve[0].get_duration() - smoothTime;
+		double smoothTime = std::min(nextCurve.get_Ta(), curve[0].get_Td()) * curBuf->motionCfg.smooth * 1e-2;
+		moveEndTime = curve[0].get_duration() - smoothTime;
 	}
 	else {
-		moveEndTime = curBuf->curve[0].get_duration();
+		moveEndTime = curve[0].get_duration();
 	}
 
 	// 有前平滑，保存前段插补曲线
 	if (curBuf->procInfo.preSmooth > 0) {
-		curBuf->curvePre[0].set_condition(preBuf->pointInfo.begPos.rbtPos[0], preBuf->pointInfo.endPos.rbtPos[0], 0, 0);
-		curBuf->curvePre[0].plan();
-		curBuf->curvePre[0].displacement(preBuf->curTime - cycleTime, 1.0);
+		curvePre[0].set_condition(preBuf->pointInfo.begPos.rbtPos[0], preBuf->pointInfo.endPos.rbtPos[0], 0, 0);
+		curvePre[0].plan();
+		curvePre[0].displacement(preBuf->procInfo.curTime - cycleTime, 1.0);
 	}
 
 	// 当前段规划时间
 	curBuf->procInfo.maxTime = moveEndTime;
 
 	// 插补时间从零计数
-	curBuf->curTime = cycleTime;
+	curBuf->procInfo.curTime = cycleTime;
 
 	return 0;
 }
@@ -525,18 +532,18 @@ int InterpBuffer::joint_move() {
 	// 插补结果
 	PosData pos;
 	// 当前插补比例
-	double ratio = curBuf->curTime / curBuf->procInfo.maxTime;
+	double ratio = curBuf->procInfo.curTime / curBuf->procInfo.maxTime;
 
 	pos.rbtPos = curBuf->pointInfo.begPos.rbtPos;
 	// 有前平滑，前段曲线参与插补
 	if (curBuf->procInfo.preSmooth > 0) {
-		double prePos = curBuf->curvePre[0].get_pos(curBuf->curTime);
-		double curPos = curBuf->curve[0].get_pos(curBuf->curTime);
-		double curPos0 = curBuf->curve[0].get_pos(0);
-		pos.rbtPos[0] = curBuf->curvePre[0].get_pos(curBuf->curTime) + curBuf->curve[0].get_pos(curBuf->curTime) - curBuf->curve[0].get_pos(0);
+		double prePos = curvePre[0].get_pos(curBuf->procInfo.curTime);
+		double curPos = curve[0].get_pos(curBuf->procInfo.curTime);
+		double curPos0 = curve[0].get_pos(0);
+		pos.rbtPos[0] = curvePre[0].get_pos(curBuf->procInfo.curTime) + curve[0].get_pos(curBuf->procInfo.curTime) - curve[0].get_pos(0);
 	}
 	else {
-		pos.rbtPos[0] = curBuf->curve[0].get_pos(curBuf->curTime);
+		pos.rbtPos[0] = curve[0].get_pos(curBuf->procInfo.curTime);
 	}
 
 	// - 插补状态更新
@@ -546,7 +553,7 @@ int InterpBuffer::joint_move() {
 	curBuf->interpInfo.dpos = pos;
 
 	// 插补时间累加
-	curBuf->curTime += cycleTime;
+	curBuf->procInfo.curTime += cycleTime;
 
 	// 返回插补进度
 	return 0;
@@ -658,9 +665,15 @@ int InterpBuffer::cartesian_plan() {
 	InterpSegment *preBuf = nullptr, *curBuf = nullptr, *nextBuf = nullptr;
 	get_neighbor_buffer(bufBeg, preBuf, curBuf, nextBuf);
 
+	// 插补曲线更新
+	for (int i = 0; i < 9; ++i) {
+		curvePre[i] = curve[i];
+		curve[i].clear();
+	}
+
 	// --- 速度规划
 	// 设置位置规划约束
-	curBuf->curve[0].set_constraint(curBuf->motionCfg.speed, 10);
+	curve[0].set_constraint(curBuf->motionCfg.speed, 10);
 	double vs = preBuf->procInfo.constrainedVel;
 	// 前瞻回溯
 	double ve = cartesian_look_ahead();
@@ -673,15 +686,15 @@ int InterpBuffer::cartesian_plan() {
 	if (curBuf->procInfo.preSmooth > 0) {
 		planDist += preBuf->procInfo.remainS;
 	}
-	curBuf->curve[0].set_condition(0, planDist, vs, ve);
-	curBuf->curve[0].plan();
+	curve[0].set_condition(0, planDist, vs, ve);
+	curve[0].plan();
 
 	// 计算整数倍插补周期后的剩余距离
-	curBuf->procInfo.remainS = curBuf->curve[0].get_remain_dist(cycleTime);
-	curBuf->procInfo.remainT = curBuf->curve[0].get_remain_time(cycleTime);
+	curBuf->procInfo.remainS = curve[0].get_remain_dist(cycleTime);
+	curBuf->procInfo.remainT = curve[0].get_remain_time(cycleTime);
 
 	// 当前段规划时间
-	curBuf->procInfo.maxTime = curBuf->curve[0].get_duration();
+	curBuf->procInfo.maxTime = curve[0].get_duration();
 
 	// --- 有前平滑时，获取上一段规划参数
 	if (curBuf->procInfo.preSmooth > 0) {
@@ -690,16 +703,16 @@ int InterpBuffer::cartesian_plan() {
 		curBuf->procInfo.segmEndDist = curBuf->procInfo.segmBegDist + curBuf->procInfo.mainDist;
 
 		// 位置分量不能合并插补，规划段右移，先插补上一条轨迹未完成的部分
-		int shiftNum = ((preBuf->curve[0].get_duration() - preBuf->curve[0].get_offset()) - (preBuf->curTime - cycleTime)) / cycleTime;
+		int shiftNum = ((curvePre[0].get_duration() - curvePre[0].get_offset()) - (preBuf->procInfo.curTime - cycleTime)) / cycleTime;
 		double shiftTime = shiftNum * cycleTime;
 		// 右移整数个周期
-		curBuf->curve[0].displacement(-shiftTime, 1);
+		curve[0].displacement(-shiftTime, 1);
 
 		// 前一条轨迹规划曲线左移: 前平滑大于零开始(curve.offset) -> 后平滑从零开始(curTime)
-		preBuf->curve[0].displacement((preBuf->curTime - cycleTime) + preBuf->curve[0].get_offset(), 1);
+		curvePre[0].displacement((preBuf->procInfo.curTime - cycleTime) + curvePre[0].get_offset(), 1);
 
 		// 前一条轨迹附加轴规划左移
-		preBuf->curve[6].displacement(preBuf->curTime - cycleTime, 1);
+		curvePre[6].displacement(preBuf->procInfo.curTime - cycleTime, 1);
 	}
 	else {
 		// 主运动状态初始化
@@ -713,20 +726,20 @@ int InterpBuffer::cartesian_plan() {
 	// 有后平滑
 	if (curBuf->procInfo.postSmooth > 0) {
 		// 当前轨迹保留不足一个周期的部分，在下一条轨迹内插补
-		curBuf->curve[0].set_reserve_time(curBuf->procInfo.remainT);
+		curve[0].set_reserve_time(curBuf->procInfo.remainT);
 	}
 
 	// --- 附加轴规划
-	curBuf->curve[6].set_condition(curBuf->pointInfo.begPos.extPos[0], curBuf->pointInfo.endPos.extPos[0], 0, 0);
-	double time1 = - curBuf->curve[0].get_offset();
-	double time2 = curBuf->curve[0].calc_time_PiTPe(curBuf->procInfo.postBlendDist);
+	curve[6].set_condition(curBuf->pointInfo.begPos.extPos[0], curBuf->pointInfo.endPos.extPos[0], 0, 0);
+	double time1 = - curve[0].get_offset();
+	double time2 = curve[0].calc_time_PiTPe(curBuf->procInfo.postBlendDist);
 	// 附加轴规划段的位移时间
-	double eulerTime = curBuf->curve[0].get_duration() - curBuf->curve[0].get_offset();
+	double eulerTime = curve[0].get_duration() - curve[0].get_offset();
 	// 姿态加速时间
 	double oriAccT = 0.0;
 	// 无平滑: 姿态匀速时长 = 位置匀速时长
 	if (curBuf->procInfo.preSmooth < dim_EPS && curBuf->procInfo.postSmooth < dim_EPS)
-		oriAccT = (curBuf->curve[0].get_duration() - curBuf->curve[0].get_Tv()) / 2;
+		oriAccT = (curve[0].get_duration() - curve[0].get_Tv()) / 2;
 	// 有前后平滑
 	else if (curBuf->procInfo.preSmooth > dim_EPS && curBuf->procInfo.postSmooth > dim_EPS)
 		oriAccT = time1;
@@ -736,19 +749,17 @@ int InterpBuffer::cartesian_plan() {
 	// 只有后平滑
 	else if (curBuf->procInfo.preSmooth < dim_EPS && curBuf->procInfo.postSmooth > dim_EPS)
 		oriAccT = 1.5 * time2;
-	curBuf->curve[6].plan_by_duration(eulerTime, oriAccT, oriAccT / 2);
+	curve[6].plan_by_duration(eulerTime, oriAccT, oriAccT / 2);
 
 	// --- 摆焊规划
-	SwingInterpParam swing;
-	curBuf->moveCmd.get_swing(swing);
+	SwingInterpParam swing = curBuf->motionCfg.swingParam;
 	// 有前平滑时，继承前段的规划，
 	if (curBuf->procInfo.preSmooth > 0) {
 		// --- 继承摆焊参数
-		curBuf->curve[2] = preBuf->curve[2];
+		curve[2] = curvePre[2];
 
 		// 修改摆焊参数，继承摆焊时间，当前摆焊目标位置
-		SwingInterpParam preSwing;
-		preSwing.deserialize(taskParam.swing);
+		SwingInterpParam preSwing = rtMotionCfg.swingParam;
 		swing.state = preSwing.state;
 		swing.time = preSwing.time;
 		swing.pos = preSwing.pos;
@@ -760,19 +771,19 @@ int InterpBuffer::cartesian_plan() {
 	}
 	// 后平滑决定摆焊运动时间
 	if (curBuf->procInfo.postSmooth > 0) {
-		swing.duration = 2 * (curBuf->curve[0].get_duration() - curBuf->curve[0].get_offset());
+		swing.duration = 2 * (curve[0].get_duration() - curve[0].get_offset());
 	}
 	else {
-		swing.duration = curBuf->curve[0].get_duration() - curBuf->curve[0].get_offset();
+		swing.duration = curve[0].get_duration() - curve[0].get_offset();
 	}
-	swing.serialize(taskParam.swing);
+	rtMotionCfg.swingParam = swing;
 
 	// --- 插补状态复位
 	// 插补完成标志复位
 	curBuf->interpInfo.partId = 0;
 
 	// 插补时间重新计数
-	curBuf->curTime = cycleTime;
+	curBuf->procInfo.curTime = cycleTime;
 
 	return 0;
 }
@@ -789,12 +800,12 @@ int InterpBuffer::cartesian_move() {
 	double preS = preBuf->procInfo.doneS;
 	bool preDone = true;
 	if (curBuf->procInfo.preSmooth > 0) {
-		preS = preBuf->curve[0].get_pos(curBuf->curTime);
-		preDone = preBuf->curve[0].done();
+		preS = curvePre[0].get_pos(curBuf->procInfo.curTime);
+		preDone = curvePre[0].done();
 	}
 	// 当前段规划位移
-	double curS = curBuf->curve[0].get_pos(curBuf->curTime);
-	bool curDone = curBuf->curve[0].done();
+	double curS = curve[0].get_pos(curBuf->procInfo.curTime);
+	bool curDone = curve[0].done();
 	// 当前总位移
 	double moveS = preS - preBuf->procInfo.doneS;
 	// 上一条轨迹插补完成
@@ -882,53 +893,52 @@ int InterpBuffer::cartesian_move() {
 	// --- 附加轴插补
 	pos.extPos = std::vector<double>(6, 0.0);
 	if (curBuf->procInfo.preSmooth > 0) {
-		pos.extPos[0] = preBuf->curve[6].get_pos(curBuf->curTime) + curBuf->curve[6].get_pos(curBuf->curTime) - curBuf->curve[6].get_pos(0);
+		pos.extPos[0] = curvePre[6].get_pos(curBuf->procInfo.curTime) + curve[6].get_pos(curBuf->procInfo.curTime) - curve[6].get_pos(0);
 	}
 	else {
-		pos.extPos[0] = curBuf->curve[6].get_pos(curBuf->curTime);
+		pos.extPos[0] = curve[6].get_pos(curBuf->procInfo.curTime);
 	}
 
 	// --- 摆焊叠加
 	double swingAdd = 0.0;
-	SwingInterpParam swing;
-	swing.deserialize(taskParam.swing);
+	SwingInterpParam swing = rtMotionCfg.swingParam;
 	// 半个摆动周期的时间
 	double singleSwingTime = 0.5 / swing.freq;
 	if (swing.state == 0) {
 		swing.state = 1;
-		curBuf->curve[2].set_condition(swing.pos, swing.rightWidth, 0, 0);
-		curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime/2, singleSwingTime/10);
-		curBuf->curve[2].plan();
+		curve[2].set_condition(swing.pos, swing.rightWidth, 0, 0);
+		curve[2].plan_by_duration(singleSwingTime, singleSwingTime/2, singleSwingTime/10);
+		curve[2].plan();
 		swing.time = cycleTime;
 		swing.pos = swing.rightWidth;
 	}
 	else {
-		swingAdd = curBuf->curve[2].get_pos(swing.time);
+		swingAdd = curve[2].get_pos(swing.time);
 
-		if (curBuf->curve[2].done()) {
+		if (curve[2].done()) {
 			swing.state = swing.state % 2 + 1;
 
 			// 剩余时间不足一个完整周期
-			double remainSwingTime = swing.duration - curBuf->curTime;
+			double remainSwingTime = swing.duration - curBuf->procInfo.curTime;
 			bool timeReset = remainSwingTime < singleSwingTime * 2;
 			if (timeReset)
 				singleSwingTime = remainSwingTime;
 
 			if (swing.state == 2) {
-				curBuf->curve[2].set_condition(swing.pos, timeReset ? 0 : -swing.leftWidth, 0, 0);
+				curve[2].set_condition(swing.pos, timeReset ? 0 : -swing.leftWidth, 0, 0);
 				swing.pos = -swing.leftWidth;
 			}
 			else {
-				curBuf->curve[2].set_condition(swing.pos, timeReset ? 0 : swing.rightWidth, 0, 0);
+				curve[2].set_condition(swing.pos, timeReset ? 0 : swing.rightWidth, 0, 0);
 				swing.pos = swing.rightWidth;
 			}
 
-			curBuf->curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
+			curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
 			swing.time = 0.0;
 		}
 		swing.time += cycleTime;
 	}
-	swing.serialize(taskParam.swing);
+	rtMotionCfg.swingParam = swing;
 
 	// 实时状态
 	interpStatus.vel = 0.0;
@@ -963,7 +973,7 @@ int InterpBuffer::cartesian_move() {
 	}
 
 	// 插补时间累加
-	curBuf->curTime += cycleTime;
+	curBuf->procInfo.curTime += cycleTime;
 
 	return 0;
 }
