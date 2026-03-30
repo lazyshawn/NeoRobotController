@@ -2,6 +2,8 @@
 
 add_library(task_plan
   collision.cpp
+  TaskTrajectory.cpp
+  TaskPlanner.cpp
 )
 
 target_include_directories(task_plan PUBLIC
@@ -27,6 +29,7 @@ find_package(ompl PATHS "${CMAKE_SOURCE_DIR}/extern/debug/ompl/share/ompl/cmake"
 target_link_libraries(task_plan PUBLIC
   coal::coal
   ompl::ompl
+  common
 )
 
 # Install headers
