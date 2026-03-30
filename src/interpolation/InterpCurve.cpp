@@ -2,29 +2,58 @@
 #include "interpolation/InterpCurve.h"
 
 // --- 辅助函数
-// 解二次方程
-int solve_quadratic_eqution(double *k, double *ans) {
+// 解二次方程: ax^2 + bx + c = 0
+// 输入: k[0]=c, k[1]=b, k[2]=a
+// 输出: ans[0], ans[1] (从小到大排序)
+// 返回值: 0-成功, -1-无实数解, -2-非二次方程(a=0)
+int solve_quadratic_equation(double *k, double *ans) {
 	double c = k[0], b = k[1], a = k[2];
+	
+	// 处理非二次方程的情况
+	if (fabs(a) < 1e-10) {
+		// 一次方程: bx + c = 0
+		if (fabs(b) < 1e-10) {
+			// 无解或无穷多解
+			return -1;
+		}
+		ans[0] = -c / b;
+		ans[1] = ans[0];
+		return 0;
+	}
 
-	double det = b * b - 4 * a*c;
-	if (det < 0)
+	// 计算判别式
+	double det = b * b - 4 * a * c;
+	
+	// 无实数解
+	if (det < -1e-10) {
 		return -1;
+	}
+	
+	// 判别式接近0，视为重根
+	if (fabs(det) < 1e-10) {
+		det = 0.0;
+	}
 
-	ans[0] = (-b + sqrt(det)) / (2 * a);
-	ans[1] = (-b - sqrt(det)) / (2 * a);
+	// 计算两个根（此时 det >= 0）
+	double sqrt_det = sqrt(det);
+	double denominator = 2.0 * a;
+	
+	// 两个不同的实数根或重根
+	ans[0] = (-b - sqrt_det) / denominator;
+	ans[1] = (-b + sqrt_det) / denominator;
 	
 	// 从小到大排序
 	if (ans[1] < ans[0]) {
 		double tmp = ans[1];
 		ans[1] = ans[0];
-		ans[0] = ans[1];
+		ans[0] = tmp;
 	}
 
 	return 0;
 }
 
 // 解三次方程, 盛金公式
-double solve_cubic_eqution(double *k, double *ans) {
+double solve_cubic_equation(double *k, double *ans) {
 	double d = k[0], c = k[1], b = k[2], a = k[3];
 	if (a < 0) {
 		a *= -1;
@@ -104,6 +133,25 @@ double solve_cubic_eqution(double *k, double *ans) {
  ***********************************************************************/
 
 DoubleSCurve::DoubleSCurve() {
+	this->clear();
+}
+
+void DoubleSCurve::clear() {
+	vmax = 2, amax = 5, jmax = 5;
+
+	sign = 1;
+	scale = 1.0, offset = 0.0;
+	reserveTime = 0.0;
+
+	q0 = q1 = v0 = v1 = 0;
+	Tj1 = Tj2 = Ta = Tv = Td = T = 0;
+
+	alima = alimd = vlim = 0;
+	s1 = s2 = s3 = s4 = s5 = s6 = 0;
+
+	doneFlag = false;
+	vp = 0.0;
+
 	vmin = -vmax;
 	amin = -amax;
 	jmin = -jmax;
@@ -468,13 +516,13 @@ double DoubleSCurve::get_max_speed(double ds) {
 		if (ds > dsC2) {
 			Tjk = amax / jmax;
 			double coeff[3] = { Tjk / 2 * v0 - v0 * v0 / (2 * amax), Tjk / 2, 1 / (2 * amax) };
-			solve_quadratic_eqution(coeff, sol);
+			solve_quadratic_equation(coeff, sol);
 		}
 		// 2.2. 两段加速到达目标距离
 		else {
 			double coeff[4] = { -v0 * v0 * v0 - ds * ds * jmax, -v0 * v0, v0, 1.0 };
 			solNum = 2;
-			solve_cubic_eqution(coeff, sol);
+			solve_cubic_equation(coeff, sol);
 		}
 
 		// 最小正解
@@ -502,16 +550,16 @@ double DoubleSCurve::calc_time_PiTPe(double ds) {
 	}
 	else if (s < s1) {
 		double coeff[4] = { -s, v0, 0, jmax / 6 };
-		solve_cubic_eqution(coeff, sol);
+		solve_cubic_equation(coeff, sol);
 		solNum = 3;
 	}
 	else if (s < s2) {
 		double coeff[3] = { alima*Tj1*Tj1 / 6 - s, v0 - alima * Tj1 / 2, alima / 2 };
-		solve_quadratic_eqution(coeff, sol);
+		solve_quadratic_equation(coeff, sol);
 	}
 	else if (s < s3) {
 		double coeff[4] = { s - (vlim + v0)*Ta / 2, vlim, 0, jmin / 6 };
-		solve_cubic_eqution(coeff, sol);
+		solve_cubic_equation(coeff, sol);
 		solNum = 3;
 		solShift = -Ta;
 	}
@@ -521,18 +569,18 @@ double DoubleSCurve::calc_time_PiTPe(double ds) {
 	}
 	else if (s < s5) {
 		double coeff[4] = { s - (vlim + v1)*Td / 2, -vlim, 0, jmax / 6 };
-		solve_cubic_eqution(coeff, sol);
+		solve_cubic_equation(coeff, sol);
 		solNum = 3;
 		solShift = T - Td;
 	}
 	else if (s < s6) {
 		double coeff[3] = { alimd*Tj2*Tj2 / 6 - (vlim + v1)*Tj2 / 2 - s, vlim - alimd * Tj2 / 2, alimd / 2 };
-		solve_quadratic_eqution(coeff, sol);
+		solve_quadratic_equation(coeff, sol);
 		solShift = T - Td;
 	}
 	else if (s < q1 - q0) {
 		double coeff[4] = { -s, v1, 0, jmax / 6 };
-		solve_cubic_eqution(coeff, sol);
+		solve_cubic_equation(coeff, sol);
 		solNum = 3;
 		solShift = -T;
 	}

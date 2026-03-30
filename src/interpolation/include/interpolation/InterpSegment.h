@@ -1,117 +1,15 @@
 ﻿#pragma once
 /* ************************************************************ *
-* @brief 统一插补接口                                           *
+* @brief 轨迹段插补信息                                         *
 *															    *
 * 主要功能如下：											    *
-* 1. 提供虚拟插补轨迹段，统一的插补接口，主要接口如下：	        *
-*    - 预处理，插入轨迹时执行，处理轨迹信息并缓存               *
-*    - 规划，根据预处理信息提前计算插补需要用到的数据           *
-*    - 插补，计算插补周期内实际电机的目标位置                   *
+* 1. 提供轨迹段在插补过程中的缓存数据                           *
 * ************************************************************* */
 
-#include <queue>
-#include <memory>
-#include <map>
 
-#include "interpolation/InterpCurve.h"
+#include "InterpCurve.h"
+#include "TrajectorySegment.h"
 
-
-/***********************************************************************
- *                        T A S K P A R A M                            *
- ***********************************************************************/
- // 参数类型
-enum class TaskParamType {
-	SWING,     // 摆焊
-};
-
-// 摆焊参数
-struct SwingInterpParam {
-	static TaskParamType type;
-
-	// 设置参数
-	int enable = 0;
-	double freq;
-	double leftWidth;
-	double rightWidth;
-
-	// 过程参数
-	int state;
-	double time;
-	double duration;
-	double pos;
-
-	void clear();
-	int get_type() const;
-	// 序列化
-	int serialize(std::vector<double>& param) const;
-	// 反序列化
-	int deserialize(const std::vector<double>& param);
-};
-
-// 任务参数: 参数启用，参数Id，序列化参数
-struct TaskParam {
-	// 摆焊参数: 当前阶段
-	std::vector<double> swing;
-};
-
-
-
-// 轨迹类型
-enum class InterpSegmentType {
-	NONE,    // 未指定
-	JOINT,   // 关节
-	LINE,    // 直线
-	CIRCLE,  // 圆弧
-	BEZIER,  // 贝塞尔
-};
-
-// 点位数据
-struct PosData {
-	//! 点位类型: 关节，世界坐标系，本体坐标系，工件坐标系
-	int pointType;
-	//! 形态位
-	int JntState;
-	//! 本体点位
-	std::vector<double> rbtPos;
-	//! 附加轴点位
-	std::vector<double> extPos;
-	//! 变位机点位
-	std::vector<double> pstPos;
-};
-
-// 轨迹点位信息
-struct PointInfo {
-	PosData begPos;
-	PosData midPos;
-	PosData endPos;
-};
-
-// 基础运动参数: 如运动类型、速度、平滑度、轴屏蔽等
-struct MotionCfg {
-	//! 运动类型: 0 关节, 1 直线, 2 圆弧
-	int moveType;
-	double speed = 0.0;
-	double accel;
-	// 结束点平滑度，起点平滑度即上一段结束点平滑度
-	double smooth;
-	//! 附加轴屏蔽标志
-	int externalMask;
-	//! 变位机屏蔽标志
-	int positionerMask;
-};
-
-// 缓冲指令: 如焊接参数、摆焊参数、缓冲动作等，在轨迹开始执行时写入到公共的任务参数区
-struct MoveCmd {
-	// 摆焊(0)
-	std::vector<int> state;
-	std::vector<std::vector<double>> data;
-
-	MoveCmd();
-
-	int reset_swing();
-	int set_swing(const SwingInterpParam& param);
-	int get_swing(SwingInterpParam& param) const;
-};
 
 /* ************************************************************ *
 * @brief 轨迹处理信息                                           *
@@ -131,8 +29,11 @@ struct ProcessInfo {
 	// 后平滑系数，后置轨迹插入时修改，为0时插补阶段不用考虑后续轨迹
 	double postSmooth = -1;
 
-	//! 当前段插补时间
+	//! 当前段插补总时间
 	double maxTime = 0.0;
+	//! 当前插补时间，同一次前瞻的轨迹中从零开始计数，插补一次叠加一次插补周期的时间
+	double curTime = 0;
+
 
 	// - 笛卡尔空间参数
 	// 直线起点/圆弧圆心
@@ -198,33 +99,15 @@ struct InterpInfo {
 };
 
 // 插补线段基类
-class InterpSegment {
+class InterpSegment : public SegmentBase {
 protected:
 
 public:
-
-	// 当前插补时间，同一次前瞻的轨迹中从零开始计数，插补一次叠加一次插补周期的时间
-	double curTime = 0;
-
-	//! 各轴插补的 S 曲线
-	// 关节: 机械臂(6) + 附加轴(3) + 变位机(3)
-	// 空间: 位置(1) + 姿态(1) + 摆焊(1) + 保留(3) + 附加轴(3) + 变位机(3)
-	DoubleSCurve curve[9];
-	DoubleSCurve curvePre[9];
-
-	// 轨迹数据
-	PointInfo pointInfo;
-	MotionCfg motionCfg;
-	MoveCmd moveCmd;
-
-	// 预处理信息
+	// 处理过程信息
 	ProcessInfo procInfo;
 
 	// 插补信息
 	InterpInfo interpInfo;
-
-	// 设置轨迹数据
-	int set_data(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd);
 };
 
 
