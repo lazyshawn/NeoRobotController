@@ -38,12 +38,24 @@ struct RobotConfig {
 	std::vector<float> jointSupremum = {};
 	// 关节下限位(更改)
 	std::vector<float> jointInfimum = {};
+
 	// 关节自动模式最大速度
 	std::vector<float> maxJointSpeedAuto = {};
 	// 关节手动模式最大速度
 	std::vector<float> maxJointSpeedManual = {};
+	// 关节自动模式最大加速度
+	std::vector<float> maxJointAccAuto = {};
+	// 关节手动模式最大加速度
+	std::vector<float> maxJointAccManual = {};
+	// 末端自动模式最大速度
+	std::vector<float> maxCartSpeedAuto = {};
 	// 末端手动模式最大速度
 	std::vector<float> maxCartSpeedManual = {};
+	// 末端自动模式最大加速度
+	std::vector<float> maxCartAccAuto = {};
+	// 末端手动模式最大加速度
+	std::vector<float> maxCartAccManual = {};
+
 	// IO 配置(更改)
 	std::vector<int> ioAction = {};
 	// 附加轴标定结果(更改)
@@ -143,6 +155,7 @@ struct RobotStatus {
 	std::vector<float> cPos = {};         // 上位机的笛卡尔空间位置
 	std::vector<float> cPosRaw = {};      // 控制卡中的笛卡尔空间位置
 	std::vector<float> cPosBuffer = {};   // 缓冲中目标位置
+	std::vector<float> jSpeed = {};       // 关节速度
 	//int taskId;                           // 当前任务号
 	//int taskType;                         // 当前任务类型：空移，拍照，横焊，立焊，平焊
 

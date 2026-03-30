@@ -1117,7 +1117,7 @@ int RobotBase::get_multilayer_pos(std::vector<float>& pos) {
 
 	// 清空数据
 	data = std::vector<float>(idxList.size(), 0.0);
-	ZController->set_axis_param({ dataIdxBase + 25000 }, "TABLE", { 0.0 });
+	ZController->set_axis_param(dataIdxBase + 25000 , "TABLE",  0.0 );
 
 	return 0;
 }
@@ -1476,7 +1476,7 @@ void RobotGroupManager::processCommandThread() {
 				if (!robot_sync_ready(i)) {
 					if (get_bit(coopState[i], 3) == 0) {
 						LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " not synced: "
-							<< vector_to_string(serialize_Sync_Config(deserialize_Sync_Config(curTraj.appendix)).second), 2);
+							<< vector_to_string(serialize_Sync_Config(deserialize_Sync_Config(curTraj.appendix)).second, 2));
 						set_bit(coopState[i], 3, true);
 					}
 					break;
@@ -1798,7 +1798,7 @@ bool RobotGroupManager::robot_error(int idx) {
 		set_bit(coopState[idx], 1, false);
 		return false;
 	}
-    else if (get_bit(coopState[idx], 1) == 0) {
+	else if (get_bit(coopState[idx], 1) == 0) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << idx << " error occur: "
 			<< statusList[idx].lowerStatus << ", " << statusList[idx].upperStatus << ", " << coopState[idx] << ".\n"
 			<< "Pos: " << vector_to_string(statusList[idx].cPos));
@@ -1939,7 +1939,7 @@ void RobotGroupManager::update_sync_state(int robotIdx) {
 
 	syncReadyState[robotIdx] = 1;
 	
-	for (auto& ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
+	for (auto ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
 		// 同步类型
 		int type = ite->first;
 
@@ -2014,7 +2014,7 @@ bool RobotGroupManager::robot_sync_ready(int robotIdx) {
 	}
 
 	// 协同机器人已就绪
-	for (auto& ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
+	for (auto ite = curSync.map.begin(); ite != curSync.map.end(); ++ite) {
 		// 同步类型
 		int type = ite->first;
 

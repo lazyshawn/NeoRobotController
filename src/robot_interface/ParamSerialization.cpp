@@ -1,5 +1,8 @@
 ﻿
+#include <algorithm>
+
 #include "robot_interface/ParamSerialization.h"
+
 
 namespace FSAIRobotInterface {
 
@@ -386,10 +389,10 @@ Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& app
 
 
 // ------- 同步参数 -------
-std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg) {
+std::pair<int, std::vector<float>> serialize_Sync_Config(const Sync_Config& syncCfg) {
 
 	// 排序
-	syncCfg.sort();
+	//syncCfg.sort();
 
 	// <mapSize, <type, size, <robot, num>>>
 	std::pair<int, std::vector<float>> ans;

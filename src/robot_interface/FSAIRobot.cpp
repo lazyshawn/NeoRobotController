@@ -150,16 +150,16 @@ namespace FSAIRobotInterface {
 		// 息弧时间
 		tmp.weldEndTime = static_cast<long>(value[32]);
 
-		// 
-		//ZController->get_axis_param({ stateIdxBase + 24117 }, "TABLE", value);
-		//tmp.lineNum = static_cast<int>(value[0]);
-
 		// 异常码
 		ZController->get_register(stateIdxBase + 250, 20, value, 0);
 		tmp.subErrorCode = std::vector<int>(value.size(), 0);
 		for (size_t i = 0; i < value.size(); ++i) {
 			tmp.subErrorCode[i] = static_cast<int>(value[i]);
 		}
+
+		// 实时速度
+		idx = get_composed_axis({ get_joint_axis(), robotConfig.appAxisIdx });
+		ZController->get_axis_param(idx, "VP_SPEED", tmp.jSpeed);
 
 		// 加锁
 		std::lock_guard<std::mutex> lock(mtxMotion);

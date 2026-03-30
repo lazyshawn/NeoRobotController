@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <map>
-#include <algorithm>
 
 #include "FsCraftDef.h"
 
@@ -85,7 +84,7 @@ std::pair<int, std::vector<float>> serialize_Move_Action(const Move_Action& wave
 Move_Action deserialize_Move_Action(const std::map<int, std::vector<float>>& appendix);
 
 // 协同参数
-std::pair<int, std::vector<float>> serialize_Sync_Config(Sync_Config& syncCfg);
+std::pair<int, std::vector<float>> serialize_Sync_Config(const Sync_Config& syncCfg);
 Sync_Config deserialize_Sync_Config(const std::map<int, std::vector<float>>& appendix);
 
 // 运动参数
