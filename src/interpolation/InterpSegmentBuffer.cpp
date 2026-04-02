@@ -94,7 +94,7 @@ int calc_traj_info(const double *begPnt, const double *midPnt, const double *end
 		}
 		else if (q13 > q12) {
 			matrix_delete(normal);
-			normal = matrix_copy(n12);
+			normal = matrix_new_copy(n12);
 		}
 
 		// 单位化法线方向并乘以圆心角度
@@ -159,7 +159,7 @@ int calc_smooth_ctrl_pnt(const InterpSegment *preBuf, const InterpSegment *curBu
 	MatrixXd *preDir = matrix_from_array(3, 1, preBuf->procInfo.dir, 3), *prePos = matrix_new(3, 1, 0);
 	MatrixXd *curDir = matrix_from_array(3, 1, curBuf->procInfo.dir, 3), *curPos = matrix_new(3, 1, 0);
 	MatrixXd *corner = matrix_from_array(3, 1, curBuf->pointInfo.begPos.rbtPos.data(), 3);
-	MatrixXd *ctrl = matrix_copy(corner);
+	MatrixXd *ctrl = matrix_new_copy(corner);
 
 	// 前段轨迹平滑起点和切向量
 	if (preBuf->motionCfg.moveType == 1) {
@@ -182,7 +182,7 @@ int calc_smooth_ctrl_pnt(const InterpSegment *preBuf, const InterpSegment *curBu
 		matrix_plus(1.0, prePos, 1.0, center, prePos);
 
 		// 切向量
-		tanDir = matrix_copy(uxv);
+		tanDir = matrix_new_copy(uxv);
 		matrix_outer_product(rotDir, tanDir, uxv);
 		matrix_plus(cq, tanDir, (1.0 - cq) * matrix_inner_product(rotDir, tanDir), rotDir, preDir);
 		matrix_plus(1.0, preDir, sq, uxv, preDir);
@@ -216,7 +216,7 @@ int calc_smooth_ctrl_pnt(const InterpSegment *preBuf, const InterpSegment *curBu
 		matrix_plus(1.0, curPos, 1.0, center, curPos);
 
 		// 切向量
-		tanDir = matrix_copy(uxv);
+		tanDir = matrix_new_copy(uxv);
 		matrix_outer_product(rotDir, tanDir, uxv);
 		matrix_plus(cq, tanDir, (1.0 - cq) * matrix_inner_product(rotDir, tanDir), rotDir, curDir);
 		matrix_plus(1.0, curDir, sq, uxv, curDir);

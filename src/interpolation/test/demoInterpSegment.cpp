@@ -7,6 +7,8 @@
 #include "interpolation/InterpSegment.h"
 #include "interpolation/InterpDispatch.h"
 
+#include "AuxTransformation.h"
+
 // 指令缓存
 InterpBuffer interpBuffer;
 // 调度器
@@ -29,7 +31,10 @@ int test_cuvre();
 
 int test_dynamic();
 
+int test_trans();
+
 int main() {
+	return test_trans();
 	//return test_cuvre();
 	//return test_dynamic();
 
@@ -281,6 +286,49 @@ int test_dynamic() {
 		std::cout << tau_out[i] << ", ";
 	}
 	std::cout << std::endl;
+
+	return 0;
+}
+
+
+int test_trans() {
+	MatrixXd *Tsb = matrix_new_identity(4);
+	MatrixXd *Tsc = matrix_new_identity(4);
+
+	matrix_set(Tsb, 0, 0, cos(M_PI / 6));
+	matrix_set(Tsb, 0, 1, -sin(M_PI / 6));
+	matrix_set(Tsb, 1, 0, sin(M_PI / 6));
+	matrix_set(Tsb, 1, 1, cos(M_PI / 6));
+	matrix_set(Tsb, 0, 3, 1);
+	matrix_set(Tsb, 1, 3, 2);
+	//matrix_cout(Tsb);
+
+	matrix_set(Tsc, 0, 0, cos(M_PI / 3));
+	matrix_set(Tsc, 0, 1, -sin(M_PI / 3));
+	matrix_set(Tsc, 1, 0, sin(M_PI / 3));
+	matrix_set(Tsc, 1, 1, cos(M_PI / 3));
+	matrix_set(Tsc, 0, 3, 2);
+	matrix_set(Tsc, 1, 3, 1);
+	//matrix_cout(Tsc);
+
+	MatrixXd *T = matrix_new_identity(4);
+	cTransInv(Tsb, T);
+	//matrix_cout(T);
+
+	matrix_multiply(Tsc, T, Tsb);
+	//matrix_cout(Tsb);
+
+	MatrixXd *se3 = matrix_new(4, 4, 0);
+	cMatrixLog6(Tsb, se3);
+	matrix_cout(se3);
+
+	MatrixXd *V = matrix_new(6, 1, 0), *S = matrix_new(6, 1, 0);
+	cSe3ToVec(se3, V);
+	//matrix_cout(V);
+
+	double theta = cAxisAng6(V, S);
+	std::cout << "theta = " << theta << std::endl;
+	matrix_cout(S);
 
 	return 0;
 }

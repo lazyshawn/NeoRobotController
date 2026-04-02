@@ -13,9 +13,7 @@
 #endif // !M_PI
 
 #ifdef _MSC_VER
-#include <stdlib.h>
 #include <math.h>
-#include <stdio.h>
 #else
 // #include "zmcbuildin.h"
 #define NULL ((void *)0)
@@ -32,13 +30,15 @@ extern "C" {
 	typedef struct {
 		int rows;
 		int cols;
-		// 按行主序存储
+		// 按行主序存储: 第i行第j列的元素为data[i*cols+j]
 		double* data;
 	} MatrixXd;
 
 	// 矩阵初始化
 	MatrixXd *matrix_new(int rows, int cols, double val);
 	MatrixXd *matrix_new_identity(int rows);
+	void matrix_set_all(MatrixXd *mat, double val);
+	void matrix_set_identity(MatrixXd *mat);
 	/**
 	* @brief  从数组初始化矩阵
 	* @param  rows    矩阵行数
@@ -53,7 +53,8 @@ extern "C" {
 	void matrix_delete(MatrixXd * q);
 
 	// 矩阵拷贝
-	MatrixXd * matrix_copy(const MatrixXd * q);
+	MatrixXd * matrix_new_copy(const MatrixXd * q);
+	void matrix_copy(const MatrixXd * q, MatrixXd *ans);
 
 	// 矩阵格式化输出
 	int matrix_cout(const MatrixXd * q);
@@ -74,7 +75,7 @@ extern "C" {
 
 	// --- 矩阵校验
 	// 矩阵大小校验
-	int matrix_same_size(MatrixXd *mat1, MatrixXd *mat2);
+	int matrix_same_size(const MatrixXd *mat1, const MatrixXd *mat2);
 
 	// --- 基础矩阵运算
 	// 矩阵行列式
@@ -83,7 +84,7 @@ extern "C" {
 	int matrix_scale(MatrixXd *q, double scale);
 	
 	// 矩阵加减法
-	int matrix_plus(double k1, MatrixXd *mat1, double k2, MatrixXd *mat2, MatrixXd *ans);
+	int matrix_plus(double k1, const MatrixXd *mat1, double k2, const MatrixXd *mat2, MatrixXd *ans);
 
 	// 矩阵乘法
 	int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans);

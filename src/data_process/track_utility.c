@@ -245,11 +245,12 @@ int matrix_cout(const MatrixXd * q) {
 		}
 		printf("\n");
 	}
+	printf("\n");
 	return 0;
 }
 
 // 矩阵拷贝
-MatrixXd * matrix_copy(const MatrixXd * q) {
+MatrixXd * matrix_new_copy(const MatrixXd * q) {
 	MatrixXd *ans = (MatrixXd *)malloc(sizeof(MatrixXd));
 
 	ans->rows = q->rows;
@@ -469,7 +470,7 @@ int matrix_LUP_inverse(const MatrixXd* A, MatrixXd* A_inv) {
 	int n = A->rows;
 
 	// 步骤1: 复制矩阵并执行LUP分解
-	MatrixXd *LU = matrix_copy(A);
+	MatrixXd *LU = matrix_new_copy(A);
 	MatrixXd *P = matrix_new(n, 1, 0);
 	int sign;
 

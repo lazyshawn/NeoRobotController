@@ -1,6 +1,8 @@
 ﻿
 
 add_library(common
+  AuxMatrix.c
+  AuxTransformation.c
   TrajectorySegment.cpp
 )
 

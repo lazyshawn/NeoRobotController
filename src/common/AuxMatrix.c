@@ -1,6 +1,11 @@
 
 #include "AuxMatrix.h"
 
+#ifdef _MSC_VER
+#include <stdlib.h>
+#include <stdio.h>
+#endif
+
 static const double dim_EPS = 1e-6;
 
 /***********************************************************************
@@ -26,6 +31,16 @@ int euler2mat(double *euler, double *seq, double *mat) {
 
 // 矩阵乘法
 int matrix_multiply_in_vector(double *matA, int row, int col, double *matB, int colB, double *ans) {
+	// 行主序存储的矩阵乘法
+	// ans[i][j] = sum_{k=0 to col-1} matA[i][k] * matB[k][j]
+	for (int i = 0; i < row; ++i) {
+		for (int j = 0; j < colB; ++j) {
+			ans[i * colB + j] = 0.0;
+			for (int k = 0; k < col; ++k) {
+				ans[i * colB + j] += matA[i * col + k] * matB[k * colB + j];
+			}
+		}
+	}
 	return 0;
 }
 
@@ -191,6 +206,20 @@ MatrixXd *matrix_new_identity(int rows) {
 	return q;
 }
 
+void matrix_set_all(MatrixXd *mat, double val) {
+	for (int i=0; i<mat->rows*mat->cols; i++){
+		mat->data[i] = val;
+	}
+}
+
+void matrix_set_identity(MatrixXd *mat) {
+	for (int i=0; i<mat->rows; i++){
+		for (int j=0; j<mat->cols; j++){
+			mat->data[i*mat->cols + j] = (i == j) ? 1.0 : 0.0;
+		}
+	}
+}
+
 MatrixXd *matrix_from_array(int rows, int cols, const double *val, int num) {
 	MatrixXd *q = (MatrixXd *)malloc(sizeof(MatrixXd));
 	if (!q)
@@ -228,7 +257,7 @@ void matrix_delete(MatrixXd * q) {
 }
 
 // 矩阵拷贝
-MatrixXd * matrix_copy(const MatrixXd * q) {
+MatrixXd * matrix_new_copy(const MatrixXd * q) {
 	MatrixXd *ans = (MatrixXd *)malloc(sizeof(MatrixXd));
 
 	ans->rows = q->rows;
@@ -239,6 +268,22 @@ MatrixXd * matrix_copy(const MatrixXd * q) {
 	}
 
 	return ans;
+}
+
+void matrix_copy(const MatrixXd * q, MatrixXd *ans) {
+	// 输出矩阵行列不对时，重新申请内存
+	if ((ans->rows - q->rows != 0) || (ans->cols - q->cols != 0)) {
+		ans->rows = q->rows;
+		ans->cols = q->cols;
+		if (ans->data) {
+			free(ans->data);
+		}
+		ans->data = (double *)malloc(sizeof(double) * ans->rows * ans->cols);
+	}
+
+	for (int i = 0; i < ans->rows*ans->cols; ++i) {
+		ans->data[i] = q->data[i];
+	}
 }
 
 // 矩阵格式化输出
@@ -304,7 +349,7 @@ int matrix_set(MatrixXd *mat, int row, int col, double val) {
 // 获取矩阵块
 int matrix_get_block(const MatrixXd *matA, int row, int col, MatrixXd *matB) {
 	// 输入合法性检测
-	if (row + matB->rows - matA->rows < 0 || col + matB->cols - matA->cols < 0)
+	if (row + matB->rows - matA->rows > 0 || col + matB->cols - matA->cols > 0)
 		return 1;
 
 	for (int i = 0; i < matB->rows; ++i) {
@@ -320,7 +365,7 @@ int matrix_get_block(const MatrixXd *matA, int row, int col, MatrixXd *matB) {
 // 设置矩阵块
 int matrix_set_block(MatrixXd *matA, int row, int col, const MatrixXd *matB) {
 	// 输入合法性检测
-	if (row + matB->rows - matA->rows < 0 || col + matB->cols - matA->cols < 0)
+	if (row + matB->rows - matA->rows > 0 || col + matB->cols - matA->cols > 0)
 		return 1;
 
 	for (int i = 0; i < matB->rows; ++i) {
@@ -336,7 +381,7 @@ int matrix_set_block(MatrixXd *matA, int row, int col, const MatrixXd *matB) {
 
 // --- 矩阵校验
 // 矩阵大小校验
-int matrix_same_size(MatrixXd *mat1, MatrixXd *mat2) {
+int matrix_same_size(const MatrixXd *mat1, const MatrixXd *mat2) {
 	return (mat1->cols - mat2->cols == 0 && mat1->rows - mat2->rows == 0);
 }
 
@@ -353,7 +398,7 @@ int matrix_scale(MatrixXd* q, double scale) {
 }
 
 // 矩阵加减法
-int matrix_plus(double k1, MatrixXd *mat1, double k2, MatrixXd *mat2, MatrixXd *ans) {
+int matrix_plus(double k1, const MatrixXd *mat1, double k2, const MatrixXd *mat2, MatrixXd *ans) {
 	// 矩阵大小校验
 	if (!matrix_same_size(ans, mat1) || !matrix_same_size(ans, mat2))
 		return 1;
@@ -367,27 +412,13 @@ int matrix_plus(double k1, MatrixXd *mat1, double k2, MatrixXd *mat2, MatrixXd *
 	return 0;
 }
 
-// 矩阵减法
-int matrix_minus(MatrixXd *mat1, MatrixXd *mat2, MatrixXd *ans) {
-	// 矩阵大小校验
-	if (!matrix_same_size(ans, mat1) || !matrix_same_size(ans, mat2))
-		return 1;
-
-	for (int i = 0; i < ans->rows; ++i) {
-		for (int j = 0; j < ans->cols; ++j) {
-			ans->data[i*ans->cols + j] = mat1->data[i*mat1->cols + j] - mat2->data[i*mat2->cols + j];
-		}
-	}
-
-	return 0;
-}
-
 // 矩阵乘法
 int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans) {
 	// 行列数校验
 	if (matA->cols - matB->rows != 0)
 		return 1;
 
+	// 输出矩阵行列不对时，重新申请内存
 	if ((ans->rows - matA->rows != 0) || (ans->cols - matB->cols != 0)) {
 		ans->rows = matA->rows;
 		ans->cols = matB->cols;
@@ -475,7 +506,7 @@ int matrix_LUP_inverse(const MatrixXd* A, MatrixXd* A_inv) {
 	int n = A->rows;
 
 	// 步骤1: 复制矩阵并执行LUP分解
-	MatrixXd *LU = matrix_copy(A);
+	MatrixXd *LU = matrix_new_copy(A);
 	MatrixXd *P = matrix_new(n, 1, 0);
 	int sign;
 
