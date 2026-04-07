@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TrajectorySegment.h"
+#include "common/TrajectorySegment.h"
 
 namespace task_plan {
 

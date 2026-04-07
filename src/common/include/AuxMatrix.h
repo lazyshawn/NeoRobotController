@@ -48,6 +48,7 @@ extern "C" {
 	* @return 矩阵指针
 	*/
 	MatrixXd *matrix_from_array(int rows, int cols, const double *val, int num);
+	int matrix_copy_array(MatrixXd *mat, const double *val, int num);
 
 	// 矩阵析构
 	void matrix_delete(MatrixXd * q);

@@ -56,8 +56,9 @@ double cAxisAng3(const MatrixXd *expc3, MatrixXd *omghat) {
 
 // Computes the rotation matrix R SO(3) corresponding to the matrix exponential of so3mat so(3).
 int cMatrixExp3(const MatrixXd *so3mat, MatrixXd *R) {
-    MatrixXd *omghat = matrix_new(3, 1, 0);
-    double theta = cAxisAng3(so3mat, omghat);
+    MatrixXd *omg = matrix_new(3, 1, 0), *omghat = matrix_new(3, 1, 0);
+	cSo3ToVec(so3mat, omg);
+    double theta = cAxisAng3(omg, omghat);
 
     // 罗德里格斯公式
     MatrixXd *wx = matrix_new(3,3,0);
@@ -222,7 +223,7 @@ int cAdjoint(const MatrixXd *T, MatrixXd *AdT) {
     matrix_set_block(AdT, 0, 0, R);
     matrix_set_block(AdT, 3, 3, R);
 
-    MatrixXd *px = matrix_new(3,1,0.0);
+    MatrixXd *px = matrix_new(3,3,0.0);
     cVecTose3(p, 1.0, px);
     MatrixXd *pxR = matrix_new(3,3,0.0);
     matrix_multiply(px, R, pxR);
@@ -347,6 +348,8 @@ int cMatrixExp6(const MatrixXd *se3mat, MatrixXd *T) {
 
 		MatrixXd *vel = matrix_new(3, 1, 0.0);
 		matrix_get_block(V, 3, 0, vel);
+		// 速度分量也要单位化后再参与计算
+		matrix_scale(vel, 1.0 / theta);
 		matrix_multiply(R, vel, omg);
 		matrix_set_block(T, 0, 3, omg);
 
@@ -355,7 +358,7 @@ int cMatrixExp6(const MatrixXd *se3mat, MatrixXd *T) {
 		matrix_delete(vel);
 	}
 	else {
-		MatrixXd *R = matrix_new(3, 3, 0.0);
+		MatrixXd *R = matrix_new_identity(3);
 		matrix_set_block(T, 0, 0, R);
 		matrix_delete(R);
 	}

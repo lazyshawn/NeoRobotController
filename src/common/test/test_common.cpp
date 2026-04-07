@@ -1,7 +1,10 @@
 ﻿
 #include "AuxTransformation.h"
+#include "AuxKinematics.h"
 
 #include <gtest/gtest.h>
+
+const double nearThread = 1e-12;
 
 // Demonstrate some basic assertions.
 //TEST(CommonTest, BasicAssertions) {
@@ -10,6 +13,7 @@
 //	// Expect equality.
 //	EXPECT_EQ(7 * 6, 42);
 //}
+
 
 TEST(CommonTest, Transformation) {
 	MatrixXd *Tsb = matrix_new_identity(4);
@@ -57,4 +61,78 @@ TEST(CommonTest, Transformation) {
 	EXPECT_EQ(matrix_at(S, 3, 0), 3.3660254037844384);
 	EXPECT_EQ(matrix_at(S, 4, 0), -3.3660254037844393);
 	EXPECT_EQ(matrix_at(S, 5, 0), 0);
+}
+
+TEST(CommonTest, FKine) {
+	// Link: 430, 163.5984, 821.7770, 210.8518, 1029.1985, 115
+	// TCP:  88.6768, 728.5914, -2.5914
+
+	// --- 1. FKinSpace
+	double M0[4][4] = { 0.0 };
+	M0[0][0] = 1; M0[0][1] = 0; M0[0][2] = 0; M0[0][3] = 1192.7969 + 115 + 728.5914;
+	M0[1][0] = 0; M0[1][1] = 1; M0[1][2] = 0; M0[1][3] = 0 - 2.5914;
+	M0[2][0] = 0; M0[2][1] = 0; M0[2][2] = 1; M0[2][3] = 1032.6288 - 88.6768;
+	M0[3][0] = 0; M0[3][1] = 0; M0[3][2] = 0; M0[3][3] = 1;
+
+	double Slist[6][6] = { 0.0 };
+	Slist[0][0] = 0; Slist[0][1] = 0; Slist[0][2] = 1; Slist[0][3] = 0; Slist[0][4] = 0; Slist[0][5] = 0;
+	Slist[1][0] = 0; Slist[1][1] = 1; Slist[1][2] = 0; Slist[1][3] = 0; Slist[1][4] = 0; Slist[1][5] = 163.5984;
+	Slist[2][0] = 0; Slist[2][1] = 1; Slist[2][2] = 0; Slist[2][3] = -821.777; Slist[2][4] = 0; Slist[2][5] = 163.5984;
+	Slist[3][0] = 1; Slist[3][1] = 0; Slist[3][2] = 0; Slist[3][3] = 0; Slist[3][4] = 1032.6288; Slist[3][5] = 0;
+	Slist[4][0] = 0; Slist[4][1] = 1; Slist[4][2] = 0; Slist[4][3] = -1032.6288; Slist[4][4] = 0; Slist[4][5] = 1192.7969;
+	Slist[5][0] = 1; Slist[5][1] = 0; Slist[5][2] = 0; Slist[5][3] = 0; Slist[5][4] = 1032.6288; Slist[5][5] = 0;
+
+	double thetalist[6] = { 10, -20, 30, -40, 50, -60 };
+	for (int i = 0; i < 6; ++i) {
+		thetalist[i] *= M_PI / 180;
+	}
+
+	double T[4][4] = { 0.0 };
+	FKinSpace(M0, Slist, thetalist, 6, T);
+
+	// 位置校验
+	EXPECT_NEAR(T[0][3], 1419.0886056004786, nearThread);
+	EXPECT_NEAR(T[1][3], -249.97753741763282, nearThread);
+	EXPECT_NEAR(T[2][3], 254.08912457483615, nearThread);
+
+
+	// --- 2. Slist to Blist
+	MatrixXd *M0mat = matrix_new(4, 4, 0.0);
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			matrix_set(M0mat, i, j, M0[i][j]);
+		}
+	}
+	MatrixXd *Mbs = matrix_new(4, 4, 0.0);
+	cTransInv(M0mat, Mbs);
+	MatrixXd *AdT = matrix_new(6, 6, 0.0);
+	cAdjoint(Mbs, AdT);
+	//matrix_cout(AdT);
+
+	double Blist[6][6] = { 0.0 };
+	for (int i = 0; i < 6; ++i) {
+		MatrixXd *sVec = matrix_from_array(6, 1, Slist[i], 6);
+		MatrixXd *bVec = matrix_new(6, 1, 0);
+		matrix_multiply(AdT, sVec, bVec);
+		matrix_to_array(bVec, Blist[i], 6);
+		matrix_delete(sVec);
+		matrix_delete(bVec);
+	}
+
+	matrix_delete(AdT);
+	matrix_delete(M0mat);
+	matrix_delete(Mbs);
+
+
+	// --- 3. FKinBody
+	FKinBody(M0, Blist, thetalist, 6, T);
+
+	// 位置校验
+	EXPECT_NEAR(T[0][3], 1419.0886056004786, nearThread);
+	EXPECT_NEAR(T[1][3], -249.97753741763282, nearThread);
+	EXPECT_NEAR(T[2][3], 254.08912457483615, nearThread);
+}
+
+TEST(CommonTest, Jacobian) {
+
 }

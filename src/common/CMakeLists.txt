@@ -2,6 +2,7 @@
 
 add_library(common
   AuxMatrix.c
+  AuxKinematics.c
   AuxTransformation.c
   TrajectorySegment.cpp
 )
@@ -27,4 +28,7 @@ install(DIRECTORY include/common
 #  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 #)
 
-add_subdirectory(test)
+
+if(BUILD_TESTING)
+  add_subdirectory(test)
+endif()

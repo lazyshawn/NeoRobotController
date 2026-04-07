@@ -237,16 +237,25 @@ MatrixXd *matrix_from_array(int rows, int cols, const double *val, int num) {
 	if (num > 0 && num < replace)
 		replace = num;
 
-	int idx = 0;
-	for (int i = 0; i < q->rows; ++i) {
-		for (int j = 0; j < q->cols; ++j) {
-			// 剩余元素用0填充
-			q->data[i*q->cols + j] = (idx < replace) ? val[idx] : 0.0;
-			idx++;
-		}
+	for (int i = 0; i < q->rows * q->cols; ++i) {
+		// 剩余元素用0填充
+		q->data[i] = (i < replace) ? val[i] : 0.0;
 	}
 
 	return q;
+}
+
+int matrix_copy_array(MatrixXd *mat, const double *val, int num) {
+	// 实际使用元素个数
+	int replace = mat->rows * mat->cols;
+	if (num > 0 && num < replace)
+		replace = num;
+
+	for (int i=0; i<replace; ++i) {
+		mat->data[i] = val[i];
+	}
+
+	return 0;
 }
 
 // 矩阵析构

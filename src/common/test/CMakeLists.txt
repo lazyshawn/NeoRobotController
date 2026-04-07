@@ -4,7 +4,7 @@ add_executable(test_common
 )
 target_link_libraries(test_common PUBLIC
   common
-  GTest::GTest
+  gtest_main
 )
 include(GoogleTest)
 gtest_discover_tests(test_common)

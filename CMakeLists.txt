@@ -45,11 +45,6 @@ if(BUILD_TESTING)
   # 启用测试，这是 CTest 所必需的
   enable_testing()
 
-  # 将下载下来的googletest编译成库 使用IMPORTED关键字
-  add_library(GTest::GTest INTERFACE IMPORTED)
-  # 链接gtest
-  target_link_libraries(GTest::GTest INTERFACE gtest_main)
-
   # 添加包含测试的子目录，比如将测试代码放在 test/ 文件夹下
   #add_subdirectory(tests)
 endif()
