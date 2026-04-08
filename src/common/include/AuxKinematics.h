@@ -57,11 +57,19 @@ int FKinSpace(
     double T[4][4]
 );
 
+/**
+ * @brief  本体坐标系的雅可比矩阵
+ * @param  Blist       物体坐标系下的关节旋量
+ * @param  thetalist   关节角数组
+ * @param  num         关节数量
+ * @param  J[out]      结果雅可比矩阵，转置后输出，使用前记得转置回来
+ * @return             状态码
+ */
 int JacobianBody(
     const double Blist[][6],
     const double *thetalist,
     int num,
-    double J[6][4]
+    double J[][6]
 );
 
 int JacobianSpace(

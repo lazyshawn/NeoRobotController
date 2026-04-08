@@ -360,6 +360,8 @@ int cMatrixExp6(const MatrixXd *se3mat, MatrixXd *T) {
 	else {
 		MatrixXd *R = matrix_new_identity(3);
 		matrix_set_block(T, 0, 0, R);
+		matrix_get_block(V, 3, 0, omg);
+		matrix_set_block(T, 0, 3, omg);
 		matrix_delete(R);
 	}
 
