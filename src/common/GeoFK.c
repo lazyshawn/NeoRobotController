@@ -1,6 +1,7 @@
-﻿#include "AuxKinematics.h"
+﻿#include "GeoFK.h"
 #include "AuxMatrix.h"
 #include "AuxTransformation.h"
+
 
 int FKinBody(
     const double M0[4][4],

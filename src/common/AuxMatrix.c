@@ -427,6 +427,8 @@ int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans) {
 	if (matA->cols - matB->rows != 0)
 		return 1;
 
+	int size = matA->rows * matB->cols;
+
 	// 输出矩阵行列不对时，重新申请内存
 	if ((ans->rows - matA->rows != 0) || (ans->cols - matB->cols != 0)) {
 		ans->rows = matA->rows;
@@ -434,26 +436,34 @@ int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans) {
 		if (ans->data) {
 			free(ans->data);
 		}
-		ans->data = (double *)malloc(sizeof(double) * ans->rows * ans->cols);
+		ans->data = (double *)malloc(sizeof(double) * size);
 	}
-	matrix_multiply_in_vector(matA->data, matA->rows, matA->cols, matB->data, matB->cols, ans->data);
+
+	// 使用临时内存，允许输入输出矩阵为同一个对象
+	double *tmp = (double *)malloc(sizeof(double) * size);
+	matrix_multiply_in_vector(matA->data, matA->rows, matA->cols, matB->data, matB->cols, tmp);
+	matrix_copy_array(ans, tmp, size);
+	free(tmp);
 
 	return 0;
 }
 
 // 矩阵范数
 double matrix_norm(const MatrixXd *mat) {
+	return sqrt(matrix_squared_norm(mat));
+}
+
+double matrix_squared_norm(const MatrixXd *mat) {
 	int num = mat->cols * mat->rows;
 
 	double ans = 0.0;
 	for (int i = 0; i < num; ++i) {
 		ans += mat->data[i] * mat->data[i];
 	}
-	ans = sqrt(ans);
 
 	return ans;
 }
-
+	
 // 矩阵单位化
 int matrix_normalize(MatrixXd *mat) {
 	double norm = matrix_norm(mat);
@@ -553,5 +563,52 @@ int matrix_LUP_inverse(const MatrixXd* A, MatrixXd* A_inv) {
 	matrix_delete(LU);
 	matrix_delete(P);
 
+	return 0;
+}
+
+// 罗德里格斯公式
+int matrix_rodrigues(const MatrixXd *k, const MatrixXd *p, double theta, MatrixXd *ans) {
+	double cq = cos(theta), sq = sin(theta);
+	MatrixXd *uxv = matrix_new(3, 1, 0.0);
+	matrix_set_all(ans, 0.0);
+
+	// kxp
+	matrix_outer_product(k, p, uxv);
+	// + pcq + k(ktp)(1-cq)
+	matrix_plus(cq, p, (1.0 - cq) * matrix_inner_product(k, p), k, ans);
+	// + (uxv)sq
+	matrix_plus(1.0, ans, sq, uxv, ans);
+
+	matrix_delete(uxv);
+	return 0;
+}
+
+// 轴角公式
+int matrix_axis_angle(const MatrixXd *k, double theta, MatrixXd *R) {
+
+	MatrixXd *wx = matrix_new(3,3,0.0);
+    // 反对称矩阵下三角元素，注意方向向量单位化
+    matrix_set(wx, 2, 1, k->data[0]);
+    matrix_set(wx, 2, 0, -k->data[1]);
+    matrix_set(wx, 1, 0, k->data[2]);
+    // 剩余元素，对角线为0，上三角元素与下三角元素互为相反数
+    for(int i=0; i<3; i++){
+        for(int j=i; j<3; j++){
+            double val = matrix_at(wx, j, i);
+            matrix_set(wx, i, j, i==j? 0.0 : -val);
+        }
+    }
+
+    // (1-cq) * wx^2
+    matrix_multiply(wx, wx, R);
+    matrix_scale(R, 1.0 - cos(theta));
+    // sq * wx
+    matrix_scale(wx, sin(theta));
+    matrix_plus(1.0, R, 1.0, wx, R);
+    // I
+    matrix_set_identity(wx);
+    matrix_plus(1.0, R, 1.0, wx, R);
+
+	matrix_delete(wx);
 	return 0;
 }

@@ -1,36 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief  6轴机械臂运动学配置结构体
- */
-struct ArmKineConfig {
-    // --- 本体运动学配置
-	//! 空间坐标系的关节旋量
-    double Slist[6][6];
-	//! 物体坐标系的关节旋量
-	double Blist[6][6];
-    //! 零位偏移角
-    double jntZeroOffset[6];
-    //! 耦合比: 23,56
-    double couple[2];
-    //! 奇异点阈值: 肩部，肘部，腕部
-    double singThreshold[3];
-
-    // --- 本体运动学配置
-	//! 外部轴旋量
-	double ESlist[3][6];
-	double EBlist[3][6];
-	//! 世界坐标系零点位置
-	double rbtZeroOffset[6];
-	//! TCP 编号
-	int tcpId;
-	//! TCP 记录值，最多记录 10 组
-	double tcp[10][6];
-};
 
 /**
  * @brief  前向运动学

@@ -1,6 +1,8 @@
 ﻿
+#include "common/GeoKinematics.h"
+
 #include "AuxTransformation.h"
-#include "AuxKinematics.h"
+#include "GeoFK.h"
 
 #include <gtest/gtest.h>
 
@@ -261,5 +263,67 @@ TEST(CommonTest, Jacobian) {
 }
 
 TEST(CommonTest, IKine) {
+	int solNum = 0;
+	// --- 后三轴相交，23轴平行
+	// Link: 430, 163.5984, 821.7770, 210.8518, 1029.1985, 115
+	// TCP:  88.6768, 728.5914, -2.5914
+	GeoKineConfig kineCfg;
+	kineCfg.jntDir[0][0] = 0; kineCfg.jntDir[0][1] = 0; kineCfg.jntDir[0][2] = 1;
+	kineCfg.jntDir[1][0] = 0; kineCfg.jntDir[1][1] = 1; kineCfg.jntDir[1][2] = 0;
+	kineCfg.jntDir[2][0] = 0; kineCfg.jntDir[2][1] = 1; kineCfg.jntDir[2][2] = 0;
+	kineCfg.jntDir[3][0] = 1; kineCfg.jntDir[3][1] = 0; kineCfg.jntDir[3][2] = 0;
+	kineCfg.jntDir[4][0] = 0; kineCfg.jntDir[4][1] = 1; kineCfg.jntDir[4][2] = 0;
+	kineCfg.jntDir[5][0] = 1; kineCfg.jntDir[5][1] = 0; kineCfg.jntDir[5][2] = 0;
 
+	kineCfg.jntAxisOffset[0][0] = 0;         kineCfg.jntAxisOffset[0][1] = 0; kineCfg.jntAxisOffset[0][2] = 430;
+	kineCfg.jntAxisOffset[1][0] = 163.5984;  kineCfg.jntAxisOffset[1][1] = 0; kineCfg.jntAxisOffset[1][2] = 0;
+	kineCfg.jntAxisOffset[2][0] = 0;         kineCfg.jntAxisOffset[2][1] = 0; kineCfg.jntAxisOffset[2][2] = 821.7770;
+	kineCfg.jntAxisOffset[3][0] = 1029.1985; kineCfg.jntAxisOffset[3][1] = 0; kineCfg.jntAxisOffset[3][2] = 210.8518;
+	kineCfg.jntAxisOffset[4][0] = 0;         kineCfg.jntAxisOffset[4][1] = 0; kineCfg.jntAxisOffset[4][2] = 0;
+	kineCfg.jntAxisOffset[5][0] = 0;         kineCfg.jntAxisOffset[5][1] = 0; kineCfg.jntAxisOffset[5][2] = 0;
+
+	kineCfg.tcpId = 0;
+	kineCfg.tcp[0][0] = 115 + 728.5914; kineCfg.tcp[0][1] = -2.5914; kineCfg.tcp[0][2] = -88.6768;
+
+	construct_GeoKineConfig(&kineCfg);
+
+	double T[4][4] = { 0.0 };
+	double thetalist[6] = { 10, -20, 30, -40, 50, -60 };
+	for (int i = 0; i < 6; ++i) {
+		thetalist[i] *= M_PI / 180;
+	}
+	GeoFKRequest fkReq;
+	fkReq.thetalist = thetalist;
+	GeoFK(&kineCfg, &fkReq, T);
+	
+	GeoIKRequest ikReq;
+	GeoIKResponse ikResp;
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			ikReq.T[i][j] = T[i][j];
+		}
+	}
+	solNum = GeoIK(&kineCfg, &ikReq, &ikResp);
+
+	// 匹配对应解
+	int solId = -1;
+	for (int i = 0; i < solNum; ++i) {
+		bool same = true;
+		for (int j = 0; j < 6; ++j) {
+			if (fabs(ikResp.theta[i][j] - thetalist[j]) > nearThread) {
+				same = false;
+				break;
+			}
+		}
+		if (same) {
+			solId = i;
+		}
+	}
+	// 找到对应解
+	EXPECT_GT(solId, 0);
+	if (solId > 0) {
+		for (int i = 0; i < 6; ++i) {
+			EXPECT_NEAR(ikResp.theta[solId][i], thetalist[i], nearThread);
+		}
+	}
 }

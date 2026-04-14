@@ -2,8 +2,12 @@
 
 add_library(common
   AuxMatrix.c
-  AuxKinematics.c
   AuxTransformation.c
+  GeoKinematics.c
+  GeoFk.c
+  GeoIK.c
+  GeoIK_subproblem.c
+
   TrajectorySegment.cpp
 )
 

@@ -60,21 +60,10 @@ int cMatrixExp3(const MatrixXd *so3mat, MatrixXd *R) {
 	cSo3ToVec(so3mat, omg);
     double theta = cAxisAng3(omg, omghat);
 
-    // 罗德里格斯公式
-    MatrixXd *wx = matrix_new(3,3,0);
-    cVecToso3(omghat, 1.0, wx);
-    // (1-cq) * wx^2
-    matrix_multiply(wx, wx, R);
-    matrix_scale(R, 1.0 - cos(theta));
-    // sq * wx
-    matrix_scale(wx, sin(theta));
-    matrix_plus(1.0, R, 1.0, wx, R);
-    // I
-    matrix_set_identity(wx);
-    matrix_plus(1.0, R, 1.0, wx, R);
+	// 罗德里格斯公式
+    matrix_axis_angle(omghat, theta, R);
 
     matrix_delete(omghat);
-    matrix_delete(wx);
 
     return 0;
 }

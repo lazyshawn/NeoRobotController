@@ -92,6 +92,7 @@ extern "C" {
 
 	// 矩阵范数
 	double matrix_norm(const MatrixXd *mat);
+	double matrix_squared_norm(const MatrixXd *mat);
 
 	// 矩阵单位化
 	int matrix_normalize(MatrixXd *mat);
@@ -104,6 +105,13 @@ extern "C" {
 
 	// 矩阵求逆
 	int matrix_LUP_inverse(const MatrixXd* A, MatrixXd* A_inv);
+
+	// --- 部分姿态转换相关的补充函数，后续移动到新的文件中
+	// 罗德里格斯公式
+	int matrix_rodrigues(const MatrixXd *k, const MatrixXd *p, double theta, MatrixXd *ans);
+
+	// 轴角公式
+	int matrix_axis_angle(const MatrixXd *k, double theta, MatrixXd *R);
 
 #ifdef __cplusplus
 }
