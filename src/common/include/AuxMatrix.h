@@ -68,6 +68,9 @@ extern "C" {
 	// 设置元素
 	int matrix_set(MatrixXd *mat, int row, int col, double val);
 
+	// 矩阵转置
+	int matrix_transpose(MatrixXd *mat);
+
 	// 获取矩阵块
 	int matrix_get_block(const MatrixXd *matA, int row, int col, MatrixXd *matB);
 

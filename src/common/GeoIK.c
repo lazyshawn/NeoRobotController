@@ -2,6 +2,7 @@
 #include "GeoIK.h"
 
 #include "AuxMatrix.h"
+#include "AuxRotRep.h"
 #include "GeoIK_subproblem.h"
 
 static const double dim_ESP = 1e-9;
@@ -13,7 +14,7 @@ int get_transform06(const ArmKineConfig cfg, const double T[4][4], MatrixXd *R06
 	MatrixXd *p01 = matrix_new(3, 1, 0.0);
 
 	for (int i = 0; i < 3; ++i) {
-		// R06
+		// R0T
 		for (int j = 0; j < 3; ++j) {
 			matrix_set(R06, i, j, T[i][j]);
 		}
@@ -24,6 +25,17 @@ int get_transform06(const ArmKineConfig cfg, const double T[4][4], MatrixXd *R06
 		// p01
 		matrix_set(p01, i, 0, cfg.jntAxisOffset[0][i]);
 	}
+	// R6T
+	double euler[3];
+	for (int i = 0; i < 3; ++i) {
+		euler[i] = cfg.tcp[3 + i];
+	}
+	Euler2Rot(euler, R6T->data);
+	matrix_transpose(R6T);
+
+	// R06 = R0T RT6
+	matrix_multiply(R06, R6T, R06);
+
 	// p06 = p0T - p01 - R06 p6T
 	matrix_plus(1.0, p06, -1.0, p01, p06);
 	matrix_multiply(R06, p6T, p01);
@@ -216,7 +228,7 @@ int GeoIK_3parallel_with_2intersect(const ArmKineConfig cfg, const double T[4][4
 	// h2T R10 p06 = d
 	matrix_copy_array(k1, cfg.jntDir[0], 3);
 	matrix_copy_array(k2, cfg.jntDir[1], 3);
-	canonical_subproblem_4(p06, k1, k2, proj, q1, &num1);
+	canonical_subproblem_4(p06->data, k1->data, k2->data, proj, q1, &num1);
 
 	matrix_delete(R06);
 	matrix_delete(p06);

@@ -1,6 +1,7 @@
 ﻿#include "common/GeoKinematics.h"
 
 #include "AuxMatrix.h"
+#include "AuxRotRep.h"
 #include "GeoFK.h"
 #include "GeoIK.h"
 
@@ -20,21 +21,17 @@ int GeoCfg2ArmCfg (const GeoKineConfig *cfg, ArmKineConfig *armCfg) {
         }
     }
 
-    // --- 2. 计算 TCP 的零位姿态矩阵
-	matrix_copy_array(pos, cfg->efc, 3);
-	matrix_copy_array(detP, cfg->tcp[cfg->tcpId], 3);
-	matrix_plus(1.0, pos, 1.0, detP, pos);
-	matrix_set_block(M0, 0, 3, pos);
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			armCfg->M0[i][j] = matrix_at(M0, i, j);
-		}
+	// --- 2. 复制 TCP 位姿
+	for (int i = 0; i < 6; ++i) {
+		armCfg->tcp[i] = cfg->tcp[cfg->tcpId][i];
 	}
 
-    // --- 3. 复制 TCP 位姿
-    for (int i=0; i<6; ++i) {
-        armCfg->tcp[i] = cfg->tcp[cfg->tcpId][i];
-    }
+    // --- 3. 计算 TCP 的零位姿态矩阵
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			armCfg->M0[i][j] = cfg->M0[i][j];
+		}
+	}
 
     // --- 4. 复制外部轴旋量
 
@@ -80,10 +77,23 @@ int construct_GeoKineConfig(GeoKineConfig *cfg) {
     matrix_to_array(pos, cfg->efc, 3);
 
 	// --- 2. 计算 TCP 的零位姿态矩阵(正解需要)
+	// TCP 位置
 	matrix_copy_array(pos, cfg->efc, 3);
 	matrix_copy_array(detP, cfg->tcp[cfg->tcpId], 3);
 	matrix_plus(1.0, pos, 1.0, detP, pos);
 	matrix_set_block(M0, 0, 3, pos);
+	// TCP 姿态
+	double euler[3], rot[9];
+	for (int i = 0; i < 3; ++i) {
+		euler[i] = cfg->tcp[cfg->tcpId][3 + i];
+	}
+	Euler2Rot(euler, rot);
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			matrix_set(M0, i, j, rot[i * 3 + j]);
+		}
+	}
+	// 赋值到 TCP 姿态矩阵
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
 			cfg->M0[i][j] = matrix_at(M0, i, j);

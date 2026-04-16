@@ -355,6 +355,69 @@ int matrix_set(MatrixXd *mat, int row, int col, double val) {
 	return 0;
 }
 
+// 矩阵原地转置
+int matrix_transpose(MatrixXd *mat) {
+	// 行列不为0检测
+	if (mat->rows == 0 || mat->cols == 0) {
+		return 1;
+	}
+
+	// 方阵转置
+	if (mat->rows == mat->cols) {
+		int num = mat->rows;
+		for (int i = 0; i < num; ++i) {
+			for (int j = i+1; j < num; ++j) {
+				double tmp = mat->data[i*mat->cols + j];
+				mat->data[i*mat->cols + j] = mat->data[j*mat->cols + i];
+				mat->data[j*mat->cols + i] = tmp;
+			}
+		}
+	}
+	// 一般矩阵转置
+	else {
+		// Ref: [牛客-矩阵原地转置](https://www.nowcoder.com/discuss/588369053870235648)
+		int num = mat->rows * mat->cols;
+		for (int i = 0; i < num; ++i) {
+			// 环上下一个元素的位置
+			int next = (i % mat->cols) * mat->cols + (i / mat->cols);
+			// 防止重复访问，当前元素为环内最小元素时进行处理，处理后置位
+			int visit = 0;
+			// 一直循环，直到回到当前位置，说明找到一个环
+			while (next != i) {
+				// 循环时找到小于当前位置的索引，说明已经遍历过
+				if (next < i) {
+					visit = 1;
+					break;
+				}
+				next = (next % mat->cols) * mat->cols + (next / mat->cols);
+			}
+			// 若当前环未访问过，执行环的转置
+			if (visit == 0) {
+				int cur = i;
+				int next = (cur % mat->cols) * mat->cols + (cur / mat->cols);
+				double backup = mat->data[cur];
+				while (next != i) {
+					// backup = A[next], A[next] = A[cur]
+					double tmp = mat->data[next];
+					mat->data[next] = mat->data[cur];
+					backup = tmp;
+					// 更新索引
+					cur = next;
+					next = (cur % mat->cols) * mat->cols + (cur / mat->cols);
+				}
+				// 处理 next = i，即第一个元素赋值
+				mat->data[next] = backup;
+			}
+		}
+	}
+
+	// 交换行列数
+	double tmp = mat->rows;
+	mat->rows = mat->cols;
+	mat->cols = tmp;
+	return 0;
+}
+
 // 获取矩阵块
 int matrix_get_block(const MatrixXd *matA, int row, int col, MatrixXd *matB) {
 	// 输入合法性检测

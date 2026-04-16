@@ -3,6 +3,7 @@
 
 #include "AuxTransformation.h"
 #include "GeoFK.h"
+#include "AuxRotRep.h"
 
 #include <gtest/gtest.h>
 
@@ -284,6 +285,7 @@ TEST(CommonTest, IKine) {
 
 	kineCfg.tcpId = 0;
 	kineCfg.tcp[0][0] = 115 + 728.5914; kineCfg.tcp[0][1] = -2.5914; kineCfg.tcp[0][2] = -88.6768;
+	kineCfg.tcp[0][3] = 0; kineCfg.tcp[0][4] = 45 * M_PI / 180; kineCfg.tcp[0][5] = 0;
 
 	construct_GeoKineConfig(&kineCfg);
 
@@ -326,4 +328,36 @@ TEST(CommonTest, IKine) {
 			EXPECT_NEAR(ikResp.theta[solId][i], thetalist[i], nearThread);
 		}
 	}
+}
+
+TEST(CommonTest, RotRep) {
+	double R[9] = { 0.0 }, ans[4] = { 0.0 };
+
+	// --- 欧拉角转旋转矩阵
+	double xyz[3] = { 10, 20, 30 };
+	for (int i=0; i<3; ++i) {
+		xyz[i] *= M_PI / 180;
+	}
+	
+	Euler2Rot(xyz, R);
+	Rot2Euler(R, ans);
+
+	EXPECT_EQ(xyz[0], ans[0]);
+	EXPECT_EQ(xyz[1], ans[1]);
+	EXPECT_EQ(xyz[2], ans[2]);
+
+	// --- 四元数转旋转矩阵
+	double q[4] = { 1,2,3,4 };
+	double nq = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+	for (int i = 0; i < 4; ++i) {
+		q[i] /= nq;
+	}
+
+	Quat2Rot(q, R);
+	Rot2Quat(R, ans);
+
+	for (int i = 0; i < 4; ++i) {
+		EXPECT_NEAR(q[i], ans[i], nearThread);
+	}
+
 }

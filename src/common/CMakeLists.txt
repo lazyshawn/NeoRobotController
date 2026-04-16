@@ -2,6 +2,7 @@
 
 add_library(common
   AuxMatrix.c
+  AuxRotRep.c
   AuxTransformation.c
   GeoKinematics.c
   GeoFk.c
