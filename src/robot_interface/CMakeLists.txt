@@ -7,6 +7,7 @@ add_library(FSAIRobotInterface
   BufferSynchronizer.cpp
 
   FSAIRobot.cpp
+  FSAISimRobot.cpp
   ZMotionRobot.cpp
   ZRVRobot.cpp
 )

@@ -4,13 +4,14 @@
 #include <eigen3/Eigen/Dense>
 
 #include "robot_interface/FSAIRobot.h"
+#include "robot_interface/FSAISimRobot.h"
 #include "RobotLogger.h"
 
 
 // 控制卡
 std::shared_ptr<FSAIRobotInterface::Controller> ZController(new FSAIRobotInterface::Controller);
 // 机器人
-std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::FSAIRobot), robot2(new FSAIRobotInterface::FSAIRobot);
+std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::FSAISimRobot), robot2(new FSAIRobotInterface::FSAIRobot);
 FSAIRobotInterface::RobotGroupManager group;
 // 轨迹
 DiscreteTrajectory trajList, trajList2;
