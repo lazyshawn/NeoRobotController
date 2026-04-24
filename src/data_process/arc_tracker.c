@@ -7,10 +7,10 @@
 
 
 // 电流数据滤波器
-FIRFilter *filter[MaxFilterNum];
+static FIRFilter *filter[MaxFilterNum];
 // 补偿量修正算法
 //ControlSMC *smc[MaxFilterNum];
-FIRFilter *compFilter[MaxFilterNum];
+static FIRFilter *compFilter[MaxFilterNum];
 
 // 打印版本信息
 void print_release_info() {

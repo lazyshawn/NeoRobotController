@@ -287,7 +287,7 @@ int matrix_set(MatrixXd *mat, int row, int col, double val) {
 // 获取矩阵块
 int matrix_get_block(const MatrixXd *matA, int row, int col, MatrixXd *matB) {
 	// 输入合法性检测
-	if (row + matB->rows - matA->rows < 0 || col + matB->cols - matA->cols < 0)
+	if (row + matB->rows - matA->rows > 0 || col + matB->cols - matA->cols > 0)
 		return 1;
 
 	for (int i = 0; i < matB->rows; ++i) {
@@ -303,7 +303,7 @@ int matrix_get_block(const MatrixXd *matA, int row, int col, MatrixXd *matB) {
 // 设置矩阵块
 int matrix_set_block(MatrixXd *matA, int row, int col, const MatrixXd *matB) {
 	// 输入合法性检测
-	if (row + matB->rows - matA->rows < 0 || col + matB->cols - matA->cols < 0)
+	if (row + matB->rows - matA->rows > 0 || col + matB->cols - matA->cols > 0)
 		return 1;
 
 	for (int i = 0; i < matB->rows; ++i) {
@@ -479,11 +479,17 @@ int matrix_LUP_inverse(const MatrixXd* A, MatrixXd* A_inv) {
 		return 2;
 	}
 
+	// 计算逆置换数组 invP
+	MatrixXd *invP = matrix_new(n, 1, 0);
+	for (int i = 0; i < n; ++i) {
+		invP->data[(int)(P->data[i])] = i;
+	}
+
 	// 步骤2: 对单位矩阵的每一列求解
 	for (int col = 0; col < n; col++) {
 		// 创建单位矩阵的第col列（经过置换）
 		MatrixXd *Pb = matrix_new(n, 1, 0);
-		Pb->data[(int)(P->data[col])] = 1.0;  // 注意：这里根据P进行置换
+		Pb->data[(int)(invP->data[col])] = 1.0;  // 注意：这里根据P进行置换
 
 		// 解 L*y = Pb
 		MatrixXd *y = matrix_new(n, 1, 0);
@@ -506,6 +512,7 @@ int matrix_LUP_inverse(const MatrixXd* A, MatrixXd* A_inv) {
 	// 清理内存
 	matrix_delete(LU);
 	matrix_delete(P);
+	matrix_delete(invP);
 
 	return 0;
 }
