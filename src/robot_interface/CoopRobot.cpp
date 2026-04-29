@@ -561,6 +561,10 @@ int RobotBase::send_traj_type(int type) {
 	return 0;
 }
 
+int RobotBase::switch_robot_mode(int type) {
+	return 0;
+}
+
 int RobotBase::trigger_action(int type, const std::vector<float>& param) {
 	
 	int stateIdxBase = get_state_idx_base();

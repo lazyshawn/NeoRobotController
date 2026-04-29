@@ -1156,6 +1156,9 @@ namespace FSAIRobotInterface {
 		return 0;
 	}
 
+	int FSAIRobot::switch_robot_mode(int type) {
+		return 0;
+	}
 
 	int FSAIRobot::update_swing_config() {
 

@@ -5,6 +5,15 @@
 
 
 namespace FSAIRobotInterface {
+// 仿真器状态
+struct SimulatorStatus {
+	// 插补周期
+	double m_timecycle;
+
+	bool autoMode = true;
+	std::vector<double> jPos = std::vector<double>(12, 0);
+	std::vector<double> cPos = std::vector<double>(12 ,0);
+};
 
 class FSAISimRobot : public RobotBase {
 
@@ -16,6 +25,9 @@ public:
 	// 机器人状态
 	int update_rt_robot_status() override;
 	int get_all_robot_status(RobotStatus& status) override;
+	int get_register_config(RobotConfig& config);
+	int read_register_config();
+	int write_register_config(const RobotConfig& config);
 
 	int moveJ(const std::vector<int>& axis, const std::vector<float>& relMove, const std::vector<int>& mask = {}) override;
 	int moveJABS(const std::vector<int>& axis, const std::vector<float>& beg, const std::vector<float>& end, const std::vector<int>& mask = {}) override;
@@ -87,6 +99,9 @@ public:
 	int execute_move_action(const std::vector<std::pair<int, std::vector<float>>>& actionList, int flag) override;
 	int process_after_send_traj() override;
 
+	// 仿真器初始化: 切换运动仿真/计算时间
+	int switch_robot_mode(int type) override;
+
 private:
 	RegisterBuffer begRegister;
 	RegisterBuffer endRegister;
@@ -102,6 +117,7 @@ private:
 	// 设置上条轨迹类型
 	int set_previous_trajectory(const SingleTrajectory& preTraj);
 
+	SimulatorStatus simStatus;
 	// 仿真器线程状态
 	std::atomic<bool> simThreadDone;
 	// 仿真器线程

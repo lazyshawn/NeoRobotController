@@ -15,6 +15,7 @@ AdvanceConfigWindow::AdvanceConfigWindow() {
 	ui->comboBox->addItem("ZMotionRobot");
 	ui->comboBox->addItem("ZVRRobot");
 	ui->comboBox->addItem("FSAIRobot");
+	ui->comboBox->addItem("FSAISimRobot");
 	ui->comboBox->setEditable(false);
 
 	ui->comboBox_2->addItem("1");

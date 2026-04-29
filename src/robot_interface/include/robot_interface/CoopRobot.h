@@ -160,11 +160,12 @@ struct RobotStatus {
 	//int taskType;                         // 当前任务类型：空移，拍照，横焊，立焊，平焊
 
 	// 按需刷新 (非实时)
+	double curInterpTime = 0.0;           // 当前插补时间(目前仅仿真器使用)
 	std::vector<int> axisStatus = {};     // 轴状态
 	std::vector<int> encoder = {};        // 编码器值
 	std::vector<float> posOffset = {};    // 随动偏移
 	std::vector<float> cPosR = {};        // 机器人坐标系位置
-	std::vector<int> subErrorCode = {}; // 异常码辅码
+	std::vector<int> subErrorCode = {};   // 异常码辅码
 
 	RobotStatus() {};
 	~RobotStatus() {};
@@ -404,11 +405,14 @@ public:
 	// 设置当前轨迹类型
 	virtual int send_traj_type(int type);
 
+	// 机器人设置初始化
+	virtual int switch_robot_mode(int type);
 
 	/* *************************** 底层自定义接口 *************************** */
 
 	//! 获取下发指令轴号，主要用于确定运动主轴
 	virtual std::vector<int> get_execute_axis() = 0;
+
 
 	// 机器人状态
 	virtual int update_rt_robot_status() = 0;
