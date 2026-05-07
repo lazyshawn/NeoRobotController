@@ -21,12 +21,14 @@ target_include_directories(FSAIRobotInterface PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/clogger>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/zmotion>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/openssl-3/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_directories(FSAIRobotInterface PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/zmotion>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/clogger>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/extern/openssl-3>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
 )
 #get_target_property(LINK_DIRS FSAIRobotInterface LINK_DIRECTORIES)
 #message("Link directories: ${LINK_DIRS}")
@@ -38,6 +40,7 @@ target_link_libraries(FSAIRobotInterface PUBLIC
   log4cplus$<$<CONFIG:Debug>:D>
   libssl
   libcrypto
+  fsai_simulator/QtWidgetsApplication3
 )
 
 # Install headers

@@ -104,6 +104,7 @@ public:
 	int execute_move_action(const std::vector<std::pair<int, std::vector<float>>>& actionList, int flag) override;
 	int process_after_send_traj() override;
 
+	int switch_robot_mode(int type) override;
 private:
 	RegisterBuffer begRegister;
 	RegisterBuffer endRegister;

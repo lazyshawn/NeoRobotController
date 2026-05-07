@@ -39,6 +39,7 @@ namespace shawn_test {
 
 
 int main() {
+
 	ZController->lazy_connect();
 
 	//char cmdbuff[2048], tempbuff[2048], cmdbuffAck[2048];

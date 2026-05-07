@@ -12,6 +12,7 @@
 #include "robot_interface/ZMotionRobot.h"
 #include "robot_interface/ZRVRobot.h"
 #include "robot_interface/FSAIRobot.h"
+#include "robot_interface/FSAISimRobot.h"
 
 #include "nlohmann/json.hpp"
 
@@ -35,7 +36,7 @@ Worker::Worker() {
 	// 每个机器人保存一份轨迹
 	displayData->teachPoints = std::vector<std::string>(displayData->robotNum);
 	// 算法类型
-	displayData->interpAlgo = 0;
+	displayData->interpAlgo = 3;
 }
 
 void Worker::doWork() {
@@ -170,8 +171,10 @@ FSAIApp::FSAIApp() {
 			robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::ZMotionRobot);
 		else if (worker->displayData->interpAlgo == 1)
 			robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::ZRVRobot);
-		else
+		else if (worker->displayData->interpAlgo == 2)
 			robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::FSAIRobot);
+		else if (worker->displayData->interpAlgo == 3)
+			robot = std::shared_ptr<FSAIRobotInterface::RobotBase>(new FSAIRobotInterface::FSAISimRobot);
 
 		robot->set_aliasId(i);
 		robot->set_ZController(ZController);
