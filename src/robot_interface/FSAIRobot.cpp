@@ -375,6 +375,11 @@ namespace FSAIRobotInterface {
 				tmp = traj.auxPoint[3];
 				traj.auxPoint[3] = traj.auxPoint[5];
 				traj.auxPoint[5] = tmp;
+
+
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId
+					<< ", notifyEnable: " << traj.notifyEnable << ", rewriteId: " << traj.rewriteId
+				);
 			}
 		}
 
@@ -574,14 +579,21 @@ namespace FSAIRobotInterface {
 	}
 
 	int FSAIRobot::move_compensate(const std::vector<float>& det) {
-		int idx = get_cmd_idx_base() + 24102;
+		int idx = get_cmd_idx_base() + 24103;
 
-		std::vector<int> tableId(4, idx);
+		std::vector<int> tableId(3, idx);
 		for (int i = 0; i < tableId.size(); ++i) {
 			tableId[i] += i;
 		}
 
-		ZController->set_axis_param(tableId, "TABLE", { 1.0, det[0], det[1], det[2] });
+		// 随动开
+		ZController->set_axis_param(idx - 3, "TABLE", 1.0);
+		// 输出跟踪补偿
+		ZController->set_axis_param(tableId, "TABLE", { det[0], det[1], det[2] });
+		ZController->set_axis_param(idx - 1, "TABLE", 1.0);
+
+		//LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " comp: " << tableId[0] << ", " << tableId[1] << ", " << tableId[2]
+		//	<< ". " << vector_to_string(det, 2));
 		return 0;
 	}
 
@@ -590,13 +602,16 @@ namespace FSAIRobotInterface {
 
 		int ret = 0;
 		int stateIdxBase = get_point_idx_base();
-		ret = ZController->set_axis_param(stateIdxBase, "TABLE", curTraj.lineNum);
+		// 上位机行号
+		ret = ZController->set_axis_param(stateIdxBase, "TABLE", curTraj.saveSeq);
+		// Coop 行号
+		endRegister.add_buffer(get_state_idx_base() + 3, curTraj.lineNum);
 
 		//int tableIdx = get_state_idx_base() + 3;
 		//ret = ZController->set_axis_param(tableIdx, "TABLE", curTraj.lineNum, axis);
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(),
-			"R" << aliasId << " send point with line num: " << cmdNum
+			"R" << aliasId << " send point with line num: " << cmdNum << ", " << curTraj.saveSeq
 		);
 
 		return ret;
@@ -943,7 +958,7 @@ namespace FSAIRobotInterface {
 
 		int cfgIdxBase = get_config_idx_base();
 		std::vector<float> data;
-		std::vector<int> axis(24, cfgIdxBase + 550);
+		std::vector<int> axis(25, cfgIdxBase + 550);
 		for (size_t i = 0; i < axis.size(); ++i) {
 			axis[i] += i;
 		}
@@ -951,7 +966,8 @@ namespace FSAIRobotInterface {
 		ZController->get_axis_param(axis, "VR", data);
 
 		// 保存数据功能未使能或异常
-		if (data[0] != 1) {
+		if (std::fabs(data[0] - 1) > 1e-2) {
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " saved status not enabled: " << data[0]);
 			return -1;
 		}
 
@@ -979,6 +995,8 @@ namespace FSAIRobotInterface {
 		//for (size_t i = 0; i < 3; ++i) {
 		//	status.cPos[3 + i] = afterEuler[2 - i] * 180 / DT_PI;
 		//}
+
+		status.lineNum = static_cast<int>(data[24]);
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " saved status: " << status.cmdNum);
 

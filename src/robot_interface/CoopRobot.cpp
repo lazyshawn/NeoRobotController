@@ -49,7 +49,7 @@ int RobotBase::wait_auto_task_stop() {
 	// 等待条件置反
 	motionDone = false;
 
-	int ret = 0;
+	int ret = -1;
 	if (get_notifyType() > 0) {
 		ret = get_notifyType();
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " notify type effect: " << ret);
@@ -65,7 +65,7 @@ int RobotBase::wait_auto_task_stop() {
 			robotStatus.lowerStatus << ", " << robotStatus.upperStatus << ", " << robotStatus.lineNum);
 	}
 
-	return 0;
+	return ret;
 }
 
 int RobotBase::notify_waiting_robot() {
@@ -1175,9 +1175,12 @@ int RobotBase::get_slave_buffer() {
 	}
 	int dropNum = bufferSync.push_slave_buffer(buffer);
 
-	if (dropNum) {
-		LOG4CPLUS_INFO(RobotLog::getLogger(), "Drop buffer size: " << dropNum);
-	}
+	//if (dropNum) {
+	//	LOG4CPLUS_INFO(RobotLog::getLogger(), "Drop buffer size: " << dropNum);
+	//}
+	//else {
+	//	LOG4CPLUS_INFO(RobotLog::getLogger(), "Save new buffer.");
+	//}
 
 	return 0;
 }
@@ -1244,12 +1247,20 @@ int RobotBase::modify_point_in_buffer(int id, const std::vector<float>& pos) {
 				<< "rewrite to: " << vector_to_string(pos));
 
 			// 偏移量过大
-			if (std::sqrt(comp[0] * comp[0] + comp[1] * comp[1] + comp[2] * comp[2]) > 10) {
+			if (std::sqrt(comp[0] * comp[0] + comp[1] * comp[1] + comp[2] * comp[2]) > 100) {
+				LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " compensate overweling.");
 				return 2;
 			}
 
 			// 补偿偏移量
+			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " comp " << vector_to_string(comp, 2));
 			move_compensate(comp);
+
+			// 修改目标位置
+			for (int i = 0; i < 3; ++i) {
+				traj.mainPoint[i] = pos[i];
+			}
+
 			return 0;
 		}
 	}
@@ -1788,6 +1799,8 @@ int RobotGroupManager::slave_buffer_stream(bool enable) {
 	}
 	else {
 		bufferThreadDone.store(true);
+		if (bufferThreadWorker.joinable())
+			bufferThreadWorker.join();
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread End.");
 	}
@@ -2187,7 +2200,7 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 
 		// 需要唤醒
 		if (curTraj.notifyEnable > 0) {
-			robotList[robotIdx]->set_notifyType(curTraj.saveSeq + 1);
+			robotList[robotIdx]->set_notifyType(curTraj.saveSeq);
 		}
 
 		// 轨迹完成
