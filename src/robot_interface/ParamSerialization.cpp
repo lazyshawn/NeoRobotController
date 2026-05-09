@@ -44,6 +44,11 @@ Weave deserialize_Weave(const std::map<int, std::vector<float>>& appendix) {
 	if (ite == appendix.end())
 		return cfg;
 	std::vector<float> param = ite->second;
+	int num = 0, paramSize = 15;
+	if (param.size() < paramSize) {
+		std::vector<float> tmp(paramSize - param.size(), 0.0);
+		param.insert(param.end(), tmp.begin(), tmp.end());
+	}
 
 	cfg.Id          = param[0];
 	cfg.Shape       = param[1];
@@ -137,7 +142,11 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	if (ite == appendix.end())
 		return cfg;
 	std::vector<float> param = ite->second;
-	int num = 0;
+	int num = 0, paramSize = 22;
+	if (param.size() < paramSize) {
+		std::vector<float> tmp(paramSize - param.size(), 0.0);
+		param.insert(param.end(), tmp.begin(), tmp.end());
+	}
 
 
 	// 焊接参数 0
@@ -149,7 +158,7 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	cfg.Inductance       = param[num++];       // 4 焊接电感
 	cfg.WeldJobChannelNum= param[num++];       // 5 焊接 Job
 
-	// 起弧参数 5
+	// 起弧参数 6
 	cfg.ArcOnWorkMode       = param[num++];      // 0 起弧模式
 	cfg.ArcOnCrt_Spd        = param[num++];	     // 1 起弧电流
 	cfg.ArcOnVtg_Strth      = param[num];	     // 2 起弧电压
@@ -159,7 +168,7 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	cfg.ArcOnTime           = param[num++];	     // 5 起弧时间
 	cfg.ArcOnBlowTime       = param[num++];	     // 6 引气时间
 
-	// 收弧参数 11
+	// 收弧参数 13
 	cfg.ArcOffWorkMode       = param[num++];       // 0 收弧模式
 	cfg.ArcOffCrt_Spd        = param[num++];       // 1 收弧电流
 	cfg.ArcOffVtg_Strth      = param[num];         // 2 收弧电压
@@ -169,7 +178,7 @@ Arc_WeldingParaItem deserialize_Arc_WeldingParaItem(const std::map<int, std::vec
 	cfg.ArcOffTime           = param[num++];       // 5 收弧时间
 	cfg.ArcOffBlowTime       = param[num++];       // 6 收气时间
 
-	// 19
+	// 21
 	cfg.SlowUpTime          = param[num++];        // 缓升时间
 	cfg.SlowDownTime        = param[num++];        // 缓降时间
 

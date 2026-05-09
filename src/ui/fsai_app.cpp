@@ -36,7 +36,7 @@ Worker::Worker() {
 	// 每个机器人保存一份轨迹
 	displayData->teachPoints = std::vector<std::string>(displayData->robotNum);
 	// 算法类型
-	displayData->interpAlgo = 3;
+	displayData->interpAlgo = 2;
 }
 
 void Worker::doWork() {

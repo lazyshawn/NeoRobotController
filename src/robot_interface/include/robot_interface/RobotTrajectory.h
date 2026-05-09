@@ -110,7 +110,7 @@ struct TrajectoryConfig {
 	// 允许唤醒
 	int notifyEnable = 0;
 	//! 保存编号
-	int saveSeq = -1;
+	int saveSeq = 10;
 	// 等待起弧: 当前轨迹下发后，进入等待，起弧成功后才下发后续的轨迹
 	int waitArcOn = 0;
 
