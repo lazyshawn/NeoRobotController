@@ -1,6 +1,14 @@
 ﻿
 
 add_library(common
+  AuxMatrix.c
+  AuxRotRep.c
+  AuxTransformation.c
+  GeoKinematics.c
+  GeoFk.c
+  GeoIK.c
+  GeoIK_subproblem.c
+
   TrajectorySegment.cpp
 )
 
@@ -25,4 +33,7 @@ install(DIRECTORY include/common
 #  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 #)
 
-add_subdirectory(test)
+
+if(BUILD_TESTING)
+  add_subdirectory(test)
+endif()

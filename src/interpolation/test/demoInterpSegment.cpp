@@ -7,6 +7,7 @@
 #include "interpolation/InterpSegment.h"
 #include "interpolation/InterpDispatch.h"
 
+
 // 指令缓存
 InterpBuffer interpBuffer;
 // 调度器
@@ -28,6 +29,7 @@ int push_trajectory();
 int test_cuvre();
 
 int test_dynamic();
+
 
 int main() {
 	//return test_cuvre();

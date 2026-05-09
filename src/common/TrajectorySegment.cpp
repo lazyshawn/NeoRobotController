@@ -1,5 +1,5 @@
 ﻿
-#include "TrajectorySegment.h"
+#include "common/TrajectorySegment.h"
 
 /***********************************************************************
  *                        M O T I O N C F G T Y P E                    *

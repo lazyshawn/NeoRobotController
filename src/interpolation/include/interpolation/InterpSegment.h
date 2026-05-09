@@ -8,7 +8,7 @@
 
 
 #include "InterpCurve.h"
-#include "TrajectorySegment.h"
+#include "common/TrajectorySegment.h"
 
 
 /* ************************************************************ *
