@@ -25,3 +25,20 @@ graph LR
 每条轨迹第一次插补前将会进行一次规划操作，通过前瞻回溯和其他速度规划算法计算该轨迹的速度曲线。
 接收暂停信号后会在插补前缓存当前插补状态，重新规划暂停运动的速度曲线，再按新的速度曲线继续插补，直至停止。
 一条轨迹插补完成后，将从缓存队列中取出下一条轨迹，重新进行规划和插补。
+
+#### 手动模式
+
+```mermaid
+sequenceDiagram
+    participant UI as UI层
+    participant dispatcher as 调度器
+    participant interp as 插补器
+    
+    UI ->> dispatcher: switch_manaul()
+    dispatcher ->> dispatcher: 模式切换检测
+    dispatcher -->> UI: switch_success
+    UI ->> interp: 点动使能信号
+```
+
+#### 自动模式
+

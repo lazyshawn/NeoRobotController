@@ -1,0 +1,34 @@
+﻿#pragma once
+
+#include "ui_mainWindow.h"
+#include "MainViewModel.h"
+
+#include <QMainWindow>
+
+class MainWindow : public QMainWindow {
+	Q_OBJECT
+public:
+	explicit MainWindow(QWidget *parent = nullptr);
+	~MainWindow();
+
+protected:
+	void showEvent(QShowEvent* event) override;
+
+private slots:
+	void on_connectState_changed();
+	void on_robot_pos_changed();
+	void on_speedRatio_changed();
+
+private:
+	Ui::MainWindow *ui;
+	MainViewModel *m_viewModel;
+
+	int m_robotIdx = 0;
+
+	// 界面初始化
+	void setup_ui();
+	// 纯页面交互
+	// 数据绑定
+	void bind_viewmodel();
+	void robot_change(int idx);
+};
