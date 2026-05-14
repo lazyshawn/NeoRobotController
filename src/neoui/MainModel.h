@@ -2,8 +2,9 @@
 
 #include <QObject>
 #include <QString>
-
 #include <mutex>
+
+#include "robot_interface/RobotTrajectory.h"
 
 struct ModelData {
 	// --- 1. 界面参数
@@ -51,11 +52,16 @@ public:
 	int get_robotIdx() const;
 
 	// --- 轮询状态
-	// 返回模型状态快照
-	void get_modelData(ModelData& data) const;
+	// 返回模型状态快照，触发时更新状态
+	void get_modelData(ModelData& data);
 
 	// --- 对外接口
+	// 设置点动类型
+	int set_jog_type(int type);
+	// 点动
 	int jog_move(int robotIdx, int axisIdx, int dir, int enable);
+	// 下发自动任务
+	int push_trajectory(const DiscreteTrajectory& trajectory);
 
 	// 仿真线程: 后续替换为实际插补线程
 	void sim_thread();

@@ -21,6 +21,7 @@ target_link_libraries(demo_mvvm PRIVATE
   Qt5::Gui
   Qt5::Widgets
   Qt5::Concurrent
+  FSAIRobotInterface
 )
 
 target_include_directories(demo_mvvm PRIVATE
@@ -28,3 +29,11 @@ target_include_directories(demo_mvvm PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+
+if (EXISTS "${QT5_DIR}/bin/windeployqt.exe")
+    message("windeployqt exists")
+    add_custom_command(TARGET demo_mvvm POST_BUILD
+        COMMAND "${QT5_DIR}/bin/windeployqt.exe" "--compiler-runtime"
+        "${PROJECT_BINARY_DIR}$<$<BOOL:${CMAKE_CONFIGURATION_TYPES}>:/$<CONFIG>>/demo_mvvm.exe"
+    )
+endif()

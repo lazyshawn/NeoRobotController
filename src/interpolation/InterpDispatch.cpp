@@ -29,6 +29,7 @@ int InterpDispatcher::run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut
 
 	// - 开始信号未使能
 	if (!signalIn.interpEnable) {
+		state = dispatcherStatus;
 		return 0;
 	}
 

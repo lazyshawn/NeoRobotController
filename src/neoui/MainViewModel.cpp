@@ -5,7 +5,7 @@ MainViewModel::MainViewModel(QObject *parent) : QObject(parent),
 {
 	// 数据更新定时器，降低刷新频率
 	connect(&m_timer, &QTimer::timeout, this, &MainViewModel::on_timeout);
-	m_timer.setInterval(200);
+	m_timer.setInterval(100);
 	m_timer.start();
 }
 
@@ -42,6 +42,11 @@ int MainViewModel::jog_move(int robotIdx, int axisIdx, int dir, int enable) {
 	return 0;
 }
 
+int MainViewModel::set_auto_task(const DiscreteTrajectory& trajectory) {
+	m_mainModel->push_trajectory(trajectory);
+	return 0;
+}
+
 std::vector<double> MainViewModel::get_jPos() {
 	return modelData.jPos;
 }
@@ -52,7 +57,16 @@ void MainViewModel::on_timeout() {
 	m_mainModel->get_modelData(data);
 
 	// --- 2. 脏标记检测
-	if (data.jPos.size() != modelData.jPos.size() || std::fabs(data.jPos[0] - modelData.jPos[0]) > 1e-3) {
+	double sum = 0.0;
+	if (data.jPos.size() != 9 || modelData.jPos.size() != 9) {
+		sum = 1e3;
+	}
+	else {
+		for (int i = 0; i < 9; ++i) {
+			sum += std::fabs(data.jPos[i] - modelData.jPos[i]);
+		}
+	}
+	if (sum > 1e-6) {
 		// 更新数据备份
 		modelData.jPos = data.jPos;
 		// 通知界面变更

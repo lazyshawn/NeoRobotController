@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.15)
-project(RobotInterface VERSION 1.0.0)
+project(NeoRobotController VERSION 1.0.0)
 
 if(WIN32)
   # create symbol for exporting lib for dynmic library

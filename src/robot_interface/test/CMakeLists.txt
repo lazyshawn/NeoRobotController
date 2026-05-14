@@ -1,10 +1,10 @@
-﻿
+
 ### FSAIRobot
 add_executable(demoFSAIRobot
   demoFSAIRobot.cpp
 )
 target_link_libraries(demoFSAIRobot PUBLIC
-  FSAIRobotInterface
+  DbgHelp
 )
 
 ### ZMotionRobot
@@ -15,12 +15,13 @@ target_link_libraries(demoZMotionRobot PUBLIC
   FSAIRobotInterface
 )
 
-### ZRVRobot
-add_executable(demoZRVRobot
-  demoZRVRobot.cpp
+### NeoRobot
+add_executable(demo_NeoRobot
+  demo_NeoRobot.cpp
 )
-target_link_libraries(demoZRVRobot PUBLIC
+target_link_libraries(demo_NeoRobot PUBLIC
   FSAIRobotInterface
+  DbgHelp
 )
 
 ### RobotTrajectory

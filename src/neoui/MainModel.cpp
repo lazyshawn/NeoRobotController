@@ -1,10 +1,23 @@
 ﻿#include "MainModel.h"
 
+#include "robot_interface/CoopRobotManager.h"
+
+static std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::NeoRobot);
+static FSAIRobotInterface::RobotGroupManager group;
 
 MainModel::MainModel(QObject *parent) : QObject(parent) {
-	// 开启插补线程，更新机器人状态
-	std::thread sim_thread(&MainModel::sim_thread, this);
-	sim_thread.detach();
+	bool simulate = false;
+
+	if (simulate) {
+		// 开启插补线程，更新机器人状态
+		std::thread sim_thread(&MainModel::sim_thread, this);
+		sim_thread.detach();
+	}
+	else {
+		robot->switch_auto(true);
+		group.new_robot(robot);
+		group.start_thread();
+	}
 }
 
 MainModel::~MainModel() {
@@ -51,16 +64,30 @@ int MainModel::get_robotIdx() const {
 	return m_modelData.robotIdx;
 }
 
-void MainModel::get_modelData(ModelData& data) const {
-	std::lock_guard<std::mutex> lock(mtxModel);
+void MainModel::get_modelData(ModelData& data) {
+
 	// 从轮询线程中更新类成员变量
+	FSAIRobotInterface::RobotStatus robotStatus;
+	robot->get_rt_robot_status(robotStatus);
+
+	std::lock_guard<std::mutex> lock(mtxModel);
+	m_modelData.jPos = robotStatus.jPos;
 
 	// 返回更新后的值
 	data = m_modelData;
 }
 
+int MainModel::set_jog_type(int type) {
+	return 0;
+}
+
 int MainModel::jog_move(int robotIdx, int axisIdx, int dir, int enable) {
 	printf("jog: %d, %d, %d, %d\n", robotIdx, axisIdx, dir, enable);
+	return 0;
+}
+
+int MainModel::push_trajectory(const DiscreteTrajectory& trajectory) {
+	group.robotList[0]->push_new_trajectory(trajectory);
 	return 0;
 }
 

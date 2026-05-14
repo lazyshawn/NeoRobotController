@@ -126,6 +126,8 @@ void MainWindow::bind_viewmodel() {
 	connect(ui->pushButton_31, &QPushButton::clicked, this, [&]() { robot_change(1); });
 	connect(ui->pushButton_32, &QPushButton::clicked, this, [&]() { robot_change(2); });
 	connect(ui->pushButton_33, &QPushButton::clicked, this, [&]() { robot_change(3); });
+	// 下发任务
+	connect(ui->pushButton_4, &QPushButton::clicked, this, &MainWindow::set_auto_task);
 
 	// --- 显示内容初始化
 	on_connectState_changed();
@@ -146,7 +148,19 @@ void MainWindow::on_connectState_changed() {
 void MainWindow::on_robot_pos_changed() {
 	// 更新机械臂位置
 	auto jPos = m_viewModel->get_jPos();
-	ui->lineEdit->setText(QString::number(jPos[0]));
+	//ui->lineEdit->setText(QString::number(jPos[0]));
+	for (size_t i = 0; i < 9; ++i) {
+		float pos;
+		// 关节位置
+		pos = jPos.size() <= i ? 0 : jPos[i];
+		QTableWidgetItem* seqItem = new QTableWidgetItem(QString::number(pos));
+		ui->tableWidget_2->setItem(i, 1, seqItem);
+
+		// 空间位置
+		//pos = data.cPos.size() <= i ? 0 : data.cPos[i];
+		//seqItem = new QTableWidgetItem(QString::number(pos));
+		//ui->tableWidget_2->setItem(i, 2, seqItem);
+	}
 }
 
 void MainWindow::on_speedRatio_changed() {
@@ -167,4 +181,52 @@ void MainWindow::robot_change(int idx) {
 	for (int i = 0; i < 4; ++i) {
 		switchRbtBtn[i]->setEnabled(i != idx);
 	}
+}
+
+void MainWindow::set_auto_task() {
+	// 轨迹
+	DiscreteTrajectory trajList;
+	SingleTrajectory curTraj;
+
+	PosData dpos;
+	dpos.pointType = 0;
+	dpos.JntState = 0;
+	dpos.rbtPos = std::vector<double>(6, 0.0);
+	dpos.extPos = std::vector<double>(3, 0.0);
+
+	// 点位数据
+	PointInfo pointInfo;
+	MotionCfg motionCfg;
+	MoveCmd moveCmd;
+	motionCfg.moveType = 1;
+	motionCfg.speed = 2;
+	motionCfg.smooth = 40;
+	pointInfo.begPos = dpos;
+	pointInfo.endPos = dpos;
+
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[0] += 10;
+	pointInfo.endPos.extPos[0] += 100;
+	curTraj.set_data(pointInfo, motionCfg, moveCmd);
+	trajList.add_single_traj(curTraj);
+
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[1] += 10;
+	pointInfo.endPos.extPos[0] += 100;
+	curTraj.set_data(pointInfo, motionCfg, moveCmd);
+	trajList.add_single_traj(curTraj);
+
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[0] -= 10;
+	pointInfo.endPos.extPos[0] += 100;
+	curTraj.set_data(pointInfo, motionCfg, moveCmd);
+	trajList.add_single_traj(curTraj);
+
+	pointInfo.begPos = pointInfo.endPos;
+	pointInfo.endPos.rbtPos[1] -= 10;
+	pointInfo.endPos.extPos[0] += 100;
+	curTraj.set_data(pointInfo, motionCfg, moveCmd);
+	trajList.add_single_traj(curTraj);
+
+	m_viewModel->set_auto_task(trajList);
 }

@@ -108,7 +108,7 @@ int push_trajectory() {
 	motionCfg.speed = 2;
 	motionCfg.smooth = 40;
 
-	SwingInterpParam swingCfg;
+	SwingConfig swingCfg;
 	swingCfg.enable = 1;
 	swingCfg.freq = 1.0;
 	swingCfg.leftWidth = swingCfg.rightWidth = 0.5;

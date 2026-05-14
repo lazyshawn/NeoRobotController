@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QTimer>
 
+#include "robot_interface/RobotTrajectory.h"
 
 class MainViewModel : public QObject
 {
@@ -26,6 +27,8 @@ public:
 
 	// 点动接口
 	Q_INVOKABLE int jog_move(int robotIdx, int axisIdx, int dir, int enable);
+	// 下发自动任务
+	Q_INVOKABLE int set_auto_task(const DiscreteTrajectory& trajectory);
 
 private:
 	void on_timeout();

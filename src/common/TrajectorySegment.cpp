@@ -4,26 +4,22 @@
 /***********************************************************************
  *                        M O T I O N C F G T Y P E                    *
  ***********************************************************************/
-MotionCfgType SwingInterpParam::type = MotionCfgType::SWING;
+MotionCfgType SwingConfig::type = MotionCfgType::SWING;
 
-void SwingInterpParam::clear() {
+void SwingConfig::clear() {
 	enable = 0;
 	freq = 0;
 	leftWidth = 0;
 	rightWidth = 0;
 
-	state = 0;
-	time = 0;
-	duration = 0;
-
 	return;
 }
 
-int SwingInterpParam::get_type() const {
+int SwingConfig::get_type() const {
 	return static_cast<int>(type);
 }
 
-int SwingInterpParam::serialize(std::vector<double>& param) const {
+int SwingConfig::serialize(std::vector<double>& param) const {
 	param.clear();
 	// 设置参数
 	param.push_back(enable);
@@ -31,18 +27,12 @@ int SwingInterpParam::serialize(std::vector<double>& param) const {
 	param.push_back(leftWidth);
 	param.push_back(rightWidth);
 
-	// 过程参数
-	param.push_back(state);
-	param.push_back(time);
-	param.push_back(duration);
-	param.push_back(pos);
-
 	return static_cast<int>(type);
 }
 
-int SwingInterpParam::deserialize(const std::vector<double>& param) {
+int SwingConfig::deserialize(const std::vector<double>& param) {
 	// 参数不全，使用默认参数
-	if (param.size() < 8) {
+	if (param.size() < 4) {
 		this->clear();
 		return 1;
 	}
@@ -52,12 +42,15 @@ int SwingInterpParam::deserialize(const std::vector<double>& param) {
 	leftWidth = param[2];
 	rightWidth = param[3];
 
-	state = static_cast<int>(param[4]);
-	time = param[5];
-	duration = param[6];
-	pos = param[7];
-
 	return 0;
+}
+
+std::vector<double> PosData::all_to_vector() {
+	std::vector<double> ans = rbtPos;
+	ans.insert(ans.end(), extPos.begin(), extPos.end());
+	ans.insert(ans.end(), pstPos.begin(), pstPos.end());
+
+	return ans;
 }
 
 

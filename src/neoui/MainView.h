@@ -27,8 +27,9 @@ private:
 
 	// 界面初始化
 	void setup_ui();
-	// 纯页面交互
 	// 数据绑定
 	void bind_viewmodel();
+
 	void robot_change(int idx);
+	void set_auto_task();
 };

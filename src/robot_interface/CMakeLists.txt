@@ -1,15 +1,11 @@
 ﻿
 add_library(FSAIRobotInterface
-  ZMotionController.cpp
-  CoopRobot.cpp
+  CoopRobotBase.cpp
+  CoopRobotManager.cpp
   RobotTrajectory.cpp
-  ParamSerialization.cpp
   BufferSynchronizer.cpp
 
-  FSAIRobot.cpp
-  FSAISimRobot.cpp
-  ZMotionRobot.cpp
-  ZRVRobot.cpp
+  NeoRobot.cpp
 )
 #set_target_properties(zmotion_interface PROPERTIES
 #  LINK_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/zmotion;${CMAKE_SOURCE_DIR}/lib/clogger"
@@ -41,6 +37,8 @@ target_link_libraries(FSAIRobotInterface PUBLIC
   libssl
   libcrypto
   fsai_simulator/QtWidgetsApplication3
+  #common
+  interpolation
 )
 
 # Install headers
