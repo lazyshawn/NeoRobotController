@@ -185,8 +185,8 @@ void MainWindow::robot_change(int idx) {
 
 void MainWindow::set_auto_task() {
 	// 轨迹
-	DiscreteTrajectory trajList;
-	SingleTrajectory curTraj;
+	FSAIRobotInterface::DiscreteTrajectory trajList;
+	FSAIRobotInterface::SingleTrajectory curTraj;
 
 	PosData dpos;
 	dpos.pointType = 0;

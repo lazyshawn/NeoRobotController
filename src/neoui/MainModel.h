@@ -61,7 +61,7 @@ public:
 	// 点动
 	int jog_move(int robotIdx, int axisIdx, int dir, int enable);
 	// 下发自动任务
-	int push_trajectory(const DiscreteTrajectory& trajectory);
+	int push_trajectory(const FSAIRobotInterface::DiscreteTrajectory& trajectory);
 
 	// 仿真线程: 后续替换为实际插补线程
 	void sim_thread();

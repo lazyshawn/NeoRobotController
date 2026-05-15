@@ -1,104 +1,214 @@
 
-#include "robot_interface/CoopRobotManager.h"
-
-#include "RobotLogger.h"
-
 #include <windows.h>
 #include <iostream>
 #include <eigen3/Eigen/Dense>
+//#include <mutex>
+//#include <condition_variable>
+//#include <unordered_set>
+//#include <atomic>
+
+#include "robot_interface/CoopRobotManager.h"
+#include "robot_interface/BufferSynchronizer.h"
+
+#include "CoopRobotBase.h"
+#include "NeoRobot.h"
+#include "RobotLogger.h"
+
 
 namespace FSAIRobotInterface {
-const double DT_PI = 3.1415926;
 
+static const double DT_PI = 3.14159265358979323846;
 
 /* *************************** RobotGroupManager *************************** */
-RobotGroupManager::RobotGroupManager() {
+RobotGroupManager::RobotGroupManager() :
+	pimpl(std::make_unique<IMPL>())
+{
+}
+
+RobotGroupManager::~RobotGroupManager() {
+	// 退出所有线程
+	this->stop();
+}
+
+// --- 隐藏实现
+struct RobotGroupManager::IMPL {
+
+	//! 协同就绪状态: 0 未就绪, 1 已就绪
+	std::vector<int> syncReadyState;
+	//! 协同就绪状态: <<type, num>, ...>
+	//std::vector<Sync_Config> syncState;
+	//! 机器人等待状态: <bit> <<robot, num>, ...>
+	//std::vector<std::unordered_set<int>> waitState;
+
+	//! 机器人队列
+	std::vector<std::shared_ptr<RobotBase>> robotList;
+
+	//! 线程终止条件
+	bool workerHealthy = true;
+	//! 指令处理线程, 状态更新线程, 下位机缓存读取线程
+	std::thread cmdThreadWorker, updateThreadWorker, bufferThreadWorker;
+	//! 指令线程状态
+	std::atomic<bool> cmdThreadDone, bufferThreadDone;
+	//! 保存机器人状态
+	std::vector<RobotStatus> statusList;
+	//! RobotGroupManager 状态
+	std::vector<int> coopState;
+	//! 机器人分组
+	std::vector<std::vector<int>> disableGroup;
+	//! 共用轴
+	std::pair<int, int> sharedAxisState;
+
+	IMPL();
+
+	/**
+	* @brief  指令处理线程
+	*/
+	void processCommandThread();
+	/**
+	* @brief  状态更新线程
+	*/
+	void updateStatusThread();
+	/**
+	* @brief  下位机缓存读取线程
+	*/
+	void readSlaveBufferThread();
+
+	void set_group_sync_config(int robotIdx);
+
+	/**
+	* @brief  机器人同步就绪
+	*/
+	void update_sync_state(int robotIdx);
+
+	/**
+	* @brief  机器人到位处理
+	*/
+	void robot_in_place_command(int robotIdx);
+
+	/**
+	* @brief  关联机器人暂停
+	*/
+	int pause_coop_robot(int idx);
+
+	/**
+	* @brief  查询机器人组是否处于空闲状态
+	*/
+	bool robot_group_idle(const std::vector<int>& ids = {});
+	/**
+	* @brief  查询机器人是否协同就绪
+	*/
+	bool robot_sync_ready(int robotIdx);
+
+	// 计算协同段总运动时间
+	int calc_sync_duration(int robotIdx);
+
+	// 修正协同段轨迹速度
+	void correct_sync_speed();
+
+	// IO 等待标志复位
+	void reset_wait_state(int robotIdx);
+
+	/**
+	* @brief  查询机器人是否处于错误状态
+	*/
+	bool robot_error(int idx);
+	/**
+	* @brief  查询机器人是否处于警告状态
+	*/
+	bool robot_warning(int idx);
+	/**
+	* @brief  查询机器人是否处于空闲状态
+	*/
+	bool robot_idle(int idx);
+
+	/**
+* @brief  机器人组继续
+*/
+	int robot_group_resume(int idx);
+	/**
+	* @brief  机器人组暂停
+	*/
+	int robot_group_pause(int idx);
+	/**
+	* @brief  机器人组暂停后更新位置
+	*/
+	int robot_group_update_saved_pos(const std::vector<int>& idxList);
+	/**
+	* @brief  机器人组清空任务
+	*/
+	int robot_group_clear_task(int idx);
+	/**
+	* @brief  机器人组急停
+	*/
+	int robot_group_stop(int idx);
+};
+
+RobotGroupManager::IMPL::IMPL() {
 	cmdThreadDone = true;
 	bufferThreadDone.store(true);
 }
 
-RobotGroupManager::~RobotGroupManager() {
-	this->stop();
-}
+int RobotGroupManager::new_robot(int type)
+{
+	std::shared_ptr<RobotBase> robot;
+	if (type == NEOROBOT) {
+		robot = std::make_shared<NeoRobot>();
+	}
 
-
-int RobotGroupManager::new_robot(std::shared_ptr<RobotBase> robot) {
-
-	robotList.push_back(robot);
+	pimpl->robotList.push_back(robot);
 	// 设置别名ID
 
-	syncReadyState.push_back(0);
-	waitState.push_back({});
-
-	coopState.push_back(0);
-	disableGroup.push_back({});
+	pimpl->syncReadyState.push_back(0);
+	//pimpl->waitState.push_back({});
+	pimpl->coopState.push_back(0);
+	pimpl->disableGroup.push_back({});
 
 	return 0;
 }
 
+// --- 需要代理的接口
+int RobotGroupManager::get_rt_robot_status(int idx, RobotStatus& robotStatus) {
+	return pimpl->robotList[idx]->get_rt_robot_status(robotStatus);
+}
 
-int RobotGroupManager::set_shared_axis(int axisId, const std::vector<int>& robotId) {
-
-	//// 查找共用轴情况
-	//std::map<int, std::vector<int>>::iterator ite = sharedAxis.find(axisId);
-	//// 修改共用轴的机器人ID
-	//sharedAxis[axisId] = robotId;
-	//// 公用轴状态
-	//sharedAxisState[axisId] = -1;
-	//return ite != sharedAxis.end();
-
-	sharedAxisState.first = axisId;
-	sharedAxisState.second = -1;
-
+int RobotGroupManager::push_new_trajectory(int idx, const DiscreteTrajectory& trajectory) {
+	pimpl->robotList[idx]->push_new_trajectory(trajectory);
 	return 0;
+}
 
+int RobotGroupManager::jog_moving(int robotIdx, int type, int idx, int dir, int move) {
+	pimpl->robotList[robotIdx]->jog_moving(type, idx, dir, move);
+	return 0;
 }
 
 
 int RobotGroupManager::start_thread() {
-
-	// 状态刷新线程使能
-	for (auto& robot : robotList) {
-		//robot->enable_refresh_thread(true);
-	}
-
 	// 绑定成员函数和 this 指针
-	updateThreadWorker = std::thread(&RobotGroupManager::updateStatusThread, this);
-
-	//// 开启缓存读取线程
-	//slave_buffer_stream(true);
-	//// 下位机时间同步
-	//auto start = std::chrono::steady_clock::now();
-	//robotList[0]->synchronize_slave_buffer(start);
-
-	LOG4CPLUS_INFO(RobotLog::getLogger(), "Process Command Thread Begin.");
-
+	pimpl->updateThreadWorker = std::thread(&RobotGroupManager::IMPL::updateStatusThread, pimpl.get());
 	return 0;
 }
 
 
 int RobotGroupManager::stop() {
 
-	workerHealthy = false;
+	pimpl->workerHealthy = false;
 	// 结束工作线程
-	if (updateThreadWorker.joinable())
-		updateThreadWorker.join();
-	if (cmdThreadWorker.joinable())
-		cmdThreadWorker.join();
+	if (pimpl->updateThreadWorker.joinable())
+		pimpl->updateThreadWorker.join();
+	if (pimpl->cmdThreadWorker.joinable())
+		pimpl->cmdThreadWorker.join();
 
 	// 状态刷新线程使能
-	for (auto& robot : robotList) {
-		//robot->enable_refresh_thread(false);
+	for (auto& robot : pimpl->robotList) {
 		// 唤醒等待中的线程
 		robot->notify_waiting_robot();
 	}
 
 	return 0;
-
 }
 
 
-void RobotGroupManager::processCommandThread() {
+void RobotGroupManager::IMPL::processCommandThread() {
 	cmdThreadDone.store(false);
 	// 指令返回值
 	int ret = 0;
@@ -305,8 +415,6 @@ void RobotGroupManager::processCommandThread() {
 
 		// 周期时间耗尽
 		if (now > wakeUpTime) {
-			//long long detTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - wakeUpTime).count();
-			//wakeUpTime += std::chrono::milliseconds((detTime / duration + 1) * duration);
 			auto detTime = now - wakeUpTime;
 			while (now > wakeUpTime)
 				wakeUpTime += std::chrono::milliseconds(duration);
@@ -320,7 +428,7 @@ void RobotGroupManager::processCommandThread() {
 }
 
 
-void RobotGroupManager::updateStatusThread() {
+void RobotGroupManager::IMPL::updateStatusThread() {
 	// 指令返回值
 	int ret = 0;
 	// 获取当前时间戳
@@ -331,6 +439,7 @@ void RobotGroupManager::updateStatusThread() {
 	long long duration = 50;
 	// 保存机器人状态
 	statusList.resize(robotList.size());
+	LOG4CPLUS_INFO(RobotLog::getLogger(), "Process Command Thread Begin.");
 
 	// 指令执行线程
 	while (workerHealthy) {
@@ -350,7 +459,6 @@ void RobotGroupManager::updateStatusThread() {
 		}
 		auto t1 = std::chrono::steady_clock::now();
 		dt[0] = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-
 
 
 		// 获取下位机缓冲数据
@@ -417,7 +525,7 @@ void RobotGroupManager::updateStatusThread() {
 			if (startCmdThread && cmdThreadDone && !robotList[i]->trajectory.trajectory_loaded()) {
 				if (cmdThreadWorker.joinable())
 					cmdThreadWorker.join();
-				cmdThreadWorker = std::thread(&RobotGroupManager::processCommandThread, this);
+				cmdThreadWorker = std::thread(&RobotGroupManager::IMPL::processCommandThread, this);
 				break;
 			}
 		}
@@ -445,7 +553,7 @@ void RobotGroupManager::updateStatusThread() {
 }
 
 
-void RobotGroupManager::readSlaveBufferThread() {
+void RobotGroupManager::IMPL::readSlaveBufferThread() {
 	// 指令返回值
 	int ret = 0;
 	// 获取当前时间戳
@@ -500,23 +608,23 @@ void RobotGroupManager::readSlaveBufferThread() {
 int RobotGroupManager::slave_buffer_stream(bool enable) {
 	if (enable) {
 		// 线程已经开启
-		if (!bufferThreadDone) {
+		if (!pimpl->bufferThreadDone) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread Already Running.");
 			return 0;
 		}
 
-		bufferThreadDone.store(false);
-		if (bufferThreadWorker.joinable())
-			bufferThreadWorker.join();
+		pimpl->bufferThreadDone.store(false);
+		if (pimpl->bufferThreadWorker.joinable())
+			pimpl->bufferThreadWorker.join();
 		// 绑定成员函数和 this 指针
-		bufferThreadWorker = std::thread(&RobotGroupManager::readSlaveBufferThread, this);
+		pimpl->bufferThreadWorker = std::thread(&RobotGroupManager::IMPL::readSlaveBufferThread, pimpl.get());
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread Begin.");
 	}
 	else {
-		bufferThreadDone.store(true);
-		if (bufferThreadWorker.joinable())
-			bufferThreadWorker.join();
+		pimpl->bufferThreadDone.store(true);
+		if (pimpl->bufferThreadWorker.joinable())
+			pimpl->bufferThreadWorker.join();
 
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "Read Slave Buffer Thread End.");
 	}
@@ -524,7 +632,7 @@ int RobotGroupManager::slave_buffer_stream(bool enable) {
 }
 
 
-bool RobotGroupManager::robot_error(int idx) {
+bool RobotGroupManager::IMPL::robot_error(int idx) {
 
 	// 下位机无异常，上位机无异常
 	if ((statusList[idx].lowerStatus >> 2) == 0 && statusList[idx].upperStatus == 0) {
@@ -543,7 +651,7 @@ bool RobotGroupManager::robot_error(int idx) {
 
 }
 
-bool RobotGroupManager::robot_warning(int idx) {
+bool RobotGroupManager::IMPL::robot_warning(int idx) {
 
 	if (get_bit(statusList[idx].lowerStatus, 1) == 0) {
 		set_bit(coopState[idx], 0, false);
@@ -571,7 +679,7 @@ bool RobotGroupManager::robot_warning(int idx) {
 
 }
 
-bool RobotGroupManager::robot_idle(int idx) {
+bool RobotGroupManager::IMPL::robot_idle(int idx) {
 
 	// 无运动，轨迹完成，无运动缓冲
 	if (statusList[idx].lowerStatus == 0 && robotList[idx]->task_assigned_completed() && robotList[idx]->trajectory.trajectory_loaded()) {
@@ -598,7 +706,7 @@ bool RobotGroupManager::robot_idle(int idx) {
 }
 
 
-bool RobotGroupManager::robot_group_idle(const std::vector<int>& ids) {
+bool RobotGroupManager::IMPL::robot_group_idle(const std::vector<int>& ids) {
 
 	std::vector<int> idSet = ids;
 
@@ -628,29 +736,29 @@ bool RobotGroupManager::robot_group_idle(const std::vector<int>& ids) {
 	return true;
 }
 
-void RobotGroupManager::set_group_sync_config(int robotIdx) {
+void RobotGroupManager::IMPL::set_group_sync_config(int robotIdx) {
 
 }
 
 
-void RobotGroupManager::update_sync_state(int robotIdx) {
+void RobotGroupManager::IMPL::update_sync_state(int robotIdx) {
 
 }
 
 
-bool RobotGroupManager::robot_sync_ready(int robotIdx) {
+bool RobotGroupManager::IMPL::robot_sync_ready(int robotIdx) {
 
 	return true;
 }
 
 
-void RobotGroupManager::correct_sync_speed() {
+void RobotGroupManager::IMPL::correct_sync_speed() {
 
 	return;
 }
 
 
-void RobotGroupManager::robot_in_place_command(int robotIdx) {
+void RobotGroupManager::IMPL::robot_in_place_command(int robotIdx) {
 
 	// 无已下发轨迹
 	if (robotList[robotIdx]->trajHistory.empty())
@@ -659,7 +767,7 @@ void RobotGroupManager::robot_in_place_command(int robotIdx) {
 }
 
 
-int RobotGroupManager::pause_coop_robot(int idx) {
+int RobotGroupManager::IMPL::pause_coop_robot(int idx) {
 
 	// 暂停关联机器人
 	for (auto& robot : disableGroup[idx]) {
@@ -676,14 +784,14 @@ int RobotGroupManager::pause_coop_robot(int idx) {
 }
 
 
-int RobotGroupManager::calc_sync_duration(int robotIdx) {
+int RobotGroupManager::IMPL::calc_sync_duration(int robotIdx) {
 
 	return 0;
 }
 
 
 
-int RobotGroupManager::robot_group_resume(int idx) {
+int RobotGroupManager::IMPL::robot_group_resume(int idx) {
 	// 当前机器人继续
 	robotList[idx]->task_resume();
 	// 暂停触发标志复位
@@ -696,20 +804,7 @@ int RobotGroupManager::robot_group_resume(int idx) {
 	return 0;
 }
 
-int RobotGroupManager::robot_group_resume(const std::vector<int>& idxList) {
-	for (auto& idx : idxList) {
-		// 当前机器人继续
-		robotList[idx]->task_resume();
-
-		// 同步继续绑定机器人
-		for (auto& robot : disableGroup[idx]) {
-			robotList[robot]->task_resume();
-		}
-	}
-	return 0;
-}
-
-int RobotGroupManager::robot_group_pause(int idx) {
+int RobotGroupManager::IMPL::robot_group_pause(int idx) {
 	// 当前机器人暂停
 	robotList[idx]->task_pause();
 	// 暂停触发标志置位
@@ -723,25 +818,7 @@ int RobotGroupManager::robot_group_pause(int idx) {
 	return 0;
 }
 
-int RobotGroupManager::robot_group_pause(const std::vector<int>& idxList) {
-	for (auto& idx : idxList) {
-		// 当前机器人暂停
-		robotList[idx]->task_pause();
-		
-		// 同步暂停绑定机器人
-		for (auto& robot : disableGroup[idx]) {
-			robotList[robot]->task_pause();
-		}
-	}
-
-	// 绑定机器人均暂停后更新位置
-	robot_group_update_saved_pos(idxList);
-
-	return 0;
-}
-
-
-int RobotGroupManager::robot_group_update_saved_pos(const std::vector<int>& idxList) {
+int RobotGroupManager::IMPL::robot_group_update_saved_pos(const std::vector<int>& idxList) {
 	bool paused = false;
 
 	while (!paused) {
@@ -766,7 +843,7 @@ int RobotGroupManager::robot_group_update_saved_pos(const std::vector<int>& idxL
 	return 0;
 }
 
-int RobotGroupManager::robot_group_clear_task(int idx) {
+int RobotGroupManager::IMPL::robot_group_clear_task(int idx) {
 	// 暂停触发标志复位
 	//set_bit(coopState[idx], 8, false);
 	coopState[idx] = 0;
@@ -776,7 +853,7 @@ int RobotGroupManager::robot_group_clear_task(int idx) {
 	return 0;
 }
 
-int RobotGroupManager::robot_group_stop(int idx) {
+int RobotGroupManager::IMPL::robot_group_stop(int idx) {
 	// 暂停触发标志复位
 	set_bit(coopState[idx], 8, false);
 
@@ -786,7 +863,7 @@ int RobotGroupManager::robot_group_stop(int idx) {
 }
 
 
-void RobotGroupManager::reset_wait_state(int robotIdx) {
+void RobotGroupManager::IMPL::reset_wait_state(int robotIdx) {
 
 }
 

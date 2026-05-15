@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-#include "robot_interface/CoopRobotBase.h"
+#include "CoopRobotBase.h"
 
 namespace FSAIRobotInterface {
 
@@ -16,8 +16,8 @@ class NeoRobot : public RobotBase {
 	void interp_thread();
 
 public:
-	SHARE_API_ explicit NeoRobot();
-	SHARE_API_ virtual ~NeoRobot();
+	explicit NeoRobot();
+	virtual ~NeoRobot();
 
 	// --- 内部接口
 	//! 执行缓冲运动
@@ -59,9 +59,6 @@ public:
 	int set_jog_type(int type) override;
 	//! 点动执行
 	int jog_moving(int type, int idx, int dir, int move) override;
-
-	//! 断点保存功能使能
-	int save_task_status(bool enable, int inBuffer) override;
 
 	//! 任务暂停
 	int task_pause() override;

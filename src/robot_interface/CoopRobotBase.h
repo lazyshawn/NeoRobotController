@@ -6,76 +6,9 @@
 
 #include "common/ExportSharedAPI.h"
 
-#include "RobotTrajectory.h"
+#include "robot_interface/RobotTrajectory.h"
 
 namespace FSAIRobotInterface {
-
-/**
-* 机器人配置参数
-*/
-struct RobotConfig {
-	// 机器人配置参数
-	// 连杆参数: LargeZ,L1,L2,L3,L4,D5,DiffY
-	std::vector<float> linkLength = {};
-	// 编码器位数
-	std::vector<float> encoderBit = {};
-	// 轴电机减速比/传动比(更新地轨)
-	//std::vector<float> transRatio = {};
-	// 减速比分子
-	std::vector<float> transRatioNumerator = {};
-	// 减速比分母
-	std::vector<float> transRatioDenominator = {};
-	// 耦合比
-	std::vector<float> couplingConfig = {};
-	// TCP 参数: SmalLX,SmalLY,SmalLZ,InitRx,InitRy,InitRz(更新tcp)
-	std::vector<float> eefPose = {}, tcpPose = {};
-	// 关节上限位(更改)
-	std::vector<float> jointSupremum = {};
-	// 关节下限位(更改)
-	std::vector<float> jointInfimum = {};
-
-	// 关节自动模式最大速度
-	std::vector<float> maxJointSpeedAuto = {};
-	// 关节手动模式最大速度
-	std::vector<float> maxJointSpeedManual = {};
-	// 关节自动模式最大加速度
-	std::vector<float> maxJointAccAuto = {};
-	// 关节手动模式最大加速度
-	std::vector<float> maxJointAccManual = {};
-	// 末端自动模式最大速度
-	std::vector<float> maxCartSpeedAuto = {};
-	// 末端手动模式最大速度
-	std::vector<float> maxCartSpeedManual = {};
-	// 末端自动模式最大加速度
-	std::vector<float> maxCartAccAuto = {};
-	// 末端手动模式最大加速度
-	std::vector<float> maxCartAccManual = {};
-
-	// IO 配置(更改)
-	std::vector<int> ioAction = {};
-	// 附加轴标定结果(更改)
-	std::vector<float> auxCalbration = {};
-	// 主从机标定结果(更改)
-	std::vector<float> slaveCalibration = {};
-	// 零点编码器值(更改)
-	std::vector<float> zeroEncoder = {};
-	// 从属设备ID(更改)
-	std::vector<int> slaveDeviceID = {};
-	//! 从属设备类型
-	std::vector<int> slaveDeviceType = {};
-
-	// 附加轴轴号
-	std::vector<int> appAxisIdx;
-	std::vector<int> appAxisIdxRead;
-
-	RobotConfig() {};
-	~RobotConfig() {};
-
-	/* *************************** 配置接口 *************************** */
-
-	//Eigen::Matrix3f get_slave_calibratino_mat();
-};
-
 
 /**
 * 机器人实时状态参数
@@ -89,55 +22,10 @@ struct RobotStatusBuffer {
 
 
 /**
-* 机器人状态参数
-*
-* 当前所有参数都在该类中，后续实时参数将移动到 `RobotRTStatus` 类中
-*/
-struct RobotStatus {
-	// 实时刷新
-	int lowerStatus;                      // 下位机状态(Bit)：(0)
-	int upperStatus = 0;                  // 上位机状态: 指令下发异常，手动/自动模式不匹配
-
-	int autoMode;                         // 自动模式：  -1-手动模式，1-自动模式
-	int fkMode;                           // 正逆解模式: 0-未建立，1-正解, -1-逆解
-	int lineNum = 0;                      // 当前运动行号
-	int cmdNum = 0;                       // 当前轨迹的下发编号
-	double masterAxisDist;                // 主轴运动距离
-	int remainBuffer;					  // 剩余缓冲数
-
-	double current;                        // 实时电流
-	double voltage;                        // 实时电压
-
-	long slaveTime;                       // 下位机时间戳
-	long weldTime;                        // 焊接时间
-	long weldBegTime;                     // 上次起弧时间戳
-	long weldEndTime;                     // 上次息弧时间戳
-
-	std::vector<double> jPos = {};         // 关节位置
-	std::vector<double> cPos = {};         // 上位机的笛卡尔空间位置
-	std::vector<double> cPosRaw = {};      // 控制卡中的笛卡尔空间位置
-	std::vector<double> cPosBuffer = {};   // 缓冲中目标位置
-	std::vector<double> jSpeed = {};       // 关节速度
-	//int taskId;                           // 当前任务号
-	//int taskType;                         // 当前任务类型：空移，拍照，横焊，立焊，平焊
-
-	// 按需刷新 (非实时)
-	double curInterpTime = 0.0;           // 当前插补时间(目前仅仿真器使用)
-	std::vector<int> axisStatus = {};     // 轴状态
-	std::vector<int> encoder = {};        // 编码器值
-	std::vector<double> posOffset = {};    // 随动偏移
-	std::vector<double> cPosR = {};        // 机器人坐标系位置
-	std::vector<int> subErrorCode = {};   // 异常码辅码
-
-	RobotStatus() {};
-	~RobotStatus() {};
-};
-
-
-/**
 * 机器人接口基类
 *
 * 与底层控制卡绑定的交互接口，实现机器人运控算法与流程的解耦
+* 只需要定义管理类`RobotGroupManager`的必要接口
 * Example:
 *   class Derived : public RobotBase {
 *     \\ foo ...
@@ -183,24 +71,20 @@ protected:
 	std::queue<SingleTrajectory> trajHistory;
 
 public:
-	SHARE_API_ RobotBase();
-	SHARE_API_ virtual ~RobotBase();
+	RobotBase();
+	virtual ~RobotBase();
 
 	/* *******************************************************
 	* 统一接口
 	* ***************************************************** */
 	//! 等待机器人运动停止
-	SHARE_API_ int wait_auto_task_stop();
+	int wait_auto_task_stop();
 	//! 获取当前保存的机器人状态
-	SHARE_API_ int get_rt_robot_status(RobotStatus& status);
+	int get_rt_robot_status(RobotStatus& status);
 
 	/* *******************************************************
 	* 虚函数接口
 	* ***************************************************** */
-	//! 切换手自动模式
-	SHARE_API_ virtual int switch_auto(bool enableAuto) = 0;
-	//! 下发自动任务
-	SHARE_API_ virtual int push_new_trajectory(DiscreteTrajectory trajList) = 0;
 
 private:
 	/* *******************************************************
@@ -356,9 +240,14 @@ private:
 
 	//! 下发运动补偿
 	virtual int move_compensate(const std::vector<float>& det) = 0;
-
+	//! 切换使能
 	virtual int switch_enable(bool enable) = 0;
+	//! 修改速度比例
 	virtual int set_manual_speed(float ratio) = 0;
+	//! 切换手自动模式
+	virtual int switch_auto(bool enableAuto) = 0;
+	//! 下发自动任务
+	virtual int push_new_trajectory(DiscreteTrajectory trajList) = 0;
 
 	/**
 	* @brief  设置点动类型
@@ -389,9 +278,6 @@ private:
 			-# 1: 开始运动
 	*/
 	virtual int jog_moving(int type, int idx, int dir, int move) = 0;
-
-	//! 断点保存功能使能
-	virtual int save_task_status(bool enable, int inBuffer) = 0;
 
 	virtual int task_pause() = 0;
 	virtual int task_resume() = 0;

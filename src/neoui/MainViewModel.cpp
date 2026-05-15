@@ -42,7 +42,7 @@ int MainViewModel::jog_move(int robotIdx, int axisIdx, int dir, int enable) {
 	return 0;
 }
 
-int MainViewModel::set_auto_task(const DiscreteTrajectory& trajectory) {
+int MainViewModel::set_auto_task(const FSAIRobotInterface::DiscreteTrajectory& trajectory) {
 	m_mainModel->push_trajectory(trajectory);
 	return 0;
 }

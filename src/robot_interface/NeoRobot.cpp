@@ -1,6 +1,7 @@
-﻿#include "robot_interface/NeoRobot.h"
-
+﻿
 #include "interpolation/InterpDispatch.h"
+
+#include "NeoRobot.h"
 
 namespace FSAIRobotInterface {
 
@@ -167,34 +168,24 @@ int NeoRobot::set_jog_type(int type) {
 }
 //! 点动执行
 int NeoRobot::jog_moving(int type, int idx, int dir, int move) {
-
-	return 0;
-}
-
-//! 断点保存功能使能
-int NeoRobot::save_task_status(bool enable, int inBuffer) {
-
 	return 0;
 }
 
 //! 任务暂停
 int NeoRobot::task_pause() {
-
 	return 0;
 }
 //! 任务继续
 int NeoRobot::task_resume() {
-
 	return 0;
 }
 //! 任务清空
 int NeoRobot::task_clear() {
-
 	return 0;
 }
 //! 急停
 int NeoRobot::emergency_stop() {
-
 	return 0;
 }
+
 }

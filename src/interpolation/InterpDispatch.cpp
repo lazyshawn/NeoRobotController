@@ -4,12 +4,12 @@
 
 #include "InterpSegmentBuffer.h"
 
-// 将前向声明 Impl 定义为 InterpBuffer 的别名
-struct InterpDispatcher::Impl : public InterpBuffer {};
+// 将前向声明 IMPL 定义为 InterpBuffer 的别名
+struct InterpDispatcher::IMPL : public InterpBuffer {};
 
-InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<InterpDispatcher::Impl>()) {}
+InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {}
 
-// 析构函数: 编译器必须析构的代码位置看到 Impl 的完整定义
+// 析构函数: 编译器必须析构的代码位置看到 IMPL 的完整定义
 InterpDispatcher::~InterpDispatcher() = default;
 
 int InterpDispatcher::interp_enable(bool enable) {

@@ -1,5 +1,7 @@
 ﻿#include "robot_interface/RobotTrajectory.h"
 
+namespace FSAIRobotInterface {
+
 bool SingleTrajectory::isJoint() {
 	return motionCfg.moveType == 0;
 }
@@ -37,4 +39,6 @@ SingleTrajectory DiscreteTrajectory::get_curTraj() {
 }
 SingleTrajectory DiscreteTrajectory::get_preTraj() {
 	return preTraj;
+}
+
 }

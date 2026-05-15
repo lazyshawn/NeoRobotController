@@ -80,9 +80,9 @@ class SHARE_API_ InterpDispatcher {
 	//! 逻辑层输入信号，封装后由上层调用进行切换
 	InterpSignalIn signalIn;
 
-	// Impl 模式前置声明，将轨迹操作单独封装
-	struct Impl;
-	std::unique_ptr<Impl> pimpl;
+	// IMPL 模式前置声明，将轨迹操作单独封装
+	struct IMPL;
+	std::unique_ptr<IMPL> pimpl;
 
 public:
 	InterpDispatcher();
