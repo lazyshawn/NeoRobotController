@@ -131,3 +131,30 @@ public:
 	double merge(const DoubleSCurve& other);
 	
 };
+
+
+/***********************************************************************
+ *                        B E Z I E R                                  *
+ * ------------------------------------------------------------------- *
+ * @brief 贝塞尔曲线辅助函数                                           *
+ * @param  m      曲线阶数                                             *
+ * @param  ctr    曲线控制点(m+1)                                      *
+ ***********************************************************************/
+
+ /******************************************
+ @brief  贝塞尔曲线插值
+ @param  u      待获取点位的参数值
+ @param  ans    [out] 目标点位
+ ******************************************/
+int bezier_positioin(int m, const double ctr[][3], double u, double ans[3]);
+
+double bezier_derivatives(int m, const double ctr[][3], double u, double ans[3]);
+
+double bezier_dist(int m, const double ctr[][3], double a, double b, int n);
+
+/******************************************
+@brief  贝塞尔曲线插值
+@param  curU   待获取点位的参数值
+@param  detS   步进距离，需要足够小(detS << dist)
+******************************************/
+double bezier_interp(int m, const double ctr[][3], double curU, double detS, int num);

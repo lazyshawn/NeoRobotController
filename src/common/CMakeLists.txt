@@ -16,8 +16,13 @@ target_include_directories(common PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-#get_target_property(LINK_DIRS FSAIRobotInterface LINK_DIRECTORIES)
-#message("Link directories: ${LINK_DIRS}")
+
+# 动态库时定义 EXPORT_SHARED_LIBS
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(common PUBLIC EXPORT_SHARED_LIBS)
+else()
+    target_compile_definitions(common PUBLIC EXPORT_STATIC_LIBS)
+endif()
 
 # Then, link libraries
 
@@ -27,11 +32,11 @@ install(DIRECTORY include/common
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 
-#install(TARGETS common EXPORT ${PROJECT_NAME}Targets
-#  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#)
+install(TARGETS common EXPORT ${PROJECT_NAME}Targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 
 if(BUILD_TESTING)

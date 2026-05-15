@@ -10,7 +10,8 @@
 #include <memory>
 #include <algorithm>
 
-#include "interpolation/InterpSegment.h"
+#include "InterpSegment.h"
+#include "InterpCurve.h"
 
 // 实时插补结果
 struct RTInterpStatus {
@@ -23,8 +24,20 @@ struct RTInterpStatus {
 	PosData dpos;
 };
 
+// 摆焊插补过程参数
+struct RTSwingProc {
+	int state;
+	double time;
+	double duration;
+	double pos;
+};
+
+// 在全局作用域强制实例化，方便Debug，否则外部无法查看 InterpBuffer::interpBuf
+template class std::vector<std::shared_ptr<InterpSegment>>;
+
 // 插补器缓存数据
-class InterpBuffer {
+struct InterpBuffer {
+public:
 	//! 点位指令缓存数组
 	std::vector<std::shared_ptr<InterpSegment>> interpBuf;
 	//! 缓冲容量(N)
@@ -42,6 +55,11 @@ class InterpBuffer {
 	RTInterpStatus interpStatus;
 	//! 任务参数，独立于单条轨迹的全局轨迹参数，主要包含支持实时修改运动参数
 	MotionCfg rtMotionCfg;
+	//! 实时修改的缓存参数，在合适的时候更新到实时任务参数中
+	MotionCfg rtMotionCfgBuf;
+
+	//! 摆焊过程参数
+	RTSwingProc swingProc;
 
 	//! 各轴插补的 S 曲线
 	// 关节: 机械臂(6) + 附加轴(3) + 变位机(3)

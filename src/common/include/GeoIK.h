@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "common/ExportSharedAPI.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,7 +31,7 @@ typedef struct {
 int GeoIK_3intersect_with_2intersect(const ArmKineConfig cfg, const double T[4][4], double theta[][6]);
 
 // 球腕关节带23轴平行
-int GeoIK_3intersect_with_2parallel(const ArmKineConfig cfg, const double T[4][4], double theta[][6]);
+SHARE_API_ int GeoIK_3intersect_with_2parallel(const ArmKineConfig cfg, const double T[4][4], double theta[][6]);
 
 // 3组相邻平行关节带56轴相交
 int GeoIK_3parallel_with_2intersect(const ArmKineConfig cfg, const double T[4][4], double theta[][6]);

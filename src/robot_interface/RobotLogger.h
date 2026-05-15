@@ -67,7 +67,7 @@ private:
 * @param  fixed  保留小数点位数, -1:默认
 * @return 以逗号分隔的字符串
 */
-std::string vector_to_string(const std::vector<float>& data, int fixed = -1);
+std::string vector_to_string(const std::vector<double>& data, int fixed = -1);
 std::string vector_to_string(const std::vector<int>& data, int fixed = -1);
 
 

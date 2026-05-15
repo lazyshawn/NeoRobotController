@@ -1,14 +1,18 @@
 ﻿#pragma once
 
 #include <vector>
+#include <map>
+
+#include "common/ExportSharedAPI.h"
 
  // 参数类型
 enum class MotionCfgType {
-	SWING,     // 摆焊
+	SWING,        // 摆焊
+	MOVE_ACTION,  // 缓冲运动
 };
 
 // 摆焊参数
-struct SwingInterpParam {
+struct SwingConfig {
 	static MotionCfgType type;
 
 	// 参数Id: 区分是否属于同一组参数，用于实时参数修改
@@ -20,18 +24,18 @@ struct SwingInterpParam {
 	double leftWidth;
 	double rightWidth;
 
-	// 过程参数
-	int state;
-	double time;
-	double duration;
-	double pos;
-
 	void clear();
 	int get_type() const;
 	//! 序列化: 写入文件或控制器时使用
 	int serialize(std::vector<double>& param) const;
 	//! 反序列化: 从文件或控制器读取时使用
 	int deserialize(const std::vector<double>& param);
+};
+
+// 缓冲运动参数
+struct MoveActionConfig {
+	std::vector<std::pair<int, std::vector<double>>> before;
+	std::vector<std::pair<int, std::vector<double>>> after;
 };
 
 // 轨迹类型
@@ -44,7 +48,7 @@ enum class InterpSegmentType {
 };
 
 // 点位数据
-struct PosData {
+struct SHARE_API_ PosData {
 	//! 点位类型: 关节，世界坐标系，本体坐标系，工件坐标系
 	int pointType;
 	//! 形态位
@@ -55,6 +59,8 @@ struct PosData {
 	std::vector<double> extPos;
 	//! 变位机点位
 	std::vector<double> pstPos;
+
+	std::vector<double> all_to_vector();
 };
 
 // 轨迹点位信息
@@ -80,7 +86,8 @@ struct MotionCfg {
 
 	// - 支持实时修改的参数，如焊接参数、摆焊参数等，在轨迹开始执行时更新到公共的任务参数区
 	// 摆焊
-	SwingInterpParam swingParam;
+	SwingConfig swingParam;
+	MoveActionConfig moveAction;
 };
 
 // 缓冲指令: 缓冲动作等
@@ -95,7 +102,7 @@ struct MoveCmd {
 };
 
 // 轨迹段基类
-class SegmentBase {
+class SHARE_API_ SegmentBase {
 public:
 	// 基础轨迹数据
 	PointInfo pointInfo;

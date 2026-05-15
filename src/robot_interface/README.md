@@ -6,6 +6,26 @@
 1. 下发流程无阻塞，指令就绪立即下发，执行过程中也可以同时下发新任务。
 1. 特殊轨迹处理，按需修改与原始指令运动不同的轨迹，如刮擦起弧、弧坑回填等。
 
+``` mermaid
+classDiagram
+    direction LR
+
+    %%note "line1line2"
+
+    class RobotGroupManager {
+        +RobotStatus
+        +RobotConfig
+        +DiscreteTrajectory
+        +flush() void
+    }
+
+    class RobotBase {
+
+    }
+
+    RobotBase <--o RobotGroupManager
+```
+
 ### 系统状态管理
 系统状态分为内部管理状态和对外开放的状态。内部管理状态主要是机器人管理类 `RobotGroupManager` 的状态标志集合；对外开放的状态可分为轮询状态、可查询状态、实时缓冲状态。轮询状态主要是机器人位置、运行异常等下位机状态信息，按 50ms 间隔更新；可查询状态目前使用统一刷新的方式，后续若可查询状态持续增多或部分状态延时不可控，则可以考虑单独开放查询接口。实时缓冲状态是下位机高频率持续缓存的状态数据，如视觉伺服、实时状态曲线绘制时需要使用，相邻数据间隔 2ms，更新间隔 20ms。
 

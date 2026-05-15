@@ -1,6 +1,5 @@
 
 #include "AuxTransformation.h"
-#include "AuxMatrix.h"
 
 const double auxEPS = 1e-9;
 

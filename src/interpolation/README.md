@@ -1,6 +1,15 @@
 ## Interpolation
 该模块是一个机械臂运动插值模块，接收基础运动轨迹指令，输出离散的关节插补点。该模块仅负责提供在给定周期内能严格完成的插补计算接口，每个插补周期执行一次插补操作就可以得到当前周期内机器人各关节的目标位置，实时性需要下游程序和操作系统保证。
 
+### 数据结构管理
+`Interpolation` 模块共有四部分：
+1. `InterpCurve`：基本运动曲线规划，如双S曲线。
+1. `InterpSegment`：
+1. `InterpDispatch`：调度器
+1. `InterpSegmentBuffer`：指令缓存
+
+对外接口只有调度器和不带处理信息的指令队列。
+
 ### 插补流程
 整个插补流程分为三层：用户输入层、调度层、插补层。用户层将运动指令预处理后存入缓冲队列；调度层管理插补状态；插补层执行插补计算并输出离散点。
 
@@ -25,3 +34,20 @@ graph LR
 每条轨迹第一次插补前将会进行一次规划操作，通过前瞻回溯和其他速度规划算法计算该轨迹的速度曲线。
 接收暂停信号后会在插补前缓存当前插补状态，重新规划暂停运动的速度曲线，再按新的速度曲线继续插补，直至停止。
 一条轨迹插补完成后，将从缓存队列中取出下一条轨迹，重新进行规划和插补。
+
+#### 手动模式
+
+```mermaid
+sequenceDiagram
+    participant UI as UI层
+    participant dispatcher as 调度器
+    participant interp as 插补器
+    
+    UI ->> dispatcher: switch_manaul()
+    dispatcher ->> dispatcher: 模式切换检测
+    dispatcher -->> UI: switch_success
+    UI ->> interp: 点动使能信号
+```
+
+#### 自动模式
+

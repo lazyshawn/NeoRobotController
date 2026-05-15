@@ -1,9 +1,9 @@
 ﻿
 add_library(interpolation
   InterpCurve.cpp
-  InterpDispatch.cpp
   InterpSegment.cpp
   InterpSegmentBuffer.cpp
+  InterpDispatch.cpp
 )
 #set_target_properties(zmotion_interface PROPERTIES
 #  LINK_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/zmotion;${CMAKE_SOURCE_DIR}/lib/clogger"
@@ -26,10 +26,10 @@ install(DIRECTORY include/interpolation
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 
-#install(TARGETS interpolation EXPORT ${PROJECT_NAME}Targets
-#  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#)
+install(TARGETS interpolation EXPORT ${PROJECT_NAME}Targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 add_subdirectory(test)

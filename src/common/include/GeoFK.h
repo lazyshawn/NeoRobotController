@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "common/ExportSharedAPI.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,7 +16,7 @@ extern "C" {
  * @param  T[out]      结果变换矩阵
  * @return             状态码
  */
-int FKinBody(
+SHARE_API_ int FKinBody(
     const double M0[4][4],
     const double Blist[][6],
     const double *thetalist,
@@ -22,7 +24,7 @@ int FKinBody(
     double T[4][4]
 );
 
-int FKinSpace(
+SHARE_API_ int FKinSpace(
     const double M0[4][4],
     const double Slist[][6],
     const double *thetalist,
@@ -38,14 +40,14 @@ int FKinSpace(
  * @param  J[out]      结果雅可比矩阵，转置后输出，使用前记得转置回来
  * @return             状态码
  */
-int JacobianBody(
+SHARE_API_ int JacobianBody(
     const double Blist[][6],
     const double *thetalist,
     int num,
     double J[][6]
 );
 
-int JacobianSpace(
+SHARE_API_ int JacobianSpace(
     const double Slist[][6],
     const double *thetalist,
     int num,

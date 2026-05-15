@@ -1,8 +1,9 @@
 ﻿
-#include "interpolation/InterpSegmentBuffer.h"
+#include "InterpSegmentBuffer.h"
 
 // 矩阵计算辅助库
 #include "AuxMatrix.h"
+#include "InterpCurve.h"
 
 static const double dim_EPS = 1e-6;
 
@@ -297,7 +298,7 @@ InterpBuffer::InterpBuffer() {
 	reserveNum = 1;
 
 	for (size_t i = 0; i < maxBufNum; ++i) {
-		interpBuf.push_back(std::shared_ptr<InterpSegment>(new InterpSegment));
+		interpBuf.push_back(std::shared_ptr<InterpSegment>(new InterpSegment()));
 	}
 }
 
@@ -752,29 +753,26 @@ int InterpBuffer::cartesian_plan() {
 	curve[6].plan_by_duration(eulerTime, oriAccT, oriAccT / 2);
 
 	// --- 摆焊规划
-	SwingInterpParam swing = curBuf->motionCfg.swingParam;
+	SwingConfig swing = curBuf->motionCfg.swingParam;
 	// 有前平滑时，继承前段的规划，
 	if (curBuf->procInfo.preSmooth > 0) {
 		// --- 继承摆焊参数
 		curve[2] = curvePre[2];
 
-		// 修改摆焊参数，继承摆焊时间，当前摆焊目标位置
-		SwingInterpParam preSwing = rtMotionCfg.swingParam;
-		swing.state = preSwing.state;
-		swing.time = preSwing.time;
-		swing.pos = preSwing.pos;
+		// 缓存下条轨迹的摆焊参数
+		rtMotionCfgBuf.swingParam = nextBuf->motionCfg.swingParam;
 	}
 	else {
-		swing.state = 0;
-		swing.time = 0.0;
-		swing.pos = 0.0;
+		swingProc.state = 0;
+		swingProc.time = 0.0;
+		swingProc.pos = 0.0;
 	}
 	// 后平滑决定摆焊运动时间
 	if (curBuf->procInfo.postSmooth > 0) {
-		swing.duration = 2 * (curve[0].get_duration() - curve[0].get_offset());
+		swingProc.duration = 2 * (curve[0].get_duration() - curve[0].get_offset());
 	}
 	else {
-		swing.duration = curve[0].get_duration() - curve[0].get_offset();
+		swingProc.duration = curve[0].get_duration() - curve[0].get_offset();
 	}
 	rtMotionCfg.swingParam = swing;
 
@@ -793,7 +791,7 @@ int InterpBuffer::cartesian_move() {
 	InterpSegment *preBuf = nullptr, *curBuf = nullptr, *nextBuf = nullptr;
 	get_neighbor_buffer(bufBeg, preBuf, curBuf, nextBuf);
 	// 插补结果
-	PosData pos;
+	PosData pos = curBuf->pointInfo.begPos;
 	
 	// --- 计算上一段+当前段的总位移
 	// 上一段规划位移
@@ -891,7 +889,7 @@ int InterpBuffer::cartesian_move() {
 	}
 
 	// --- 附加轴插补
-	pos.extPos = std::vector<double>(6, 0.0);
+	//pos.extPos = std::vector<double>(6, 0.0);
 	if (curBuf->procInfo.preSmooth > 0) {
 		pos.extPos[0] = curvePre[6].get_pos(curBuf->procInfo.curTime) + curve[6].get_pos(curBuf->procInfo.curTime) - curve[6].get_pos(0);
 	}
@@ -901,44 +899,46 @@ int InterpBuffer::cartesian_move() {
 
 	// --- 摆焊叠加
 	double swingAdd = 0.0;
-	SwingInterpParam swing = rtMotionCfg.swingParam;
-	// 半个摆动周期的时间
-	double singleSwingTime = 0.5 / swing.freq;
-	if (swing.state == 0) {
-		swing.state = 1;
-		curve[2].set_condition(swing.pos, swing.rightWidth, 0, 0);
-		curve[2].plan_by_duration(singleSwingTime, singleSwingTime/2, singleSwingTime/10);
-		curve[2].plan();
-		swing.time = cycleTime;
-		swing.pos = swing.rightWidth;
-	}
-	else {
-		swingAdd = curve[2].get_pos(swing.time);
-
-		if (curve[2].done()) {
-			swing.state = swing.state % 2 + 1;
-
-			// 剩余时间不足一个完整周期
-			double remainSwingTime = swing.duration - curBuf->procInfo.curTime;
-			bool timeReset = remainSwingTime < singleSwingTime * 2;
-			if (timeReset)
-				singleSwingTime = remainSwingTime;
-
-			if (swing.state == 2) {
-				curve[2].set_condition(swing.pos, timeReset ? 0 : -swing.leftWidth, 0, 0);
-				swing.pos = -swing.leftWidth;
-			}
-			else {
-				curve[2].set_condition(swing.pos, timeReset ? 0 : swing.rightWidth, 0, 0);
-				swing.pos = swing.rightWidth;
-			}
-
+	SwingConfig swing = rtMotionCfg.swingParam;
+	if (swing.enable) {
+		// 半个摆动周期的时间
+		double singleSwingTime = 0.5 / swing.freq;
+		if (swingProc.state == 0) {
+			swingProc.state = 1;
+			curve[2].set_condition(swingProc.pos, swing.rightWidth, 0, 0);
 			curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
-			swing.time = 0.0;
+			curve[2].plan();
+			swingProc.time = cycleTime;
+			swingProc.pos = swing.rightWidth;
 		}
-		swing.time += cycleTime;
+		else {
+			swingAdd = curve[2].get_pos(swingProc.time);
+
+			if (curve[2].done()) {
+				swingProc.state = swingProc.state % 2 + 1;
+
+				// 剩余时间不足一个完整周期
+				double remainSwingTime = swingProc.duration - curBuf->procInfo.curTime;
+				bool timeReset = remainSwingTime < singleSwingTime * 2;
+				if (timeReset)
+					singleSwingTime = remainSwingTime;
+
+				if (swingProc.state == 2) {
+					curve[2].set_condition(swingProc.pos, timeReset ? 0 : -swing.leftWidth, 0, 0);
+					swingProc.pos = -swing.leftWidth;
+				}
+				else {
+					curve[2].set_condition(swingProc.pos, timeReset ? 0 : swing.rightWidth, 0, 0);
+					swingProc.pos = swing.rightWidth;
+				}
+
+				curve[2].plan_by_duration(singleSwingTime, singleSwingTime / 2, singleSwingTime / 10);
+				swingProc.time = 0.0;
+			}
+			swingProc.time += cycleTime;
+		}
+		rtMotionCfg.swingParam = swing;
 	}
-	rtMotionCfg.swingParam = swing;
 
 	// 实时状态
 	interpStatus.vel = 0.0;
