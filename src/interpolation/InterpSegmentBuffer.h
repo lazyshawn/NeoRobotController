@@ -10,7 +10,8 @@
 #include <memory>
 #include <algorithm>
 
-#include "interpolation/InterpSegment.h"
+#include "InterpSegment.h"
+#include "InterpCurve.h"
 
 // 实时插补结果
 struct RTInterpStatus {
@@ -31,11 +32,11 @@ struct RTSwingProc {
 	double pos;
 };
 
-// 在全局作用域强制实例化，方便Debug，否则无法查看 InterpBuffer::interpBuf
+// 在全局作用域强制实例化，方便Debug，否则外部无法查看 InterpBuffer::interpBuf
 template class std::vector<std::shared_ptr<InterpSegment>>;
 
 // 插补器缓存数据
-class InterpBuffer {
+struct InterpBuffer {
 public:
 	//! 点位指令缓存数组
 	std::vector<std::shared_ptr<InterpSegment>> interpBuf;

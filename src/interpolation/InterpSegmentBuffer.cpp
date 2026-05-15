@@ -1,8 +1,9 @@
 ﻿
-#include "interpolation/InterpSegmentBuffer.h"
+#include "InterpSegmentBuffer.h"
 
 // 矩阵计算辅助库
 #include "AuxMatrix.h"
+#include "InterpCurve.h"
 
 static const double dim_EPS = 1e-6;
 

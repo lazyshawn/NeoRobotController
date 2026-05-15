@@ -1,4 +1,4 @@
-
+﻿
 
 add_library(common
   AuxMatrix.c
@@ -16,8 +16,13 @@ target_include_directories(common PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-#get_target_property(LINK_DIRS FSAIRobotInterface LINK_DIRECTORIES)
-#message("Link directories: ${LINK_DIRS}")
+
+# 动态库时定义 EXPORT_SHARED_LIBS
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(common PUBLIC EXPORT_SHARED_LIBS)
+else()
+    target_compile_definitions(common PUBLIC EXPORT_STATIC_LIBS)
+endif()
 
 # Then, link libraries
 

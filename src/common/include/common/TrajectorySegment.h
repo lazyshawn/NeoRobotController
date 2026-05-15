@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 
+#include "common/ExportSharedAPI.h"
+
  // 参数类型
 enum class MotionCfgType {
 	SWING,        // 摆焊
@@ -46,7 +48,7 @@ enum class InterpSegmentType {
 };
 
 // 点位数据
-struct PosData {
+struct SHARE_API_ PosData {
 	//! 点位类型: 关节，世界坐标系，本体坐标系，工件坐标系
 	int pointType;
 	//! 形态位
@@ -100,7 +102,7 @@ struct MoveCmd {
 };
 
 // 轨迹段基类
-class SegmentBase {
+class SHARE_API_ SegmentBase {
 public:
 	// 基础轨迹数据
 	PointInfo pointInfo;

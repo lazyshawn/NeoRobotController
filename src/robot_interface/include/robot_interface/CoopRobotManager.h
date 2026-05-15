@@ -19,7 +19,7 @@ namespace FSAIRobotInterface {
  *
  * 处理多机器人的状态更新，指令下发，任务协同等
  */
-class RobotGroupManager {
+class SHARE_API_ RobotGroupManager {
 	//! 协同就绪状态: 0 未就绪, 1 已就绪
 	std::vector<int> syncReadyState;
 	//! 协同就绪状态: <<type, num>, ...>
@@ -100,6 +100,12 @@ public:
 
 	RobotGroupManager();
 	~RobotGroupManager();
+	// 禁用拷贝
+	RobotGroupManager(const RobotGroupManager&) = delete;
+	RobotGroupManager& operator=(const RobotGroupManager&) = delete;
+	// 禁用移动
+	RobotGroupManager(RobotGroupManager&& other) = delete;
+	RobotGroupManager& operator=(RobotGroupManager&& other) = delete;
 
 	/**
 	* @brief  向指定控制卡申请新机器人

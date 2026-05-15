@@ -3,15 +3,16 @@
 #include <deque>
 
 #include "common/TrajectorySegment.h"
+#include "common/ExportSharedAPI.h"
 
-class SingleTrajectory : public SegmentBase {
+class SHARE_API_ SingleTrajectory : public SegmentBase {
 public:
 	bool isJoint();
 	bool isCartesian();
 };
 
 // 上位机任务的离散轨迹指令
-class DiscreteTrajectory {
+class SHARE_API_ DiscreteTrajectory {
 	std::deque<SingleTrajectory> trajList;
 	SingleTrajectory preTraj;
 

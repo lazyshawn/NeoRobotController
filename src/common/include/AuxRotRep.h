@@ -12,27 +12,29 @@
  * q[4] = [w, x, y, z], 作为返回值时取 w 为正的解
  *****************************************************/
 
+#include "common/ExportSharedAPI.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // ZYX欧拉角转旋转矩阵
-int Euler2Rot(const double euler[3], double R[9]);
+SHARE_API_ int Euler2Rot(const double euler[3], double R[9]);
 
 // 旋转矩阵转欧拉角
-int Rot2Euler(const double R[9], double euler[3]);
+SHARE_API_ int Rot2Euler(const double R[9], double euler[3]);
 
 // 四元数转旋转矩阵
-int Quat2Rot(const double q[4], double R[9]);
+SHARE_API_ int Quat2Rot(const double q[4], double R[9]);
 
 // 旋转矩阵转四元数
-int Rot2Quat(const double R[9], double q[4]);
+SHARE_API_ int Rot2Quat(const double R[9], double q[4]);
 
 // 四元数球面距离
-double QuatDistance(const double q0[4], const double q1[4]);
+SHARE_API_ double QuatDistance(const double q0[4], const double q1[4]);
 
 // 四元数球面插补
-int QuatSlerp(const double q0[4], const double q1[4], double t, double q[4]);
+SHARE_API_ int QuatSlerp(const double q0[4], const double q1[4], double t, double q[4]);
 
 #ifdef __cplusplus
 }

@@ -4,6 +4,8 @@
 #include <condition_variable>
 #include <queue>
 
+#include "common/ExportSharedAPI.h"
+
 #include "RobotTrajectory.h"
 
 namespace FSAIRobotInterface {
@@ -145,15 +147,18 @@ struct RobotStatus {
 *   group.new_robot(robot);
 */
 class RobotBase {
+	//! 专属管理类
+	friend class RobotGroupManager;
+
 protected:
 	//! 控制卡分配的 ID
 	int robotId = -1;
-	//! 指令行号: 下发的运动个数
-	int cmdNum = 0;
 	//! 指定编号
 	int aliasId = -1;
+	//! 指令行号: 下发的运动个数
+	int cmdNum = 0;
 	//! 状态刷新线程
-	bool enableRefresh = false;
+	//bool enableRefresh = false;
 	//! 唤醒类型
 	int notifyType;
 
@@ -172,14 +177,32 @@ protected:
 	//! 机器人状态
 	RobotStatus robotStatus;
 
-public:
-	virtual ~RobotBase();
-
 	//! 机器人缓存轨迹
 	DiscreteTrajectory trajectory;
 	//! 已发送的轨迹，运动完成后的处理
 	std::queue<SingleTrajectory> trajHistory;
 
+public:
+	SHARE_API_ RobotBase();
+	SHARE_API_ virtual ~RobotBase();
+
+	/* *******************************************************
+	* 统一接口
+	* ***************************************************** */
+	//! 等待机器人运动停止
+	SHARE_API_ int wait_auto_task_stop();
+	//! 获取当前保存的机器人状态
+	SHARE_API_ int get_rt_robot_status(RobotStatus& status);
+
+	/* *******************************************************
+	* 虚函数接口
+	* ***************************************************** */
+	//! 切换手自动模式
+	SHARE_API_ virtual int switch_auto(bool enableAuto) = 0;
+	//! 下发自动任务
+	SHARE_API_ virtual int push_new_trajectory(DiscreteTrajectory trajList) = 0;
+
+private:
 	/* *******************************************************
 	* 对内接口
 	*
@@ -188,8 +211,6 @@ public:
 	// --- 机器人管理类相关
 	//! 唤醒等待中的线程
 	int notify_waiting_robot();
-	//! 等待机器人运动停止
-	int wait_auto_task_stop();
 	//! 已下发任务完成
 	int task_assigned_completed();
 
@@ -214,8 +235,6 @@ public:
 	bool check_arc_on();
 
 	// --- 控制卡相关
-	//! 获取当前保存的机器人状态
-	int get_rt_robot_status(RobotStatus& status);
 	//! 获取保存的机器人配置参数
 	int get_register_config(RobotConfig& config);
 
@@ -338,10 +357,6 @@ public:
 	//! 下发运动补偿
 	virtual int move_compensate(const std::vector<float>& det) = 0;
 
-	//! 下发自动任务
-	virtual int push_new_trajectory(DiscreteTrajectory trajList) = 0;
-
-	virtual int switch_auto(bool enableAuto) = 0;
 	virtual int switch_enable(bool enable) = 0;
 	virtual int set_manual_speed(float ratio) = 0;
 

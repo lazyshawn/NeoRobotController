@@ -9,8 +9,10 @@
 * ************************************************************* */
 
 #include <vector>
+#include <memory>
 
-#include "interpolation/InterpSegmentBuffer.h"
+#include "common/TrajectorySegment.h"
+#include "common/ExportSharedAPI.h"
 
 /**
 * @brief  插补输入信号
@@ -72,23 +74,21 @@ struct DispatcherState {
 };
 
 // 插补调度
-class InterpDispatcher {
+class SHARE_API_ InterpDispatcher {
 	//! 调度器状态
 	DispatcherState dispatcherStatus;
 	//! 逻辑层输入信号，封装后由上层调用进行切换
 	InterpSignalIn signalIn;
 
-	/**
-	* @brief  切换插补状态
-	* @param  state     目标状态
-	* @return 异常码
-	*/
-	int switch_interp_state(int state);
+	// Impl 模式前置声明，将轨迹操作单独封装
+	struct Impl;
+	std::unique_ptr<Impl> pimpl;
 
 public:
 	InterpDispatcher();
-	~InterpDispatcher() {};
+	~InterpDispatcher();
 	
+	// --- 外部信号
 	// 手自动切换信号
 	// 开始信号使能
 	int interp_enable(bool enable);
@@ -103,6 +103,10 @@ public:
 	*
 	* 周期任务由逻辑层单独开线程循环调用并执行
 	*/
-	int run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut& signalOut, DispatcherState& state);
+	int run_cycle_task(InterpSignalOut& signalOut, DispatcherState& state);
 
+	// --- 轨迹操作代理
+	bool buffer_ready();
+	double get_cycleTime();
+	int add_move_point(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd);
 };

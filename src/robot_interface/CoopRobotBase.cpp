@@ -21,6 +21,8 @@ RobotLog::RobotLog() {
 }
 
 /* *************************** RobotBase *************************** */
+RobotBase::RobotBase() {
+}
 RobotBase::~RobotBase() {
 	return;
 }

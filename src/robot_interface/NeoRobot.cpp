@@ -4,8 +4,6 @@
 
 namespace FSAIRobotInterface {
 
-// 指令缓存
-static InterpBuffer interpBuffer;
 // 调度器
 static InterpDispatcher dispatcher;
 // 调度器状态
@@ -42,7 +40,7 @@ void NeoRobot::interp_thread() {
 	// 下次唤醒时间
 	auto wakeUpTime = start;
 	// 线程周期(ms)
-	long long duration = interpBuffer.get_cycleTime() * 1e3;
+	long long duration = dispatcher.get_cycleTime() * 1e3;
 
 	// --- 循环变量
 	// 当前关节角
@@ -60,7 +58,7 @@ void NeoRobot::interp_thread() {
 		// 加锁并执行插补任务
 		{
 			std::lock_guard<std::mutex> lock(mtxMotion);
-			dispatcher.run_cycle_task(interpBuffer, signalOut, dispatcherState);
+			dispatcher.run_cycle_task(signalOut, dispatcherState);
 		}
 
 		// 周期时间耗尽
@@ -92,7 +90,7 @@ int NeoRobot::execute_single_cartesian() {
 	auto curTraj = trajectory.get_curTraj();
 	auto preTraj = trajectory.get_preTraj();
 
-	interpBuffer.add_move_point(curTraj.pointInfo, curTraj.motionCfg, curTraj.moveCmd);
+	dispatcher.add_move_point(curTraj.pointInfo, curTraj.motionCfg, curTraj.moveCmd);
 
 	// 弹出轨迹
 	trajectory.pop();
@@ -102,7 +100,7 @@ int NeoRobot::execute_single_cartesian() {
 
 //! 剩余缓冲检测
 int NeoRobot::remain_buffer_free() {
-	return interpBuffer.buffer_ready();
+	return dispatcher.buffer_ready();
 }
 
 //! 读取断点信息

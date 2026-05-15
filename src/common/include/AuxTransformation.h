@@ -18,7 +18,7 @@ extern "C" {
 * @param  RInv  旋转矩阵的逆
 * @return 0 成功，-1 失败
 */
-int cRotInv(const MatrixXd *R, MatrixXd * RInv);
+SHARE_API_ int cRotInv(const MatrixXd *R, MatrixXd * RInv);
 
 /*
 * @brief  向量转换为so3矩阵
@@ -27,7 +27,7 @@ int cRotInv(const MatrixXd *R, MatrixXd * RInv);
 * @param  so3  so3矩阵
 * @return 0 成功，-1 失败
 */
-int cVecToso3(const MatrixXd *omg, double theta, MatrixXd *so3);
+SHARE_API_ int cVecToso3(const MatrixXd *omg, double theta, MatrixXd *so3);
 
 /*
 * @brief  so3矩阵转换为向量
@@ -35,7 +35,7 @@ int cVecToso3(const MatrixXd *omg, double theta, MatrixXd *so3);
 * @param  vec  向量
 * @return 0 成功，-1 失败
 */
-int cSo3ToVec(const MatrixXd *so3, MatrixXd *vec);
+SHARE_API_ int cSo3ToVec(const MatrixXd *so3, MatrixXd *vec);
 
 /*
 * @brief  计算旋转变换的指数坐标对应的轴角表示
@@ -43,7 +43,7 @@ int cSo3ToVec(const MatrixXd *so3, MatrixXd *vec);
 * @param  omghat  旋转轴的单位向量
 * @return double 旋转角度
 */
-double cAxisAng3(const MatrixXd *expc3, MatrixXd *omghat);
+SHARE_API_ double cAxisAng3(const MatrixXd *expc3, MatrixXd *omghat);
 
 /*
 * @brief  计算矩阵指数so(3)对应的旋转矩阵SO(3)
@@ -51,7 +51,7 @@ double cAxisAng3(const MatrixXd *expc3, MatrixXd *omghat);
 * @param  R       旋转矩阵SO(3)
 * @return 0 成功，-1 失败
 */
-int cMatrixExp3(const MatrixXd *so3mat, MatrixXd *R);
+SHARE_API_ int cMatrixExp3(const MatrixXd *so3mat, MatrixXd *R);
 
 /*
 * @brief  计算旋转矩阵SO(3)的指数坐标
@@ -59,7 +59,7 @@ int cMatrixExp3(const MatrixXd *so3mat, MatrixXd *R);
 * @param  so3mat  矩阵指数的指数坐标so(3)
 * @return 0 成功，-1 失败
 */
-int cMatrixLog3(const MatrixXd *R, MatrixXd *so3mat);
+SHARE_API_ int cMatrixLog3(const MatrixXd *R, MatrixXd *so3mat);
 
 /*
 * @brief  计算旋转矩阵SO(3)和位移向量p对应的齐次变换矩阵T
@@ -68,7 +68,7 @@ int cMatrixLog3(const MatrixXd *R, MatrixXd *so3mat);
 * @param  T[out]  变换矩阵
 * @return 0 成功，-1 失败
 */
-int cRpToTrans(const MatrixXd *R, const MatrixXd *p, MatrixXd *T);
+SHARE_API_ int cRpToTrans(const MatrixXd *R, const MatrixXd *p, MatrixXd *T);
 
 /*
 * @brief  计算齐次变换矩阵T对应的旋转矩阵SO(3)和位移向量p
@@ -77,7 +77,7 @@ int cRpToTrans(const MatrixXd *R, const MatrixXd *p, MatrixXd *T);
 * @param  p[out]  位移向量
 * @return 0 成功，-1 失败
 */
-int cTransToRp(const MatrixXd *T, MatrixXd *R, MatrixXd *p);
+SHARE_API_ int cTransToRp(const MatrixXd *T, MatrixXd *R, MatrixXd *p);
 
 /*
 * @brief  计算齐次变换矩阵T的逆
@@ -85,7 +85,7 @@ int cTransToRp(const MatrixXd *T, MatrixXd *R, MatrixXd *p);
 * @param  TInv[out]  变换矩阵的逆
 * @return 0 成功，-1 失败
 */
-int cTransInv(const MatrixXd *T, MatrixXd *TInv);
+SHARE_API_ int cTransInv(const MatrixXd *T, MatrixXd *TInv);
 
 /*
 * @brief  计算6x1向量V对应的se(3)矩阵
@@ -94,7 +94,7 @@ int cTransInv(const MatrixXd *T, MatrixXd *TInv);
 * @param  se3mat  se(3)矩阵
 * @return 0 成功，-1 失败
 */
-int cVecTose3(const MatrixXd *V, double theta, MatrixXd *se3mat);
+SHARE_API_ int cVecTose3(const MatrixXd *V, double theta, MatrixXd *se3mat);
 
 /*
 * @brief  计算se(3)矩阵对应的6x1向量V
@@ -102,7 +102,7 @@ int cVecTose3(const MatrixXd *V, double theta, MatrixXd *se3mat);
 * @param  V[out]  6x1向量
 * @return 0 成功，-1 失败
 */
-int cSe3ToVec(const MatrixXd *se3mat, MatrixXd *V);
+SHARE_API_ int cSe3ToVec(const MatrixXd *se3mat, MatrixXd *V);
 
 /*
 * @brief  计算齐次变换矩阵T的Adjoint矩阵AdT
@@ -110,7 +110,7 @@ int cSe3ToVec(const MatrixXd *se3mat, MatrixXd *V);
 * @param  AdT[out]  Adjoint矩阵
 * @return 0 成功，-1 失败
 */
-int cAdjoint(const MatrixXd *T, MatrixXd *AdT);
+SHARE_API_ int cAdjoint(const MatrixXd *T, MatrixXd *AdT);
 
 /*
 * @brief  根据，计算单位旋量
@@ -121,7 +121,7 @@ int cAdjoint(const MatrixXd *T, MatrixXd *AdT);
 * @param  screw[out]  6x1向量
 * @return 0 成功，-1 失败
 */
-int cScrewToAxis(const MatrixXd *q, const MatrixXd *s, double h, int infiniteH, MatrixXd *screw);
+SHARE_API_ int cScrewToAxis(const MatrixXd *q, const MatrixXd *s, double h, int infiniteH, MatrixXd *screw);
 
 /*
 * @brief  计算空间变换的指数坐标的单位螺旋轴和旋转角度
@@ -129,7 +129,7 @@ int cScrewToAxis(const MatrixXd *q, const MatrixXd *s, double h, int infiniteH, 
 * @param  S[out]  单位螺旋轴
 * @return double 旋转角度
 */
-double cAxisAng6(const MatrixXd *expc6, MatrixXd *S);
+SHARE_API_ double cAxisAng6(const MatrixXd *expc6, MatrixXd *S);
 
 /*
 * @brief  计算空间变换的指数坐标的齐次变换矩阵
@@ -137,7 +137,7 @@ double cAxisAng6(const MatrixXd *expc6, MatrixXd *S);
 * @param  T[out]  变换矩阵
 * @return 0 成功，-1 失败
 */
-int cMatrixExp6(const MatrixXd *se3mat, MatrixXd *T);
+SHARE_API_ int cMatrixExp6(const MatrixXd *se3mat, MatrixXd *T);
 
 /*
 * @brief  计算空间变换的指数坐标的se(3)矩阵
@@ -145,7 +145,7 @@ int cMatrixExp6(const MatrixXd *se3mat, MatrixXd *T);
 * @param  se3mat[out]  se(3)矩阵
 * @return 0 成功，-1 失败
 */
-int cMatrixLog6(const MatrixXd *T, MatrixXd *se3mat);
+SHARE_API_ int cMatrixLog6(const MatrixXd *T, MatrixXd *se3mat);
 
 
 #ifdef __cplusplus

@@ -3,7 +3,7 @@ project(NeoRobotController VERSION 1.0.0)
 
 if(WIN32)
   # create symbol for exporting lib for dynmic library
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  #set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   # control where the static and shared libraries are built so that on windows
   # we don't need to tinker with the path to run the executable
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
@@ -17,7 +17,11 @@ if(WIN32)
   # Set the runtime lib for MSCV (global)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 else()
-  option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+  set(BUILD_SHARED_LIBS ON CACHE BOOL "Build using shared libraries"  FORCE)
+  # 设置所有后续目标的默认可见性，默认不导出符号
+  set(CMAKE_C_VISIBILITY_PRESET hidden)
+  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+  set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 endif()
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/output/${PROJECT_NAME})

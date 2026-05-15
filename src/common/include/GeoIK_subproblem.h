@@ -6,6 +6,8 @@
  *         [Canonical Subproblems for Robot Inverse Kinematics](https://arxiv.org/pdf/2211.05737v2)
  */
 
+#include "common/ExportSharedAPI.h"
+
  #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,7 +82,7 @@ int PKsubproblem_3(
  * @param num 解个数
  * @return int 0 精确解, 1 近似解, 小于 0 表示异常
  */
-int canonical_subproblem_1(
+SHARE_API_ int canonical_subproblem_1(
     const double *pPos,
     const double *dir,
     const double *qPos,
@@ -88,7 +90,7 @@ int canonical_subproblem_1(
     int *num
 );
 
-int canonical_subproblem_2(
+SHARE_API_ int canonical_subproblem_2(
     const double *pos1,
     const double *dir1,
     const double *pos2,
@@ -98,7 +100,7 @@ int canonical_subproblem_2(
 	int *num
 );
 
-int canonical_subproblem_3(
+SHARE_API_ int canonical_subproblem_3(
 	const double *pos1,
 	const double *dir1,
 	const double *pos2,
@@ -120,7 +122,7 @@ int canonical_subproblem_3(
  * @param num 解个数
  * @return int 0 精确解, 1 近似解, 小于 0 表示异常
  */
-int canonical_subproblem_4(
+SHARE_API_ int canonical_subproblem_4(
     const double *pos,
     const double *kDir,
     const double *hDir,
@@ -129,7 +131,7 @@ int canonical_subproblem_4(
     int *num
 );
 
-int canonical_subproblem_5(
+SHARE_API_ int canonical_subproblem_5(
     const double *pos1,
     const double *dir1,
     const double *shift1,

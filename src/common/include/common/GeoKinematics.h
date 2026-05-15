@@ -3,6 +3,8 @@
  * @brief  公开的正逆运动学接口
 */
 
+#include "common/ExportSharedAPI.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,17 +78,17 @@ typedef struct {
     int multiTcp;
 } GeoFKRequest;
 
-//! 初始化运动学配置
-int construct_GeoKineConfig(GeoKineConfig *cfg);
+//! 初始化运动学配置, 根据基础配置计算并更新完整配置
+SHARE_API_ int construct_GeoKineConfig(GeoKineConfig *cfg);
 
 //! 正运动学计算
-int GeoFK(const GeoKineConfig *cfg, const GeoFKRequest *req, double T[4][4]);
+SHARE_API_ int GeoFK(const GeoKineConfig *cfg, const GeoFKRequest *req, double T[4][4]);
 
 //! 逆运动学计算
-int GeoIK(const GeoKineConfig *cfg, const GeoIKRequest *req, GeoIKResponse *resp);
+SHARE_API_ int GeoIK(const GeoKineConfig *cfg, const GeoIKRequest *req, GeoIKResponse *resp);
 
 //! 雅可比计算
-int GeoJacobian(const GeoKineConfig *cfg, const double *joint, double J[][6]);
+SHARE_API_ int GeoJacobian(const GeoKineConfig *cfg, const double *joint, double J[][6]);
 
 #ifdef __cplusplus
 }

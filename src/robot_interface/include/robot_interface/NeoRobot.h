@@ -16,8 +16,8 @@ class NeoRobot : public RobotBase {
 	void interp_thread();
 
 public:
-	explicit NeoRobot();
-	virtual ~NeoRobot();
+	SHARE_API_ explicit NeoRobot();
+	SHARE_API_ virtual ~NeoRobot();
 
 	// --- 内部接口
 	//! 执行缓冲运动

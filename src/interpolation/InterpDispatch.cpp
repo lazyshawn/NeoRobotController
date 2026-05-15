@@ -2,14 +2,15 @@
 #include "interpolation/InterpDispatch.h"
 #include <iostream>
 
-InterpDispatcher::InterpDispatcher() {
-	dispatcherStatus.CycleNum = 0;
-	dispatcherStatus.interpState = 0;
-}
+#include "InterpSegmentBuffer.h"
 
-int InterpDispatcher::switch_interp_state(int state) {
-	return 0;
-}
+// 将前向声明 Impl 定义为 InterpBuffer 的别名
+struct InterpDispatcher::Impl : public InterpBuffer {};
+
+InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<InterpDispatcher::Impl>()) {}
+
+// 析构函数: 编译器必须析构的代码位置看到 Impl 的完整定义
+InterpDispatcher::~InterpDispatcher() = default;
 
 int InterpDispatcher::interp_enable(bool enable) {
 	std::cout << "Interp " << (enable ? "enabled." : "disabled.") << std::endl;
@@ -17,7 +18,7 @@ int InterpDispatcher::interp_enable(bool enable) {
 	return 0;
 }
 
-int InterpDispatcher::run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut& signalOut, DispatcherState& state) {
+int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState& state) {
 	// - 前处理
 	// 第一次调用时初始化，接收初始关节角
 	if (dispatcherStatus.CycleNum < 1) {
@@ -48,8 +49,8 @@ int InterpDispatcher::run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut
 
 		// 执行插补
 		PosData pos;
-		interpFinish = interpBuffer.move(pos);
-		interpBuffer.get_cur_dpos(dispatcherStatus.dpos);
+		interpFinish = pimpl->move(pos);
+		pimpl->get_cur_dpos(dispatcherStatus.dpos);
 		//std::cout << "dpos: " << pos.rbtPos[0] << ", " << pos.rbtPos[1] << ", " << pos.rbtPos[2] << std::endl;
 	}
 	// 插补动作停止，等待恢复插补的信号
@@ -61,7 +62,7 @@ int InterpDispatcher::run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut
 		// 3. 任务队列清空，进入 <完成> 状态
 		// 3.1 响应非紧急状态切换信号，如手自动切换
 		// 3.2 接收新任务切换到 <插补/等待> 状态
-		if (dispatcherStatus.interpState == 0 && interpBuffer.get_buffer_size() > 0) {
+		if (dispatcherStatus.interpState == 0 && pimpl->get_buffer_size() > 0) {
 			// 运动前缓冲指令切换 <等待> 状态
 			// 轨迹起点设为当前关节位置
 			//PosData begPos;
@@ -82,13 +83,13 @@ int InterpDispatcher::run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut
 		// 当前插补运动执行完成，依次执行缓冲动作：有缓冲读写则立即执行，有缓冲等待则进入 <等待> 状态
 
 		// 当前指令执行完成，指令缓冲不为空，加载下一条指令
-		interpBuffer.pop_front();
-		if (interpBuffer.get_buffer_size() > 0) {
-			std::cout << "traj finish: " << interpBuffer.get_bufbeg() << std::endl;
+		pimpl->pop_front();
+		if (pimpl->get_buffer_size() > 0) {
+			std::cout << "traj finish: " << pimpl->get_bufbeg() << std::endl;
 		}
 		// 指令缓冲为空，进入 <完成> 状态
 		else {
-			std::cout << "all traj finish: " << interpBuffer.get_bufbeg() << std::endl;
+			std::cout << "all traj finish: " << pimpl->get_bufbeg() << std::endl;
 			dispatcherStatus.interpState = 0;
 		}
 
@@ -96,8 +97,20 @@ int InterpDispatcher::run_cycle_task(InterpBuffer& interpBuffer, InterpSignalOut
 	}
 
 	// - 输出插补结果，更新关节角
-	dispatcherStatus.cmdNum = interpBuffer.get_bufbeg();
+	dispatcherStatus.cmdNum = pimpl->get_bufbeg();
 	state = dispatcherStatus;
 
 	return 0;
+}
+
+bool InterpDispatcher::buffer_ready() {
+	return pimpl->buffer_ready();
+}
+
+double InterpDispatcher::get_cycleTime() {
+	return pimpl->cycleTime;
+}
+
+int InterpDispatcher::add_move_point(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd) {
+	return pimpl->add_move_point(point, cfg, cmd);
 }
