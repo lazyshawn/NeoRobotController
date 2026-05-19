@@ -18,6 +18,7 @@ private slots:
 	void on_connectState_changed();
 	void on_robot_pos_changed();
 	void on_speedRatio_changed();
+	void on_autoMode_changed();
 
 private:
 	Ui::MainWindow *ui;

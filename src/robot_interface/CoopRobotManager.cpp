@@ -176,6 +176,11 @@ int RobotGroupManager::push_new_trajectory(int idx, const DiscreteTrajectory& tr
 	return 0;
 }
 
+int RobotGroupManager::switch_auto(int idx, bool enable) {
+	pimpl->robotList[idx]->switch_auto(enable);
+	return 0;
+}
+
 int RobotGroupManager::jog_moving(int robotIdx, int type, int idx, int dir, int move) {
 	pimpl->robotList[robotIdx]->jog_moving(type, idx, dir, move);
 	return 0;

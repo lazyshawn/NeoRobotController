@@ -128,10 +128,14 @@ void MainWindow::bind_viewmodel() {
 	connect(ui->pushButton_33, &QPushButton::clicked, this, [&]() { robot_change(3); });
 	// 下发任务
 	connect(ui->pushButton_4, &QPushButton::clicked, this, &MainWindow::set_auto_task);
+	// 切换手自动模式
+	connect(ui->checkBox_2, &QCheckBox::clicked, m_viewModel, &MainViewModel::change_autoModel);
+	connect(m_viewModel, &MainViewModel::autoMode_changed, this, &MainWindow::on_autoMode_changed);
 
 	// --- 显示内容初始化
 	on_connectState_changed();
 	on_speedRatio_changed();
+	on_autoMode_changed();
 	robot_change(m_robotIdx);
 }
 
@@ -169,6 +173,12 @@ void MainWindow::on_speedRatio_changed() {
 	// 更新界面
 	ui->horizontalSlider->setValue(ratio);
 	ui->spinBox->setValue(ratio);
+}
+
+void MainWindow::on_autoMode_changed() {
+	bool autoMode = m_viewModel->autoMode();
+	ui->checkBox_2->setChecked(autoMode);
+	ui->checkBox_2->setText(autoMode ? "Auto  " : "Manaul");
 }
 
 void MainWindow::robot_change(int idx) {

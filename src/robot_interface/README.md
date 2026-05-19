@@ -13,17 +13,22 @@ classDiagram
     %%note "line1line2"
 
     class RobotGroupManager {
-        +RobotStatus
-        +RobotConfig
-        +DiscreteTrajectory
         +flush() void
     }
 
     class RobotBase {
-
+        +DiscreteTrajectory
     }
 
-    RobotBase <--o RobotGroupManager
+    class RobotStatus {
+    }
+
+    class RobotConfig {
+    }
+
+    RobotBase <--o RobotGroupManager: 代理
+    RobotStatus <--* RobotBase
+    RobotConfig <--* RobotBase
 ```
 
 ### 系统状态管理

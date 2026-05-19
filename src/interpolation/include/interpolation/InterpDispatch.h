@@ -59,7 +59,9 @@ struct InterpSignalOut {
 */
 struct DispatcherState {
 	//! 周期任务执行次数
-	int CycleNum;
+	long CycleNum;
+	//! 手自动模式
+	bool autoMode;
 	//! 当前插补行号
 	int cmdNum;
 	//! 当前插补状态: 插补，暂停中/已暂停，继续，等待，完成/空闲
@@ -84,13 +86,17 @@ class SHARE_API_ InterpDispatcher {
 	struct IMPL;
 	std::unique_ptr<IMPL> pimpl;
 
+	int interp_auto_task();
+	int interp_manual_task();
+
 public:
 	InterpDispatcher();
 	~InterpDispatcher();
 	
 	// --- 外部信号
 	// 手自动切换信号
-	// 开始信号使能
+	int switch_auto(bool enable);
+	// 插补使能，紧急情况下可以下使能，禁止继续插补
 	int interp_enable(bool enable);
 	// 暂停信号使能
 

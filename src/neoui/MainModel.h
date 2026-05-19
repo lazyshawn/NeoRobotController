@@ -50,6 +50,9 @@ public:
 	// 选定机器人
 	int set_robotIdx(int idx);
 	int get_robotIdx() const;
+	// 手自动模式
+	int set_autoMode(bool enable);
+	int get_autoMode() const;
 
 	// --- 轮询状态
 	// 返回模型状态快照，触发时更新状态

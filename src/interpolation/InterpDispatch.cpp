@@ -12,6 +12,11 @@ InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {}
 // 析构函数: 编译器必须析构的代码位置看到 IMPL 的完整定义
 InterpDispatcher::~InterpDispatcher() = default;
 
+int InterpDispatcher::switch_auto(bool enable) {
+	signalIn.switchMode = enable;
+	return 0;
+}
+
 int InterpDispatcher::interp_enable(bool enable) {
 	std::cout << "Interp " << (enable ? "enabled." : "disabled.") << std::endl;
 	signalIn.interpEnable = enable;
@@ -36,6 +41,19 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 
 	// 跟随误差检测
 
+	if (dispatcherStatus.autoMode) {
+		interp_auto_task();
+	}
+	else {
+		interp_manual_task();
+	}
+
+	// 输出插补状态
+	state = dispatcherStatus;
+	return 0;
+}
+
+int InterpDispatcher::interp_auto_task() {
 	// - 执行插补动作: 插补与等待状态切换需要一个周期，避免不同状态下触发的动作时序混乱
 	static int interpFinish = 0;
 	// 插补执行过程中: <正常插补>, <暂停过程>, <继续过程>
@@ -60,17 +78,16 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 		// 2. <等待> 状态，等待就绪信号，如事件信号、定时器信号
 
 		// 3. 任务队列清空，进入 <完成> 状态
-		// 3.1 响应非紧急状态切换信号，如手自动切换
-		// 3.2 接收新任务切换到 <插补/等待> 状态
+		// 3.1 接收新任务切换到 <插补/等待> 状态
 		if (dispatcherStatus.interpState == 0 && pimpl->get_buffer_size() > 0) {
 			// 运动前缓冲指令切换 <等待> 状态
-			// 轨迹起点设为当前关节位置
-			//PosData begPos;
-			//begPos.pointType = 0;
-			//begPos.rbtPos = state.dpos;
-			//interpBuffer.set_begin_pos(begPos);
+			// 轨迹起点设为当前关节位置, 因为缓冲动作可能会运动导致当前点与指令起点不一致
 			// 缓冲指令完成，切换 <插补> 状态
 			dispatcherStatus.interpState |= 1;
+		}
+		// 3.2 响应非紧急状态切换信号，如手自动切换
+		else if (!signalIn.switchMode) {
+			dispatcherStatus.autoMode = false;
 		}
 	}
 
@@ -98,8 +115,17 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 
 	// - 输出插补结果，更新关节角
 	dispatcherStatus.cmdNum = pimpl->get_bufbeg();
-	state = dispatcherStatus;
 
+	return 0;
+}
+
+int InterpDispatcher::interp_manual_task() {
+	// 遍历轴使能信号
+	// 所有点动停止后，响应自动模式切换
+	if (signalIn.switchMode) {
+		dispatcherStatus.autoMode = true;
+		return 0;
+	}
 	return 0;
 }
 

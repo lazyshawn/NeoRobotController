@@ -17,6 +17,10 @@ double MainViewModel::speedRatio() const {
 	return m_mainModel->get_speedRatio();
 }
 
+bool MainViewModel::autoMode() const {
+	return m_mainModel->get_autoMode();
+}
+
 void MainViewModel::change_connectState() {
 	int state = m_mainModel->get_connectState();
 	if (state > 0) {
@@ -35,6 +39,11 @@ void MainViewModel::change_connectState() {
 void MainViewModel::change_speedRatio(double ratio) {
 	m_mainModel->set_speedRatio(ratio);
 	emit speedRatio_changed();
+}
+
+void MainViewModel::change_autoModel() {
+	int state = m_mainModel->get_autoMode();
+	m_mainModel->set_autoMode(!state);
 }
 
 int MainViewModel::jog_move(int robotIdx, int axisIdx, int dir, int enable) {
@@ -57,6 +66,7 @@ void MainViewModel::on_timeout() {
 	m_mainModel->get_modelData(data);
 
 	// --- 2. 脏标记检测
+	// 2.1 机器人位置
 	double sum = 0.0;
 	if (data.jPos.size() != 9 || modelData.jPos.size() != 9) {
 		sum = 1e3;
@@ -71,6 +81,11 @@ void MainViewModel::on_timeout() {
 		modelData.jPos = data.jPos;
 		// 通知界面变更
 		emit robot_pos_changed();
+	}
+	// 2.2 手自动模式
+	if (modelData.autoMode != data.autoMode) {
+		modelData.autoMode = data.autoMode;
+		emit autoMode_changed();
 	}
 
 	// --- 3. 下位机状态丢失或主动修改时进行同步

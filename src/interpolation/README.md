@@ -21,13 +21,17 @@ graph LR
     
     B --finish--> C[完成]
     C --next--> A
-    C --reset--> C
 
     B --wait--> D[等待]
     D --ready--> B
 
     B --pause--> E[暂停]
     E --resume--> A
+
+    C --> F[手动]
+
+    E --clear--> C
+    D --clear--> C
 ```
 
 插补过程中根据信号量进行状态切换，部分信号仅由算法内部激活，部分信号还可以由外部激活。

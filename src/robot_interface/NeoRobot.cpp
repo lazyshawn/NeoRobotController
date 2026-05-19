@@ -130,6 +130,7 @@ int NeoRobot::update_rt_robot_status() {
 
 	robotStatus.lowerStatus = 0;
 	robotStatus.jPos = dispatcherState.dpos.all_to_vector();
+	robotStatus.autoMode = dispatcherState.autoMode;
 
 	return 0;
 }
@@ -149,21 +150,21 @@ int NeoRobot::push_new_trajectory(DiscreteTrajectory trajList) {
 }
 
 int NeoRobot::switch_auto(bool enableAuto) {
-
+	dispatcher.switch_auto(enableAuto);
 	return 0;
 }
+
 int NeoRobot::switch_enable(bool enable) {
 
 	return 0;
 }
-int NeoRobot::set_manual_speed(float ratio) {
 
+int NeoRobot::set_manual_speed(float ratio) {
 	return 0;
 }
 
 //! 设置点动类型
 int NeoRobot::set_jog_type(int type) {
-
 	return 0;
 }
 //! 点动执行

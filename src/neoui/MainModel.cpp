@@ -2,26 +2,17 @@
 
 #include "robot_interface/CoopRobotManager.h"
 
-//static std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::NeoRobot);
 static FSAIRobotInterface::RobotGroupManager group;
 
 MainModel::MainModel(QObject *parent) : QObject(parent) {
-	bool simulate = false;
-
-	if (simulate) {
-		// 开启插补线程，更新机器人状态
-		std::thread sim_thread(&MainModel::sim_thread, this);
-		sim_thread.detach();
-	}
-	else {
-		//robot->switch_auto(true);
-		group.new_robot(FSAIRobotInterface::RobotGroupManager::NEOROBOT);
-		group.start_thread();
-	}
+	// 启动机器人管理类
+	group.new_robot(FSAIRobotInterface::RobotGroupManager::NEOROBOT);
+	group.start_thread();
 }
 
 MainModel::~MainModel() {
 	// 结束线程
+	group.stop();
 }
 
 int MainModel::connect(const std::string& addr) {
@@ -64,6 +55,15 @@ int MainModel::get_robotIdx() const {
 	return m_modelData.robotIdx;
 }
 
+int MainModel::set_autoMode(bool enable) {
+	group.switch_auto(m_modelData.robotIdx, enable);
+	return 0;
+}
+
+int MainModel::get_autoMode() const {
+	return m_modelData.autoMode;
+}
+
 void MainModel::get_modelData(ModelData& data) {
 	// 从轮询线程中更新类成员变量
 	FSAIRobotInterface::RobotStatus robotStatus;
@@ -71,6 +71,7 @@ void MainModel::get_modelData(ModelData& data) {
 
 	std::lock_guard<std::mutex> lock(mtxModel);
 	m_modelData.jPos = robotStatus.jPos;
+	m_modelData.autoMode = robotStatus.autoMode;
 
 	// 返回更新后的值
 	data = m_modelData;
