@@ -12,7 +12,6 @@
 #include <memory>
 
 #include "common/TrajectorySegment.h"
-#include "common/ExportSharedAPI.h"
 
 /**
 * @brief  插补输入信号
@@ -30,9 +29,13 @@
 struct InterpSignalIn {
 	//! 开始信号
 	bool interpEnable = false;
-	//! 模式切换: 手动，自动
+	//! 模式切换
+	// + : 1 - 自动
+	// - : 1 - 关节，2 - 世界，3 - 工具，4 - 工件
 	int switchMode;
-	//! 状态切换: 重置，暂停，继续，停止
+	//! 状态切换，响应后复位，未响应保持
+	// 自动：重置，暂停，继续，停止
+	// 手动：点动方向 [+|-] x N
 	int switchState;
 };
 
@@ -61,16 +64,20 @@ struct DispatcherState {
 	//! 周期任务执行次数
 	long CycleNum;
 	//! 手自动模式
-	bool autoMode;
-	//! 当前插补行号
-	int cmdNum;
-	//! 当前插补状态: 插补，暂停中/已暂停，继续，等待，完成/空闲
+	// +  : 自动模式
+	// -/0: 手动模式, 关节，世界，工具，工件
+	int autoMode;
+	//! 当前插补状态
+	// 自动：插补，暂停中/已暂停，继续，等待，完成/空闲
+	// 手动：点动方向 [+|-] x N
 	int interpState;
 	//! 警告码，触发暂停信号
 	int warnCode;
 	//! 异常码，触发急停信号
 	int errorCode;
 
+	//! 当前插补行号
+	int cmdNum;
 	//! 插补结果，规划关节位置
 	PosData dpos;
 };
@@ -92,13 +99,6 @@ class SHARE_API_ InterpDispatcher {
 public:
 	InterpDispatcher();
 	~InterpDispatcher();
-	
-	// --- 外部信号
-	// 手自动切换信号
-	int switch_auto(bool enable);
-	// 插补使能，紧急情况下可以下使能，禁止继续插补
-	int interp_enable(bool enable);
-	// 暂停信号使能
 
 	/**
 	* @brief  执行周期任务
@@ -111,8 +111,23 @@ public:
 	*/
 	int run_cycle_task(InterpSignalOut& signalOut, DispatcherState& state);
 
-	// --- 轨迹操作代理
+	// --- 外部信号: 插补使能，手自动，暂停/继续，停止/清空任务
+	// 手自动切换信号
+	int switch_auto(bool enable);
+	// 插补使能，紧急情况下可以下使能，禁止继续插补
+	int interp_enable(bool enable);
+	// 暂停信号使能
+
+	// --- 查询代理
 	bool buffer_ready();
 	double get_cycleTime();
+
+	// --- 运动指令代理
 	int add_move_point(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd);
+	// 点动模式
+	int set_jog_type(int jogType);
+	// 执行点动
+	int jog_move(int idx, int dir);
+	// 寸动
+	//int step_feed(int idx, double dist);
 };

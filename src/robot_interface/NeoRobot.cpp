@@ -155,7 +155,6 @@ int NeoRobot::switch_auto(bool enableAuto) {
 }
 
 int NeoRobot::switch_enable(bool enable) {
-
 	return 0;
 }
 
@@ -165,10 +164,14 @@ int NeoRobot::set_manual_speed(float ratio) {
 
 //! 设置点动类型
 int NeoRobot::set_jog_type(int type) {
+	printf("jogType = %d\n", type);
+	dispatcher.set_jog_type(type);
 	return 0;
 }
 //! 点动执行
 int NeoRobot::jog_moving(int type, int idx, int dir, int move) {
+	printf("%d, %d, %d, %d\n", type, idx, dir, move);
+	//dispatcher.jog();
 	return 0;
 }
 

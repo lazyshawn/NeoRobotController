@@ -24,6 +24,7 @@ private:
 	Ui::MainWindow *ui;
 	MainViewModel *m_viewModel;
 
+	// 修改为从 Model 获取
 	int m_robotIdx = 0;
 
 	// 界面初始化

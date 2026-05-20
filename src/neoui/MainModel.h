@@ -17,9 +17,9 @@ struct ModelData {
 	//! 速度比例: [0,100]
 	double speedRatio = 100;
 	//! 点动坐标系
-	int jogType = 0;
+	//int jogType = 0;
 	//! 手自动模式
-	bool autoMode = false;
+	int autoMode = 0;
 
 	// --- 3. 轮询状态
 	//! 上位机状态: [info, warning, error]
@@ -60,14 +60,11 @@ public:
 
 	// --- 对外接口
 	// 设置点动类型
-	int set_jog_type(int type);
+	int set_jogType(int robotIdx, int type);
 	// 点动
 	int jog_move(int robotIdx, int axisIdx, int dir, int enable);
 	// 下发自动任务
 	int push_trajectory(const FSAIRobotInterface::DiscreteTrajectory& trajectory);
-
-	// 仿真线程: 后续替换为实际插补线程
-	void sim_thread();
 
 private:
 	// mutable 允许在 const 成员函数中加锁, 考虑移动到 ModelData 中

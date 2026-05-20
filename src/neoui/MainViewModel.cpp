@@ -17,7 +17,7 @@ double MainViewModel::speedRatio() const {
 	return m_mainModel->get_speedRatio();
 }
 
-bool MainViewModel::autoMode() const {
+int MainViewModel::autoMode() const {
 	return m_mainModel->get_autoMode();
 }
 
@@ -43,7 +43,12 @@ void MainViewModel::change_speedRatio(double ratio) {
 
 void MainViewModel::change_autoModel() {
 	int state = m_mainModel->get_autoMode();
-	m_mainModel->set_autoMode(!state);
+	m_mainModel->set_autoMode(state <= 0);
+}
+
+int MainViewModel::set_jogType(int robotIdx, int type) {
+	m_mainModel->set_jogType(robotIdx, type);
+	return 0;
 }
 
 int MainViewModel::jog_move(int robotIdx, int axisIdx, int dir, int enable) {

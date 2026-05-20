@@ -13,7 +13,7 @@ InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {}
 InterpDispatcher::~InterpDispatcher() = default;
 
 int InterpDispatcher::switch_auto(bool enable) {
-	signalIn.switchMode = enable;
+	signalIn.switchMode = enable ? 1 : -1;
 	return 0;
 }
 
@@ -41,7 +41,7 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 
 	// 跟随误差检测
 
-	if (dispatcherStatus.autoMode) {
+	if (dispatcherStatus.autoMode > 0) {
 		interp_auto_task();
 	}
 	else {
@@ -59,9 +59,9 @@ int InterpDispatcher::interp_auto_task() {
 	// 插补执行过程中: <正常插补>, <暂停过程>, <继续过程>
 	if (dispatcherStatus.interpState % 2 == 1) {
 		// 响应停止/暂停信号, 修改规划参数
-		if (signalIn.switchState == 0) {
-			dispatcherStatus.interpState |= (1 << 8);
-		}
+		//if (signalIn.switchState == 0) {
+		//	dispatcherStatus.interpState |= (1 << 8);
+		//}
 
 		// 规划新轨迹指令
 
@@ -86,8 +86,10 @@ int InterpDispatcher::interp_auto_task() {
 			dispatcherStatus.interpState |= 1;
 		}
 		// 3.2 响应非紧急状态切换信号，如手自动切换
-		else if (!signalIn.switchMode) {
-			dispatcherStatus.autoMode = false;
+		else if (signalIn.switchMode < 0) {
+			dispatcherStatus.autoMode = signalIn.switchMode + 1;
+			dispatcherStatus.interpState = 0;
+			signalIn.switchMode = 0;
 		}
 	}
 
@@ -121,9 +123,11 @@ int InterpDispatcher::interp_auto_task() {
 
 int InterpDispatcher::interp_manual_task() {
 	// 遍历轴使能信号
-	// 所有点动停止后，响应自动模式切换
+	// 所有点动停止后，响应手自动模式切换
 	if (signalIn.switchMode) {
-		dispatcherStatus.autoMode = true;
+		dispatcherStatus.autoMode = signalIn.switchMode < 0 ? (signalIn.switchMode + 1) : signalIn.switchMode;
+		dispatcherStatus.interpState = 0;
+		signalIn.switchMode = 0;
 		return 0;
 	}
 	return 0;
@@ -139,4 +143,16 @@ double InterpDispatcher::get_cycleTime() {
 
 int InterpDispatcher::add_move_point(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd) {
 	return pimpl->add_move_point(point, cfg, cmd);
+}
+
+// 点动模式
+int InterpDispatcher::set_jog_type(int jogType) {
+	signalIn.switchMode = -jogType-1;
+
+	return 0;
+}
+
+// 执行点动
+int InterpDispatcher::jog_move(int idx, int dir) {
+	return 0;
 }

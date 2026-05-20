@@ -11,7 +11,7 @@ class MainViewModel : public QObject
 {
     Q_OBJECT
 	// 申明一个可绑定的属性，NOTIFY用于通知变更
-	Q_PROPERTY(bool autoMode READ autoMode NOTIFY autoMode_changed)
+	Q_PROPERTY(int autoMode READ autoMode NOTIFY autoMode_changed)
 	Q_PROPERTY(int cardConnectState READ cardConnectState NOTIFY connectState_changed)
 	Q_PROPERTY(double speedRatio READ speedRatio NOTIFY speedRatio_changed)
 
@@ -20,7 +20,7 @@ public:
 
 	int cardConnectState() const;
 	double speedRatio() const;
-	bool autoMode() const;
+	int autoMode() const;
 
 	// 提供一个命令供 View 调用
 	Q_INVOKABLE void change_connectState();
@@ -29,6 +29,7 @@ public:
 	Q_INVOKABLE void change_autoModel();
 
 	// 点动接口
+	Q_INVOKABLE int set_jogType(int robotIdx, int type);
 	Q_INVOKABLE int jog_move(int robotIdx, int axisIdx, int dir, int enable);
 	// 下发自动任务
 	Q_INVOKABLE int set_auto_task(const FSAIRobotInterface::DiscreteTrajectory& trajectory);

@@ -131,6 +131,11 @@ void MainWindow::bind_viewmodel() {
 	// 切换手自动模式
 	connect(ui->checkBox_2, &QCheckBox::clicked, m_viewModel, &MainViewModel::change_autoModel);
 	connect(m_viewModel, &MainViewModel::autoMode_changed, this, &MainWindow::on_autoMode_changed);
+	// 点动模式
+	QRadioButton *jogTypeBtn[4] = { ui->radioButton, ui->radioButton_2, ui->radioButton_3, ui->radioButton_4 };
+	for (int i = 0; i < 4; ++i) {
+		connect(jogTypeBtn[i], &QRadioButton::pressed, m_viewModel, [&, i]() { m_viewModel->set_jogType(this->m_robotIdx, i); });
+	}
 
 	// --- 显示内容初始化
 	on_connectState_changed();
@@ -176,9 +181,17 @@ void MainWindow::on_speedRatio_changed() {
 }
 
 void MainWindow::on_autoMode_changed() {
-	bool autoMode = m_viewModel->autoMode();
-	ui->checkBox_2->setChecked(autoMode);
-	ui->checkBox_2->setText(autoMode ? "Auto  " : "Manaul");
+	int autoMode = m_viewModel->autoMode();
+
+	ui->checkBox_2->setChecked(autoMode > 0);
+	ui->checkBox_2->setText(autoMode > 0 ? "Auto  " : "Manaul");
+
+	QRadioButton *jogTypeBtn[4] = { ui->radioButton, ui->radioButton_2, ui->radioButton_3, ui->radioButton_4 };
+	if (autoMode <= 0) {
+		for (int i = 0; i < 4; ++i) {
+			jogTypeBtn[i]->setChecked(i == -autoMode);
+		}
+	}
 }
 
 void MainWindow::robot_change(int idx) {

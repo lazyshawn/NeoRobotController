@@ -181,6 +181,11 @@ int RobotGroupManager::switch_auto(int idx, bool enable) {
 	return 0;
 }
 
+int  RobotGroupManager::set_jogType(int robotIdx, int type) {
+	pimpl->robotList[robotIdx]->set_jog_type(type);
+	return 0;
+}
+
 int RobotGroupManager::jog_moving(int robotIdx, int type, int idx, int dir, int move) {
 	pimpl->robotList[robotIdx]->jog_moving(type, idx, dir, move);
 	return 0;
