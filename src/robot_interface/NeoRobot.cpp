@@ -170,8 +170,9 @@ int NeoRobot::set_jog_type(int type) {
 }
 //! 点动执行
 int NeoRobot::jog_moving(int type, int idx, int dir, int move) {
-	printf("%d, %d, %d, %d\n", type, idx, dir, move);
-	//dispatcher.jog();
+	printf("NeoRobot - Jog: %d, %d, %d, %d\n", type, idx, dir, move);
+
+	dispatcher.jog_move(idx, move > 0 ? dir : 0);
 	return 0;
 }
 

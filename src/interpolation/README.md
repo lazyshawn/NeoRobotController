@@ -13,7 +13,10 @@
 ### 插补流程
 整个插补流程分为三层：用户输入层、调度层、插补层。用户层将运动指令预处理后存入缓冲队列；调度层管理插补状态；插补层执行插补计算并输出离散点。
 
-调度器管理一个状态机，在每个插补周期中根据当前状态调用插补算法。调度器状共五个：完成、规划、插补、等待、暂停，保存在 `DispatcherState::interpState`中。调度流程如下图所示。
+调度器管理一个状态机，在每个插补周期中根据当前状态调用插补算法。
+
+#### 自动模式
+自动模式下调度器状共五个：完成、规划、插补、等待、暂停，保存在 `DispatcherState::interpState`中，流程如下图所示。
 
 ```mermaid
 graph LR
@@ -28,7 +31,7 @@ graph LR
     B --pause--> E[暂停]
     E --resume--> A
 
-    C --> F[手动]
+    C --switch--> F[手动]
 
     E --clear--> C
     D --clear--> C
@@ -44,14 +47,19 @@ graph LR
 ```mermaid
 sequenceDiagram
     participant UI as UI层
-    participant dispatcher as 调度器
+    participant dispatch as 调度器
     participant interp as 插补器
     
-    UI ->> dispatcher: switch_manaul()
-    dispatcher ->> dispatcher: 模式切换检测
-    dispatcher -->> UI: switch_success
-    UI ->> interp: 点动使能信号
+    UI ->> dispatch: switch_manaul()
+    dispatch ->> dispatch: 模式切换与轴初始化
+    dispatch -->> UI: switch_success
+    UI ->> dispatch: 点动使能信号
+    dispatch ->> interp: 点动状态检测与切换
+
+    alt 点动执行中
+        interp -->> dispatch: 插补结果
+    else 点动结束
+        UI ->> dispatch: switch_auto()
+    end
 ```
-
-#### 自动模式
-
+模式切换与轴初始化：切换到指定的手动模式，如关节、世界、工具、工件坐标系；更新各轴插补曲线的起点位置、速度、加速度等。

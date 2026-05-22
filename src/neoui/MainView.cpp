@@ -189,7 +189,10 @@ void MainWindow::on_autoMode_changed() {
 	QRadioButton *jogTypeBtn[4] = { ui->radioButton, ui->radioButton_2, ui->radioButton_3, ui->radioButton_4 };
 	if (autoMode <= 0) {
 		for (int i = 0; i < 4; ++i) {
-			jogTypeBtn[i]->setChecked(i == -autoMode);
+			jogTypeBtn[i]->setChecked(i+1 == -autoMode);
+		}
+		if (autoMode == 0) {
+			jogTypeBtn[0]->setChecked(true);
 		}
 	}
 }

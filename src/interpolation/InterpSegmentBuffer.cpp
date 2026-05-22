@@ -1045,3 +1045,30 @@ double InterpBuffer::cartesian_look_ahead() {
 
 	return vlim[0];
 }
+
+int InterpBuffer::set_jog_constraint(int idx, double q0, double vmax, double amax, double jmax) {
+	curve[idx].set_condition(q0, q0, 0, 0);
+	curve[idx].set_constraint(vmax, amax);
+	return 0;
+}
+
+int InterpBuffer::switch_jog_state(int idx, int state) {
+	curve[idx].set_onlineState(state);
+	return 0;
+}
+
+int InterpBuffer::jog_move(int idx) {
+	int state = 0;
+	// 细化插补，减少突变，按500us插补，按实际周期输出
+	int num = cycleTime / 5e-4;
+	for (int i = 0; i < num; ++i) {
+		state = curve[idx].online_interp(cycleTime / num);
+	}
+
+	return state;
+}
+
+int InterpBuffer::get_online_interp_result(int idx, double ans[4]) {
+	curve[idx].get_cur_state(ans);
+	return 0;
+}

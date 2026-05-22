@@ -65,7 +65,7 @@ struct DispatcherState {
 	long CycleNum;
 	//! 手自动模式
 	// +  : 自动模式
-	// -/0: 手动模式, 关节，世界，工具，工件
+	// -/0: 手动模式, 关节(0/-1)，世界(-2)，工具(-3)，工件(-4)
 	int autoMode;
 	//! 当前插补状态
 	// 自动：插补，暂停中/已暂停，继续，等待，完成/空闲
@@ -95,6 +95,9 @@ class SHARE_API_ InterpDispatcher {
 
 	int interp_auto_task();
 	int interp_manual_task();
+
+	// 切换到给定模式，并做对应处理
+	int switch_to_mode(int type);
 
 public:
 	InterpDispatcher();
