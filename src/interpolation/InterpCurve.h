@@ -11,39 +11,46 @@
 //双S曲线插补, 七段规划
 class DoubleSCurve {
 	//! 运动学约束
-	double vmax = 2, amax = 5, jmax = 5;
-	double vmin, amin, jmin;
+	double m_vmax = 2, m_amax = 5, m_jmax = 5;
+	double m_vmin, m_amin, m_jmin;
 
 	//! 曲线方向
-	int sign = 1;
+	int m_sign = 1;
 	// 偏移与缩放
-	double scale = 1.0, offset = 0.0;
+	double m_scale = 1.0, m_offset = 0.0;
 	//! 保留时间，剩余时间小于保留时间时视作插补完成
-	double reserveTime = 0.0;
+	double m_reserveTime = 0.0;
 
 	//! 始末点状态
-	double q0, q1, v0, v1;
+	double m_q0, m_q1, m_v0, m_v1;
 	//! 不同阶段的时间
-	double Tj1, Tj2, Ta, Tv, Td, T = 0;
+	double m_Tj1, m_Tj2, m_Ta, m_Tv, m_Td, m_T = 0;
 
 	// - 其他常用规划参数
 	//! 轨迹段最大速度、加速度
-	double alima, alimd, vlim;
+	double m_alima, m_alimd, m_vlim;
 	// 不同阶段的位移
-	double s1, s2, s3, s4, s5, s6;
+	double m_s1, m_s2, m_s3, m_s4, m_s5, m_s6;
 
 	// - 保持规划插补参数
 	//! 完成标识符，上次计算点位到达终点
-	bool doneFlag;
-	//! 规划速度
-	double vp = 0.0;
+	bool m_doneFlag;
+	//! 规划速度，后续移除，存入m_xt中
+	double m_vp = 0.0;
+
+	// --- 在线插补参数
+	//! 在线插补状态: +/- 运动方向，1 - 加速/匀速阶段, 2 - 减速阶段
+	int m_onlineState;
+	long m_decCnt = 0;
+	//! 当前插补结果 [xt, vt, at, jt]
+	double m_xt[4];
 
 	// 计算实际运动参数限制值，每次规划完后更新
 	int calc_plan_param();
 
 public:
-	// 曲线初始化
 	DoubleSCurve();
+
 	void clear();
 	/**
 	* @brief  设置曲线参数
@@ -88,6 +95,15 @@ public:
 	bool done();
 	double get_offset();
 
+	int get_onlineState();
+	int set_onlineState(int state);
+	/**
+	* @brief  在线插补
+	* @param  phase    插补阶段: 0 - 加速，1 - 减速
+	*/
+	int online_interp(double dt);
+	// 获取当前插补状态
+	int get_cur_state(double state[4]);
 
 	/**
 	* @brief  曲线缩放与偏移
@@ -116,20 +132,6 @@ public:
 	* @param  ds  剩余位移
 	*/
 	double calc_time_PiTPe(double ds);
-
-	/**
-	* @brief  更新保存点位
-	* @param  t   目标时间
-	* @return 目标位置
-	*/
-	double move_to(double t);
-	/**
-	* @brief  曲线合并
-	*
-	* 当前段减速段与目标段加速段合并，计算合并后的最大速度与最大加速度
-	*/
-	double merge(const DoubleSCurve& other);
-	
 };
 
 

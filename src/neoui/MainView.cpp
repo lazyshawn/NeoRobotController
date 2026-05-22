@@ -128,10 +128,19 @@ void MainWindow::bind_viewmodel() {
 	connect(ui->pushButton_33, &QPushButton::clicked, this, [&]() { robot_change(3); });
 	// 下发任务
 	connect(ui->pushButton_4, &QPushButton::clicked, this, &MainWindow::set_auto_task);
+	// 切换手自动模式
+	connect(ui->checkBox_2, &QCheckBox::clicked, m_viewModel, &MainViewModel::change_autoModel);
+	connect(m_viewModel, &MainViewModel::autoMode_changed, this, &MainWindow::on_autoMode_changed);
+	// 点动模式
+	QRadioButton *jogTypeBtn[4] = { ui->radioButton, ui->radioButton_2, ui->radioButton_3, ui->radioButton_4 };
+	for (int i = 0; i < 4; ++i) {
+		connect(jogTypeBtn[i], &QRadioButton::pressed, m_viewModel, [&, i]() { m_viewModel->set_jogType(this->m_robotIdx, i); });
+	}
 
 	// --- 显示内容初始化
 	on_connectState_changed();
 	on_speedRatio_changed();
+	on_autoMode_changed();
 	robot_change(m_robotIdx);
 }
 
@@ -148,9 +157,8 @@ void MainWindow::on_connectState_changed() {
 void MainWindow::on_robot_pos_changed() {
 	// 更新机械臂位置
 	auto jPos = m_viewModel->get_jPos();
-	//ui->lineEdit->setText(QString::number(jPos[0]));
 	for (size_t i = 0; i < 9; ++i) {
-		float pos;
+		double pos;
 		// 关节位置
 		pos = jPos.size() <= i ? 0 : jPos[i];
 		QTableWidgetItem* seqItem = new QTableWidgetItem(QString::number(pos));
@@ -169,6 +177,23 @@ void MainWindow::on_speedRatio_changed() {
 	// 更新界面
 	ui->horizontalSlider->setValue(ratio);
 	ui->spinBox->setValue(ratio);
+}
+
+void MainWindow::on_autoMode_changed() {
+	int autoMode = m_viewModel->autoMode();
+
+	ui->checkBox_2->setChecked(autoMode > 0);
+	ui->checkBox_2->setText(autoMode > 0 ? "Auto  " : "Manaul");
+
+	QRadioButton *jogTypeBtn[4] = { ui->radioButton, ui->radioButton_2, ui->radioButton_3, ui->radioButton_4 };
+	if (autoMode <= 0) {
+		for (int i = 0; i < 4; ++i) {
+			jogTypeBtn[i]->setChecked(i+1 == -autoMode);
+		}
+		if (autoMode == 0) {
+			jogTypeBtn[0]->setChecked(true);
+		}
+	}
 }
 
 void MainWindow::robot_change(int idx) {

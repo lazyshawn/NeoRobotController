@@ -37,7 +37,7 @@ template class std::vector<std::shared_ptr<InterpSegment>>;
 
 // 插补器缓存数据
 struct InterpBuffer {
-public:
+private:
 	//! 点位指令缓存数组
 	std::vector<std::shared_ptr<InterpSegment>> interpBuf;
 	//! 缓冲容量(N)
@@ -135,4 +135,10 @@ public:
 	*   - <0  插补异常
 	*/
 	int move(PosData& pos);
+
+	// --- 点动处理
+	int set_jog_constraint(int idx, double q0, double vmax, double amax, double jmax);
+	int switch_jog_state(int idx, int state);
+	int jog_move(int idx);
+	int get_online_interp_result(int idx, double ans[4]);
 };

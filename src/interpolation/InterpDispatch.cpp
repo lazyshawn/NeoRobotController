@@ -12,6 +12,11 @@ InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {}
 // 析构函数: 编译器必须析构的代码位置看到 IMPL 的完整定义
 InterpDispatcher::~InterpDispatcher() = default;
 
+int InterpDispatcher::switch_auto(bool enable) {
+	signalIn.switchMode = enable ? 1 : -1;
+	return 0;
+}
+
 int InterpDispatcher::interp_enable(bool enable) {
 	std::cout << "Interp " << (enable ? "enabled." : "disabled.") << std::endl;
 	signalIn.interpEnable = enable;
@@ -36,22 +41,34 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 
 	// 跟随误差检测
 
+	if (dispatcherStatus.autoMode > 0) {
+		interp_auto_task();
+	}
+	else {
+		interp_manual_task();
+	}
+
+	// 输出插补状态
+	state = dispatcherStatus;
+	return 0;
+}
+
+int InterpDispatcher::interp_auto_task() {
 	// - 执行插补动作: 插补与等待状态切换需要一个周期，避免不同状态下触发的动作时序混乱
 	static int interpFinish = 0;
+
+	// 当前机器人位置
+	PosData pos = dispatcherStatus.dpos;
+
 	// 插补执行过程中: <正常插补>, <暂停过程>, <继续过程>
 	if (dispatcherStatus.interpState % 2 == 1) {
 		// 响应停止/暂停信号, 修改规划参数
-		if (signalIn.switchState == 0) {
-			dispatcherStatus.interpState |= (1 << 8);
-		}
-
-		// 规划新轨迹指令
+		//if (signalIn.switchState == 0) {
+		//	dispatcherStatus.interpState |= (1 << 8);
+		//}
 
 		// 执行插补
-		PosData pos;
 		interpFinish = pimpl->move(pos);
-		pimpl->get_cur_dpos(dispatcherStatus.dpos);
-		//std::cout << "dpos: " << pos.rbtPos[0] << ", " << pos.rbtPos[1] << ", " << pos.rbtPos[2] << std::endl;
 	}
 	// 插补动作停止，等待恢复插补的信号
 	else {
@@ -60,17 +77,16 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 		// 2. <等待> 状态，等待就绪信号，如事件信号、定时器信号
 
 		// 3. 任务队列清空，进入 <完成> 状态
-		// 3.1 响应非紧急状态切换信号，如手自动切换
-		// 3.2 接收新任务切换到 <插补/等待> 状态
+		// 3.1 接收新任务切换到 <插补/等待> 状态
 		if (dispatcherStatus.interpState == 0 && pimpl->get_buffer_size() > 0) {
 			// 运动前缓冲指令切换 <等待> 状态
-			// 轨迹起点设为当前关节位置
-			//PosData begPos;
-			//begPos.pointType = 0;
-			//begPos.rbtPos = state.dpos;
-			//interpBuffer.set_begin_pos(begPos);
+			// 轨迹起点设为当前关节位置, 因为缓冲动作可能会运动导致当前点与指令起点不一致
 			// 缓冲指令完成，切换 <插补> 状态
 			dispatcherStatus.interpState |= 1;
+		}
+		// 3.2 响应非紧急状态切换信号，如手自动切换
+		else if (signalIn.switchMode < 0) {
+			switch_to_mode(signalIn.switchMode + 1);
 		}
 	}
 
@@ -97,8 +113,76 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 	}
 
 	// - 输出插补结果，更新关节角
+	dispatcherStatus.dpos = pos;
 	dispatcherStatus.cmdNum = pimpl->get_bufbeg();
-	state = dispatcherStatus;
+
+	return 0;
+}
+
+int InterpDispatcher::interp_manual_task() {
+	// 遍历轴点动使能信号
+	int cmd = signalIn.switchState;
+	for (int i = 0; i < 9; ++i) {
+		// 修改点动状态
+		int dir = cmd & 3;
+
+		// 正向信号
+		if (dir == 1) {
+			pimpl->switch_jog_state(i, 1);
+		}
+		// 负向信号
+		else if (dir == 2) {
+			pimpl->switch_jog_state(i, -1);
+		}
+		// 异常信号重置
+		else if (dir == 3) {
+			pimpl->switch_jog_state(i, 0);
+			signalIn.switchState &= ~(1 << (i * 2));
+			signalIn.switchState &= ~(1 << (i * 2 + 1));
+		}
+		// 停止信号，按当前方向停止
+		else {
+			pimpl->switch_jog_state(i, 0);
+		}
+
+		// 执行点动插补
+		double xt[4];
+		int jogState = pimpl->jog_move(i);
+		pimpl->get_online_interp_result(i, xt);
+		if (i < 6) {
+			dispatcherStatus.dpos.rbtPos[i] = xt[0];
+		}
+		else {
+			dispatcherStatus.dpos.extPos[i - 6] = xt[0];
+		}
+
+		// 更新当前插补状态
+		if (jogState > 0) {
+			dispatcherStatus.interpState |= (1 << (2 * i));
+			dispatcherStatus.interpState &= ~(1 << (2 * i + 1));
+		}
+		else if (jogState < 0) {
+			dispatcherStatus.interpState &= ~(1 << (2 * i));
+			dispatcherStatus.interpState |= (1 << (2 * i + 1));
+		}
+		else {
+			dispatcherStatus.interpState &= ~(1 << (2 * i));
+			dispatcherStatus.interpState &= ~(1 << (2 * i + 1));
+		}
+
+		cmd = cmd >> 2;
+	}
+
+	// 不需要切换模式，可以直接返回
+	if (signalIn.switchMode == 0)
+		return 0;
+
+	// 所有点动停止后，响应手自动模式切换
+	if (dispatcherStatus.interpState == 0) {
+		switch_to_mode(signalIn.switchMode);
+	}
+	// 否则不允许切换模式
+	signalIn.switchMode = 0;
 
 	return 0;
 }
@@ -108,9 +192,60 @@ bool InterpDispatcher::buffer_ready() {
 }
 
 double InterpDispatcher::get_cycleTime() {
-	return pimpl->cycleTime;
+	return pimpl->get_cycleTime();
 }
 
 int InterpDispatcher::add_move_point(const PointInfo& point, const MotionCfg& cfg, const MoveCmd& cmd) {
 	return pimpl->add_move_point(point, cfg, cmd);
+}
+
+// 点动模式
+int InterpDispatcher::set_jog_type(int jogType) {
+	signalIn.switchMode = -jogType-1;
+	return 0;
+}
+
+// 下发点动信号
+int InterpDispatcher::jog_move(int idx, int dir) {
+	// 正向点动
+	if (dir > 0) {
+		int bit = idx * 2;
+		signalIn.switchState |= (1 << bit);
+	}
+	else if (dir < 0) {
+		int bit = idx * 2 + 1;
+		signalIn.switchState |= (1 << bit);
+	}
+	else {
+		int bit = idx * 2;
+		signalIn.switchState &= ~(1 << bit);
+
+		bit = idx * 2 + 1;
+		signalIn.switchState &= ~(1 << bit);
+	}
+
+	return 0;
+}
+
+int InterpDispatcher::switch_to_mode(int type) {
+	// 切换到自动
+	if (type > 0) {
+	}
+	// 切换到关节
+	else if (type == 0) {
+		// 点位坐标系转换
+
+		// 更新各轴插补曲线的起点位置、速度、加速度等
+		for (int i = 0; i < 9; ++i) {
+			double q0 = i < 6 ? dispatcherStatus.dpos.rbtPos[i] : dispatcherStatus.dpos.extPos[i - 6];
+			pimpl->set_jog_constraint(i, q0, 10, 10, 100);
+		}
+	}
+
+	// 切换到指定模式
+	dispatcherStatus.autoMode = type;
+	// 切换完成后复位当前插补状态
+	dispatcherStatus.interpState = 0;
+
+	return 0;
 }

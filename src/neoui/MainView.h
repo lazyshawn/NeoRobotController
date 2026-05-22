@@ -18,11 +18,13 @@ private slots:
 	void on_connectState_changed();
 	void on_robot_pos_changed();
 	void on_speedRatio_changed();
+	void on_autoMode_changed();
 
 private:
 	Ui::MainWindow *ui;
 	MainViewModel *m_viewModel;
 
+	// 修改为从 Model 获取
 	int m_robotIdx = 0;
 
 	// 界面初始化

@@ -36,6 +36,8 @@ public:
 
 	int get_rt_robot_status(int idx, RobotStatus& robotStatus);
 	int push_new_trajectory(int idx, const DiscreteTrajectory& trajectory);
+	int switch_auto(int idx, bool enable);
+	int set_jogType(int robotIdx, int type);
 	int jog_moving(int robotIdx, int type, int idx, int dir, int move);
 
 	/**
