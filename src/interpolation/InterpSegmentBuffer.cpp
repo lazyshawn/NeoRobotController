@@ -323,7 +323,7 @@ int InterpBuffer::add_move_point(const PointInfo& point, const MotionCfg& cfg, c
 
 	// 轨迹写入位置
 	int curBuf = bufEnd, nextBuf, preBuf;
-	get_neighbor_index(&preBuf, &bufEnd, &nextBuf);
+	get_neighbor_index(&preBuf, &curBuf, &nextBuf);
 
 	// 写入位置行号为非负，表示点位未执行完毕，不插入点位
 	if (interpBuf[curBuf]->procInfo.lineNum >= 0) {
@@ -333,7 +333,7 @@ int InterpBuffer::add_move_point(const PointInfo& point, const MotionCfg& cfg, c
 	// - 插入轨迹
 	bufOccupied = true;
 	// 缓冲轨迹
-	std::shared_ptr<InterpSegment> traj = std::shared_ptr<InterpSegment>(new InterpSegment);
+	std::shared_ptr<InterpSegment> traj = std::make_shared<InterpSegment>();
 
 	// 轨迹加入缓冲
 	traj->set_data(point, cfg, cmd);
@@ -401,7 +401,7 @@ InterpSegmentType InterpBuffer::get_segment_type(int bufNum) {
 // 获取相邻的轨迹索引 [0,N)
 int InterpBuffer::get_neighbor_index(int *pre, int *cur, int *next) {
 	*next = (*cur + 1) % maxBufNum;
-	*pre = (*cur - 1) < 0 ? maxBufNum - 1 : *cur - 1;
+	*pre = (*cur - 1) < 0 ? maxBufNum - 1 : (*cur - 1) % maxBufNum;
 	*cur = *cur % maxBufNum;
 
 	return 0;
@@ -409,7 +409,7 @@ int InterpBuffer::get_neighbor_index(int *pre, int *cur, int *next) {
 // 获取相邻的轨迹指针
 int InterpBuffer::get_neighbor_buffer(int cur, InterpSegment *&preBuf, InterpSegment *&curBuf, InterpSegment *&nextBuf) {
 	int next = (cur + 1) % maxBufNum;
-	int pre = (cur - 1) < 0 ? maxBufNum - 1 : cur - 1;
+	int pre = (cur - 1) < 0 ? maxBufNum - 1 : (cur - 1) % maxBufNum;
 	cur = cur % maxBufNum;
 
 	preBuf = interpBuf[pre].get();

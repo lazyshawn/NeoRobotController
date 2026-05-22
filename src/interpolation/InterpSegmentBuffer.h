@@ -87,7 +87,6 @@ private:
 	int cartesian_plan();
 	int cartesian_move();
 
-
 	// 轨迹前瞻: 输出最大终点速度
 	double cartesian_look_ahead();
 

@@ -157,9 +157,8 @@ void MainWindow::on_connectState_changed() {
 void MainWindow::on_robot_pos_changed() {
 	// 更新机械臂位置
 	auto jPos = m_viewModel->get_jPos();
-	//ui->lineEdit->setText(QString::number(jPos[0]));
 	for (size_t i = 0; i < 9; ++i) {
-		float pos;
+		double pos;
 		// 关节位置
 		pos = jPos.size() <= i ? 0 : jPos[i];
 		QTableWidgetItem* seqItem = new QTableWidgetItem(QString::number(pos));
