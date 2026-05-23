@@ -223,12 +223,25 @@ void MainWindow::set_auto_task() {
 	PointInfo pointInfo;
 	MotionCfg motionCfg;
 	MoveCmd moveCmd;
-	motionCfg.moveType = 1;
 	motionCfg.speed = 2;
 	motionCfg.smooth = 40;
 	pointInfo.begPos = dpos;
 	pointInfo.endPos = dpos;
 
+	//// --- 关节运动
+	//motionCfg.moveType = 0;
+	//pointInfo.begPos = pointInfo.endPos;
+	//pointInfo.endPos.rbtPos = { 10, 5, 0, 0,0,0 };
+	//curTraj.set_data(pointInfo, motionCfg, moveCmd);
+	//trajList.add_single_traj(curTraj);
+
+	//pointInfo.begPos = pointInfo.endPos;
+	//pointInfo.endPos.rbtPos = { 15, 20, 0, 0,0,0 };
+	//curTraj.set_data(pointInfo, motionCfg, moveCmd);
+	//trajList.add_single_traj(curTraj);
+
+	// --- 空间运动
+	motionCfg.moveType = 1;
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[0] += 10;
 	pointInfo.endPos.extPos[0] += 100;

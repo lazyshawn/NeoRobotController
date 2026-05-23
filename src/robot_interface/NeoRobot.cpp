@@ -84,6 +84,14 @@ int NeoRobot::process_after_send_traj() {
 }
 
 int NeoRobot::execute_single_joint() {
+	auto curTraj = trajectory.get_curTraj();
+	auto preTraj = trajectory.get_preTraj();
+
+	dispatcher.add_move_point(curTraj.pointInfo, curTraj.motionCfg, curTraj.moveCmd);
+
+	// 弹出轨迹
+	trajectory.pop();
+
 	return 0;
 
 }

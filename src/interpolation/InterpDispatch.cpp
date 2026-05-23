@@ -1,8 +1,12 @@
 ﻿
 #include "interpolation/InterpDispatch.h"
-#include <iostream>
 
 #include "InterpSegmentBuffer.h"
+
+//#include <iostream>
+//#include <fstream>
+//static std::ofstream jntPosOutFile("jnt_pos.txt");
+//static std::ofstream jntVelOutFile("jnt_vel.txt");
 
 // 将前向声明 IMPL 定义为 InterpBuffer 的别名
 struct InterpDispatcher::IMPL : public InterpBuffer {};
@@ -47,6 +51,15 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 	else {
 		interp_manual_task();
 	}
+
+	//for (int i = 0; i < 5; ++i) {
+	//	jntPosOutFile << dispatcherStatus.dpos.rbtPos[i] << ", ";
+	//}
+	//jntPosOutFile << dispatcherStatus.dpos.rbtPos[5] << ", ";
+	//for (int i = 0; i < 2; ++i) {
+	//	jntPosOutFile << dispatcherStatus.dpos.extPos[i] << ", ";
+	//}
+	//jntPosOutFile << dispatcherStatus.dpos.extPos[2] << std::endl;
 
 	// 输出插补状态
 	state = dispatcherStatus;
