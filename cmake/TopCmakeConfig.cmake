@@ -37,6 +37,9 @@ if(NOT hasParent)
 
   option(EXPORT_CMAKE_PACKAGE "Export targets with cmake package" ON)
 
+  # generate compiler_commands.json
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 else()
   option(EXPORT_CMAKE_PACKAGE "Export targets with cmake package" OFF)
 

@@ -1,17 +1,20 @@
 ﻿
 #include "data_process/arc_tracker.h"
+#include "data_process/input_shaping.h"
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 // 滤波器测试
 int test_filter();
-// 矩阵计算测试
-int test_matrix_calc();
+// 输入整形测试
+int test_input_shaping();
 
 int main() {
-	test_filter();
-	//test_matrix_calc();
+	//test_filter();
+	test_input_shaping();
 	return 0;
 }
 
@@ -65,33 +68,43 @@ int test_filter() {
 }
 
 
-int test_matrix_calc() {
-	MatrixXd *mat1 = matrix_new_identity(3), *vec1 = matrix_new_identity(3), *ans = matrix_new_identity(3);
-	mat1->data[5] = 2.0;
-	vec1->data[2] = 2.0;
+int test_input_shaping() {
+	double Ts = 5e-3;
 
-	matrix_set(mat1, 0, 0, 0.8137977);
-	matrix_set(mat1, 0, 1, -0.4698463);
-	matrix_set(mat1, 0, 2, 0.3420202);
-	matrix_set(mat1, 1, 0, 0.5438381);
-	matrix_set(mat1, 1, 1, 0.8231729);
-	matrix_set(mat1, 1, 2, -0.1631759);
-	matrix_set(mat1, 2, 0, -0.2048741);
-	matrix_set(mat1, 2, 1, 0.3187958);
-	matrix_set(mat1, 2, 2, 0.9254166);
+	std::ofstream out("example.txt", std::ios::out);
+	if (!out) {
+		std::cerr << "无法打开文件用于写入\n";
+		return 1;
+	}
 
-	printf("mat = \n");
-	matrix_cout(mat1);
+	// 构建滤波器
+	//construct_input_shaping_filter(2 * M_PI, 0.1, 0.7, Ts);
+	construct_low_pass_input_shaping(2 * M_PI, 0.1, 0.7, Ts);
 
-	matrix_LUP_inverse(mat1, ans);
+	// 生成平滑信号，五次多项式S形曲线
+	double Trise = 2.0, Tsim = 5.0;
+	int N = Tsim / Ts;
 
-	printf("\nmat_inv = \n");
-	matrix_cout(ans);
+	for (int i = 0; i < N; ++i) {
+		// 模拟平滑输入指令
+		double tau = std::min(i * Ts / Trise, 1.0);
+		double rk = 6 * tau*tau*tau*tau*tau - 15 * tau*tau*tau*tau + 10 * tau*tau*tau + 1;
+		//if (i == 500) {
+		//	rk += 1.0;
+		//}
+		
+		// 整形
+		int num = 9;
+		double Jin[9] = { 0.0 }, Jout[9] = { 0.0 };
+		for (int j = 0; j < num; ++j) {
+			Jin[j] = rk;
+		}
+		input_shaping_filter_onestep(Jin, Jout, num);
 
-	matrix_multiply(mat1, ans, vec1);
+		// 保存结果
+		std::cout << i << ", " << Jin[0] << ": " << Jout[0] << std::endl;
+		out << Jin[0] << ", " << Jout[0] << std::endl;
+	}
 
-	printf("\nAA-1 = \n");
-	matrix_cout(vec1);
 	return 0;
 }
-

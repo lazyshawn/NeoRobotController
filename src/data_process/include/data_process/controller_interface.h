@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 #else
 #include "zmcbuildin.h"
 #define NULL ((void *)0)

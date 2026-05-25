@@ -88,7 +88,7 @@ void matrix_delete(MatrixXd * q);
 int matrix_cout(const MatrixXd * q);
 
 // 矩阵拷贝
-MatrixXd * matrix_copy(const MatrixXd * q);
+MatrixXd * matrix_new_copy(const MatrixXd * q);
 
 // 获取元素
 int matrix_get(const MatrixXd *mat, int row, int col, double *ans);

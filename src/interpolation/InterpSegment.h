@@ -1,0 +1,112 @@
+﻿#pragma once
+/* ************************************************************ *
+* @brief 轨迹段插补信息                                         *
+*															    *
+* 主要功能如下：											    *
+* 1. 提供轨迹段在插补过程中的缓存数据                           *
+* ************************************************************* */
+
+
+#include "common/TrajectorySegment.h"
+
+
+/* ************************************************************ *
+* @brief 轨迹处理信息                                           *
+*															    *
+* 1. 预处理: 接收轨迹信息时，需要根据前置或后置轨迹获取的信息   *
+* 2. 规划: 补充或修改的信息                                     *
+* 3. 插补: 插补完成后，保存的信息                               *
+* ************************************************************* */
+struct ProcessInfo {
+	// 处理阶段: 未开始(0), 预处理(1,2), 规划(3,4), 插补(5,6)
+	int procStage = 0;
+
+	// 轨迹行号
+	int lineNum = -1;
+	// 前平滑系数，接收当前轨迹时修改，同时修改前置轨迹的后平滑系数
+	double preSmooth = -1;
+	// 后平滑系数，后置轨迹插入时修改，为0时插补阶段不用考虑后续轨迹
+	double postSmooth = -1;
+
+	//! 当前段插补总时间
+	double maxTime = 0.0;
+	//! 当前插补时间，同一次前瞻的轨迹中从零开始计数，插补一次叠加一次插补周期的时间
+	double curTime = 0;
+
+
+	// - 笛卡尔空间参数
+	// 直线起点/圆弧圆心
+	double knot[3];
+	// 直线方向(1)/圆弧旋转矢量(theta)
+	double dir[3];
+	// 直线长度/圆弧弧长
+	double dist;
+
+	// 前平滑开始处比例
+	double preSmoothK = 0.0;
+	// 后平滑开始处比例
+	double postSmoothK = 1.0;
+
+	// 控制点顺序与轨迹方向相同: + 轨迹点, * 平滑曲线控制点
+	// + ... ---- *-*-*- ... + ... -*-*-* ---- ... ---- *-*-*- ... + ... -*-*-* ---- ... +
+	//     post 0 1 2        |      0 1 2 pre      post 0 1 2      |      0 1 2 pre
+	// 前段轨迹              | 当前轨迹                            | 下段轨迹
+	// 后平滑3个点           | 前平滑的3个点       后平滑3个点     | 前平滑3个点
+
+	//! 前平滑控制点
+	double preCtrlPnt[6][3];
+	//! 后平滑控制点
+	double postCtrlPnt[6][3];
+	//! 规划段长度
+	double mainDist, preBlendDist, postBlendDist;
+	//! 整数周期插补后的剩余距离
+	double remainS = 0.0;
+	//! 整数周期插补后的剩余时间
+	double remainT = 0.0;
+	//! 结束点速度
+	double constrainedVel = 0.0;
+
+	//! 直线段始末位置
+	double segmBegDist, segmEndDist;
+
+	// --- 结束状态
+	//! 完成时间
+
+	//! 结束点规划速度
+	//! 结束点位置: 当前段位置
+	double doneS = 0.0;
+	double doneU = 0.0;
+
+	void reset();
+};
+
+// 插补状态
+// 1. 插补过程中频繁更新的数据
+// 2, 可能需要输出的状态
+struct InterpInfo {
+	// --- 过程状态
+	//! 插补轨迹位置: 完成(-1), 未开始(0)，前平滑，无平滑，后平滑
+	int partId;
+	//! 插补比列
+	double schedule = 0.0;
+	//! 当前过渡曲线位置参数，前平滑和后平滑共同使用该参数
+	double curU = 0.0;
+	//! 当前速度曲线规划的位移: 包含上一段曲线位移
+	double curMoveS = 0.0;
+	//! 当前周期目标位置
+	PosData dpos;
+};
+
+// 插补线段基类
+class InterpSegment : public SegmentBase {
+protected:
+
+public:
+	// 处理过程信息
+	ProcessInfo procInfo;
+
+	// 插补信息
+	InterpInfo interpInfo;
+};
+
+
