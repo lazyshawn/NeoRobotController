@@ -16,7 +16,7 @@ class DoubleSCurve {
 
 	//! 曲线方向
 	int m_sign = 1;
-	// 偏移与缩放
+	// 偏移与缩放：新曲线时间戳与旧曲线时间戳对应关系为: tn = K to + dt
 	double m_scale = 1.0, m_offset = 0.0;
 	//! 保留时间，剩余时间小于保留时间时视作插补完成
 	double m_reserveTime = 0.0;
@@ -93,7 +93,8 @@ public:
 	*/
 	double get_pos(double t);
 	bool done();
-	double get_offset();
+	double get_offset() const;
+	double get_scale() const;
 
 	int get_onlineState();
 	int set_onlineState(int state);

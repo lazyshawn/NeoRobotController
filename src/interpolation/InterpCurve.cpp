@@ -350,6 +350,10 @@ int DoubleSCurve::plan_by_duration(double Tall, double Tacc, double Tjerk) {
 	denom *= alpha * beta * m_T;
 	m_jmax = h / denom;
 
+	m_vmin = -m_vmax;
+	m_amin = -m_amax;
+	m_jmin = -m_jmax;
+
 	// - 计算最大速度、加速度
 	calc_plan_param();
 
@@ -380,14 +384,18 @@ bool DoubleSCurve::done() {
 	return m_doneFlag;
 }
 
-double DoubleSCurve::get_offset() {
+double DoubleSCurve::get_offset() const {
 	return m_offset;
+}
+
+double DoubleSCurve::get_scale() const {
+	return m_scale;
 }
 
 double DoubleSCurve::get_pos(double t) {
 	
-	// 时间缩放
-	t = t * m_scale + m_offset;
+	// 时间缩放: 
+	t = (t - m_offset) / m_scale;
 
 	// 插补完成标志
 	if (t + m_reserveTime > m_T) {

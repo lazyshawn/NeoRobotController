@@ -372,7 +372,6 @@ void RobotGroupManager::IMPL::processCommandThread() {
 					ret = robotList[i]->execute_single_joint();
 				}
 				else if (curTraj.isCartesian()){
-					// 下发轨迹
 					ret = robotList[i]->execute_single_cartesian();
 				}
 
