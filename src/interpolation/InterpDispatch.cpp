@@ -3,7 +3,7 @@
 
 #include "InterpSegmentBuffer.h"
 
-//#include <iostream>
+#include <iostream>
 //#include <fstream>
 //static std::ofstream jntPosOutFile("jnt_pos.txt");
 //static std::ofstream jntVelOutFile("jnt_vel.txt");

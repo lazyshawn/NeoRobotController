@@ -14,6 +14,12 @@ add_executable(demo_mvvm
   MainViewModel.cpp
   # views
   mainView.cpp
+
+  forms/logo.rc
+)
+
+set_target_properties(demo_mvvm
+  PROPERTIES WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,ON,OFF>
 )
 
 target_link_libraries(demo_mvvm PRIVATE
