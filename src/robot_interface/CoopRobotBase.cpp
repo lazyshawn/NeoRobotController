@@ -16,8 +16,8 @@ RobotLog::RobotLog() {
 
 	LOG4CPLUS_INFO(logger, "*************************************\n"
 		<< "RobotGroupManager Info:\n"
-		<< "Version:         1.0.2\n"
-		<< "Release Date:    260325_0945");
+		<< "Version:         1.1.0\n"
+		<< "Release Date:    260525_1416");
 }
 
 /* *************************** RobotBase *************************** */
