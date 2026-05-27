@@ -141,4 +141,5 @@ public:
 	int switch_jog_state(int idx, int state);
 	int jog_move(int idx);
 	int get_online_interp_result(int idx, double ans[4]);
+	double plan_decccel_online_interp(int idx);
 };

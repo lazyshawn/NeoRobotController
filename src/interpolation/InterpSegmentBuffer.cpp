@@ -1095,3 +1095,8 @@ int InterpBuffer::get_online_interp_result(int idx, double ans[4]) {
 	curve[idx].get_cur_state(ans);
 	return 0;
 }
+
+double InterpBuffer::plan_decccel_online_interp(int idx) {
+	double Tdi[3];
+	return curve[idx].plan_decccel_online_interp(Tdi);
+}

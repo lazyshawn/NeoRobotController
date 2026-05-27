@@ -486,19 +486,12 @@ int DoubleSCurve::set_onlineState(int state) {
 
 	// 停止，不改变曲线方向
 	if (std::abs(m_onlineState) == 1 && state == 0) {
-		// 切换到停止时，规划减速段
+		// 切换到停止状态
 		m_onlineState = m_onlineState > 0 ? 2 : -2;
-		// 能达到匀加速度阶段
-		m_Tj1 = (m_amin - m_xt[2]) / m_jmin;
-		m_Tj2 = (0 - m_amin) / m_jmax;
-		m_Td = -m_xt[1] / m_amin + m_Tj1 * (m_amin - m_xt[2]) / (2 * m_amin) + m_Tj2 * m_amin / (2 * m_amin);
-
-		// 不能达到匀加速度阶段
-		if (m_Td < m_Tj1 + m_Tj2) {
-			m_Tj1 = -m_xt[2] / m_jmin + sqrt((m_jmax - m_jmin)*(m_xt[2] * m_xt[2] * m_jmax - m_jmin * 2 * m_jmax*m_xt[1])) / (m_jmin*(m_jmin - m_jmax));
-			m_Tj2 = sqrt((m_jmax - m_jmin)*(m_xt[2] * m_xt[2] * m_jmax - m_jmin * 2 * m_jmax*m_xt[1])) / (m_jmax*(m_jmax - m_jmin));
-			m_Td = m_Tj1 + m_Tj2;
-		}
+		// 规划减速段
+		double Tdi[3];
+		plan_decccel_online_interp(Tdi);
+		apply_deccel_plan(Tdi);
 	}
 	// 静止切换到运动 / 运动过程中切换状态
 	else if (state != 0){
@@ -599,6 +592,37 @@ int DoubleSCurve::get_cur_state(double state[4]) {
 	for (int i = 0; i < 4; ++i) {
 		state[i] = m_xt[i] * m_sign;
 	}
+	return 0;
+}
+
+double DoubleSCurve::plan_decccel_online_interp(double Tdi[3]) {
+	// 能达到匀加速度阶段
+	double Tj1 = (m_amin - m_xt[2]) / m_jmin;
+	double Tj2 = (0 - m_amin) / m_jmax;
+	double Td = -m_xt[1] / m_amin + Tj1 * (m_amin - m_xt[2]) / (2 * m_amin) + Tj2 * m_amin / (2 * m_amin);
+
+	// 不能达到匀加速度阶段
+	if (Td < Tj1 + Tj2) {
+		Tj1 = -m_xt[2] / m_jmin + sqrt((m_jmax - m_jmin)*(m_xt[2] * m_xt[2] * m_jmax - m_jmin * 2 * m_jmax*m_xt[1])) / (m_jmin*(m_jmin - m_jmax));
+		Tj2 = sqrt((m_jmax - m_jmin)*(m_xt[2] * m_xt[2] * m_jmax - m_jmin * 2 * m_jmax*m_xt[1])) / (m_jmax*(m_jmax - m_jmin));
+		Td = Tj1 + Tj2;
+	}
+
+	Tdi[0] = Tj1;
+	Tdi[1] = Tj2;
+	Tdi[2] = Td;
+
+	// 计算终点位置
+	double hk = m_xt[2] * Td*Td / 2 + (m_jmin*Tj1*(3 * Td*Td - 3 * Td*Tj1 + Tj1 * Tj1) + m_jmax * Tj2*Tj2*Tj2) / 6 + Td * m_xt[1];
+
+	return m_sign * (m_xt[0] + hk);
+}
+
+int DoubleSCurve::apply_deccel_plan(double Tdi[3]) {
+	m_Tj1 = Tdi[0];
+	m_Tj2 = Tdi[1];
+	m_Td  = Tdi[2];
+
 	return 0;
 }
 

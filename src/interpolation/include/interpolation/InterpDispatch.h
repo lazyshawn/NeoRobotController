@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "common/TrajectorySegment.h"
+#include "common/GeoKinematics.h"
 
 /**
 * @brief  插补输入信号
@@ -88,6 +89,8 @@ class SHARE_API_ InterpDispatcher {
 	DispatcherState dispatcherStatus;
 	//! 逻辑层输入信号，封装后由上层调用进行切换
 	InterpSignalIn signalIn;
+	//! 机械臂运动学模型
+	GeoKineConfig kineCfg;
 
 	// IMPL 模式前置声明，将轨迹操作单独封装
 	struct IMPL;
