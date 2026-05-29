@@ -56,7 +56,7 @@ public:
 	* @brief  设置曲线参数
 	*/
 	int set_condition(double begPos, double endPos, double begVel, double endVel);
-	int set_constraint(double maxVel, double maxAcc);
+	int set_constraint(double maxVel, double maxAcc, double maxJerk = -1);
 	/**
 	* @brief  设置保留时间
 	* @param  time    保留时间(s)

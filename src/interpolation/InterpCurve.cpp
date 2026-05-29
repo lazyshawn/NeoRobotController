@@ -206,12 +206,14 @@ int DoubleSCurve::set_condition(double begPos, double endPos, double begVel, dou
 	return 0;
 }
 
-int DoubleSCurve::set_constraint(double maxVel, double maxAcc) {
+int DoubleSCurve::set_constraint(double maxVel, double maxAcc, double maxJerk) {
 	m_vmax = fabs(maxVel);
 	m_amax = fabs(maxAcc);
+	m_jmax = maxJerk > 0 ? fabs(maxJerk) : 10 * m_amax;
 
 	m_vmin = -m_vmax;
 	m_amin = -m_amax;
+	m_jmin = -m_jmax;
 	return 0;
 }
 
