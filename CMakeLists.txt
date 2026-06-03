@@ -25,6 +25,7 @@ else()
 endif()
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/output/${PROJECT_NAME})
+set(CMAKE_CXX_STANDARD 17)
 include(GNUInstallDirs)
 
 

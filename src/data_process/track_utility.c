@@ -347,7 +347,7 @@ int matrix_multiply(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *ans) {
  *   - 0: 表示成功
  *   - 1: 表示奇异矩阵，主元为0
  */
-int LUP_decompose(MatrixXd* A, MatrixXd* P, int* sign) {
+static int LUP_decompose(MatrixXd* A, MatrixXd* P, int* sign) {
 	int n = A->rows;
 
 	// 初始化置换向量和行列式符号
@@ -422,7 +422,7 @@ int LUP_decompose(MatrixXd* A, MatrixXd* P, int* sign) {
 }
 
 // 前向替代（解 Ly = Pb）
-void forward_substitution(const MatrixXd* LU, const MatrixXd* Pb, MatrixXd* y) {
+static void forward_substitution(const MatrixXd* LU, const MatrixXd* Pb, MatrixXd* y) {
 	int n = LU->rows;
 	for (int i = 0; i < n; i++) {
 		double sum = 0.0;
@@ -436,7 +436,7 @@ void forward_substitution(const MatrixXd* LU, const MatrixXd* Pb, MatrixXd* y) {
 }
 
 // 后向替代（解 Ux = y）
-void backward_substitution(const MatrixXd* LU, const MatrixXd* y, MatrixXd* x) {
+static void backward_substitution(const MatrixXd* LU, const MatrixXd* y, MatrixXd* x) {
 	int n = LU->rows;
 	for (int i = n - 1; i >= 0; i--) {
 		double sum = 0.0;

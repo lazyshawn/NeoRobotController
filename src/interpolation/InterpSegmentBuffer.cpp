@@ -700,7 +700,7 @@ int InterpBuffer::cartesian_plan() {
 
 	// --- 速度规划
 	// 设置位置规划约束
-	curve[0].set_constraint(curBuf->motionCfg.speed, 10);
+	curve[0].set_constraint(curBuf->motionCfg.speed, 10, 10*10);
 	double vs = preBuf->procInfo.constrainedVel;
 	// 前瞻回溯
 	double ve = cartesian_look_ahead();
@@ -1041,7 +1041,7 @@ double InterpBuffer::cartesian_look_ahead() {
 		dist += tmpBuf->procInfo.preBlendDist + tmpBuf->procInfo.mainDist + tmpBuf->procInfo.postBlendDist;
 
 		// 最大提速速度
-		curve.set_constraint(tmpBuf->motionCfg.speed, 10);
+		curve.set_constraint(tmpBuf->motionCfg.speed, 10, 10 * 10);
 		curve.set_condition(0, dist, vsForward, 0);
 		double maxSpeed = curve.get_max_speed(dist);
 
@@ -1057,7 +1057,7 @@ double InterpBuffer::cartesian_look_ahead() {
 		double dist = tmpBuf->procInfo.preBlendDist + tmpBuf->procInfo.mainDist + tmpBuf->procInfo.postBlendDist;
 
 		// 最大提速速度
-		curve.set_constraint(tmpBuf->motionCfg.speed, 10);
+		curve.set_constraint(tmpBuf->motionCfg.speed, 10, 10 * 10);
 		curve.set_condition(0, dist, vsForward, 0);
 		double maxSpeed = curve.get_max_speed(dist);
 
@@ -1071,7 +1071,7 @@ double InterpBuffer::cartesian_look_ahead() {
 
 int InterpBuffer::set_jog_constraint(int idx, double q0, double vmax, double amax, double jmax) {
 	curve[idx].set_condition(q0, q0, 0, 0);
-	curve[idx].set_constraint(vmax, amax);
+	curve[idx].set_constraint(vmax, amax, jmax);
 	return 0;
 }
 
@@ -1094,4 +1094,9 @@ int InterpBuffer::jog_move(int idx) {
 int InterpBuffer::get_online_interp_result(int idx, double ans[4]) {
 	curve[idx].get_cur_state(ans);
 	return 0;
+}
+
+double InterpBuffer::plan_decccel_online_interp(int idx) {
+	double Tdi[3];
+	return curve[idx].plan_decccel_online_interp(Tdi);
 }

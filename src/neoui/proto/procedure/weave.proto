@@ -1,0 +1,10 @@
+// weave.proto
+syntax = "proto3";
+package procedure;
+
+message WeaveParam {
+  int32 id = 1;
+  int32 enable = 2;
+  int32 shape = 3;
+  int32 dwell_shape = 4;
+}

@@ -11,7 +11,17 @@
 // 将前向声明 IMPL 定义为 InterpBuffer 的别名
 struct InterpDispatcher::IMPL : public InterpBuffer {};
 
-InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {}
+InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {
+	// --- 默认机器人配置参数
+	for (int i = 0; i < 6; ++i) {
+		kineCfg.jntLowerLimit[i] = -5 - i;
+		kineCfg.jntUpperLimit[i] = 5 + i;
+	}
+	for (int i = 0; i < 3; ++i) {
+		kineCfg.extLowerLimit[i] = -8 - i;
+		kineCfg.extUpperLimit[i] = 8 + i;
+	}
+}
 
 // 析构函数: 编译器必须析构的代码位置看到 IMPL 的完整定义
 InterpDispatcher::~InterpDispatcher() = default;
@@ -29,9 +39,12 @@ int InterpDispatcher::interp_enable(bool enable) {
 
 int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState& state) {
 	// - 前处理
-	// 第一次调用时初始化，接收初始关节角
+	// 第一次调用时初始化
 	if (dispatcherStatus.CycleNum < 1) {
+		// 接收初始关节角
 		dispatcherStatus.dpos = state.dpos;
+		// 默认进入关节模式
+		switch_to_mode(0);
 	}
 
 	// 调用计数更新
@@ -94,6 +107,12 @@ int InterpDispatcher::interp_auto_task() {
 		if (dispatcherStatus.interpState == 0 && pimpl->get_buffer_size() > 0) {
 			// 运动前缓冲指令切换 <等待> 状态
 			// 轨迹起点设为当前关节位置, 因为缓冲动作可能会运动导致当前点与指令起点不一致
+			// 设置各轴插补曲线的起点位置、速度、加速度等
+			for (int i = 0; i < 3; ++i) {
+				pimpl->set_jog_constraint(i, 0, 20, 50, 500);
+				pimpl->set_jog_constraint(i + 3, 0, 10, 50, 500);
+				pimpl->set_jog_constraint(i + 6, 0, 100, 1000, 5000);
+			}
 			// 缓冲指令完成，切换 <插补> 状态
 			dispatcherStatus.interpState |= 1;
 		}
@@ -156,6 +175,20 @@ int InterpDispatcher::interp_manual_task() {
 		// 停止信号，按当前方向停止
 		else {
 			pimpl->switch_jog_state(i, 0);
+		}
+
+		// 检测限位: 超限后允许反向点动
+		double endmove = pimpl->plan_decccel_online_interp(i);
+		// 限位检测安全余量
+		constexpr double limitSafeMargin = 0.01;
+		double upperLimit = i < 6 ? kineCfg.jntUpperLimit[i] : kineCfg.extUpperLimit[i - 6];
+		double lowerLimit = i < 6 ? kineCfg.jntLowerLimit[i] : kineCfg.extLowerLimit[i - 6];
+		if ((dir == 1 && endmove + limitSafeMargin > upperLimit) || (dir == 2 && endmove - limitSafeMargin < lowerLimit)
+			&& signalIn.switchState) 
+		{
+			pimpl->switch_jog_state(i, 0);
+			signalIn.switchState &= ~(1 << (i * 2));
+			signalIn.switchState &= ~(1 << (i * 2 + 1));
 		}
 
 		// 执行点动插补
@@ -251,7 +284,7 @@ int InterpDispatcher::switch_to_mode(int type) {
 		// 更新各轴插补曲线的起点位置、速度、加速度等
 		for (int i = 0; i < 9; ++i) {
 			double q0 = i < 6 ? dispatcherStatus.dpos.rbtPos[i] : dispatcherStatus.dpos.extPos[i - 6];
-			pimpl->set_jog_constraint(i, q0, 10, 10, 100);
+			pimpl->set_jog_constraint(i, q0, 10, 100, 800);
 		}
 	}
 

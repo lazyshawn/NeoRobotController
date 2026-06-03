@@ -56,7 +56,7 @@ public:
 	* @brief  设置曲线参数
 	*/
 	int set_condition(double begPos, double endPos, double begVel, double endVel);
-	int set_constraint(double maxVel, double maxAcc);
+	int set_constraint(double maxVel, double maxAcc, double maxJerk = -1);
 	/**
 	* @brief  设置保留时间
 	* @param  time    保留时间(s)
@@ -105,6 +105,10 @@ public:
 	int online_interp(double dt);
 	// 获取当前插补状态
 	int get_cur_state(double state[4]);
+	// 规划在线插补减速阶段: 计算各个减速阶段的时间，返回终点位置
+	double plan_decccel_online_interp(double Tdi[3]);
+	// 使用减速规划参数
+	int apply_deccel_plan(double Tdi[3]);
 
 	/**
 	* @brief  曲线缩放与偏移

@@ -16,6 +16,7 @@ target_link_directories(robot_webservice PUBLIC
 target_link_libraries(robot_webservice PUBLIC
   libssl
   libcrypto
+  common
 )
 
 # Install headers

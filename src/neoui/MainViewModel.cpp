@@ -1,4 +1,5 @@
 ﻿#include "MainViewModel.h"
+#include <cmath>
 
 MainViewModel::MainViewModel(QObject *parent) : QObject(parent),
     m_mainModel(new MainModel(this))

@@ -20,22 +20,22 @@ extern "C" {
 #endif
 
 // 构造滤波器
-void filter_construct(int idx, double* param, int num);
+SHARE_API_ void filter_construct(int idx, double* param, int num);
 
 // 销毁滤波器
-void filter_deconstruct(int idx);
+SHARE_API_ void filter_deconstruct(int idx);
 
 // 重置滤波器
-void filter_clear(int idx);
+SHARE_API_ void filter_clear(int idx);
 
 // 单次滤波
-double filter_process(int idx, double sample);
+SHARE_API_ double filter_process(int idx, double sample);
 
 // 计算样本区间参考值
-double calc_interval_refrence(double *config, double *data);
+SHARE_API_ double calc_interval_refrence(double *config, double *data);
 
 // 计算补偿量, 估计偏移量/误差
-int calc_compensate(int idx, double *config, double *data);
+SHARE_API_ int calc_compensate(int idx, double *config, double *data);
 
 // 计算控制量
 

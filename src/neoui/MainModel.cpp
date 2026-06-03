@@ -1,6 +1,8 @@
 ﻿#include "MainModel.h"
 
 #include "robot_interface/CoopRobotManager.h"
+#include "procedure/job.pb.h"
+#include <fstream>
 
 static FSAIRobotInterface::RobotGroupManager group;
 
@@ -8,6 +10,29 @@ MainModel::MainModel(QObject *parent) : QObject(parent) {
 	// 启动机器人管理类
 	group.new_robot(FSAIRobotInterface::RobotGroupManager::NEOROBOT);
 	group.start_thread();
+
+	procedure::JobParam jobParam;
+	procedure::WeldParam* weldParam = jobParam.add_weld();
+	weldParam->set_id(1);
+	weldParam->set_enable(1);
+	weldParam->set_current(123);
+	weldParam->set_voltage(30);
+	weldParam->set_inductance(0);
+	// 以二进制模式打开文件流
+	std::fstream output("weld_param.txt", std::ios::out | std::ios::trunc | std::ios::binary);
+	if (!weldParam->SerializeToOstream(&output)) {
+		std::cerr << "Failed to write Protobuf." << std::endl;
+	}
+	std::cout << "Protobuf written successfully." << std::endl;
+	output.close();
+
+	// 以二进制模式打开文件流
+	procedure::WeldParam weldRead;
+	std::fstream input("weld_param.txt", std::ios::in | std::ios::binary);
+	if (!weldRead.ParseFromIstream(&input)) {
+		std::cerr << "Failed to parse Protobuf." << std::endl;
+	}
+	std::cout << "Protobuf read successfully." << std::endl;
 }
 
 MainModel::~MainModel() {

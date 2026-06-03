@@ -3,7 +3,9 @@
 #include <string>
 //#include <restbed>
 
-class WebService {
+#include "common/ExportSharedAPI.h"
+
+class SHARE_API_ WebService {
 
 public:
 	WebService();

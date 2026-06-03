@@ -62,7 +62,7 @@ BiasEstimator *bias_estimator_construct(int order) {
 }
 
 // BE 析构函数
-void *bias_estimator_deconstruct(BiasEstimator *q) {
+void bias_estimator_deconstruct(BiasEstimator *q) {
 }
 
 // BE 初始化
