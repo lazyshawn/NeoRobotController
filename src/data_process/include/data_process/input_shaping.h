@@ -4,6 +4,8 @@
 #define MaxAxisNum 9
 #endif // !MaxAxisNum
 
+#include "controller_interface.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,7 +19,7 @@ extern "C" {
  * @param Ts   采样周期
  * @return int 0: 成功, -1: 失败
  */
-int construct_input_shaping_filter(double wn, double zeta, double T, double Ts);
+SHARE_API_ int construct_input_shaping_filter(double wn, double zeta, double T, double Ts);
 
 /**
  * @brief 构造低通整形器
@@ -28,7 +30,7 @@ int construct_input_shaping_filter(double wn, double zeta, double T, double Ts);
  * @param Ts    采样周期
  * @return int 0: 成功, -1: 失败
  */
-int construct_low_pass_input_shaping(double wn, double zeta, double T, double Ts);
+SHARE_API_ int construct_low_pass_input_shaping(double wn, double zeta, double T, double Ts);
 
 /**
  * @brief 单步输入整形
@@ -37,7 +39,7 @@ int construct_low_pass_input_shaping(double wn, double zeta, double T, double Ts
  * @param num     轴数
  * @return int 0: 成功, -1: 失败
  */
-int input_shaping_filter_onestep(double *JPosIn, double *JPosOut, int num);
+SHARE_API_ int input_shaping_filter_onestep(double *JPosIn, double *JPosOut, int num);
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 # Protobuf
 set(PROTO_DIR "C:/Program Files/protobuf/lib/cmake/protobuf")
 find_package(Protobuf PATHS "${PROTO_DIR}" CONFIG REQUIRED)

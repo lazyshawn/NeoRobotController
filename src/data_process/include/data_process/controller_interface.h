@@ -14,6 +14,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "common/ExportSharedAPI.h"
 #else
 #include "zmcbuildin.h"
 #define NULL ((void *)0)

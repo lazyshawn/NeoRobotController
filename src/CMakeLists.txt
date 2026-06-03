@@ -2,7 +2,6 @@
 add_subdirectory(common)
 add_subdirectory(robot_interface)
 add_subdirectory(robot_webservice)
-add_subdirectory(seam_tracker)
 add_subdirectory(task_plan)
 
 add_subdirectory(interpolation)
