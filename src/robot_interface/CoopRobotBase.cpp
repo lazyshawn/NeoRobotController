@@ -9,7 +9,7 @@ log4cplus::Logger RobotLog::logger;
 RobotLog::RobotLog() {
 	log4cplus::helpers::SharedObjectPtr<log4cplus::Appender> _append;
 	_append = log4cplus::helpers::SharedObjectPtr<log4cplus::Appender>(new log4cplus::RollingFileAppender("./log/ZMotionRobot.log", 8 * 1024 * 1024, 8));//按照固定大小进行log分割
-	_append->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(LOG4CPLUS_TEXT("%D{%m/%d/%Y %H:%M:%S:%q} [%t] %-5p - %m %n"))));//("%D{%m/%d/%y %H:%M:%S},大写的D代表北京时间否则不准																															/* step 4: Instantiate a logger object */
+	_append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(LOG4CPLUS_TEXT("%D{%m/%d/%Y %H:%M:%S:%q} [%t] %-5p - %m %n"))));//("%D{%m/%d/%y %H:%M:%S},大写的D代表北京时间否则不准																															/* step 4: Instantiate a logger object */
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("ZROBOT_LOG"));
 	logger.setLogLevel(log4cplus::INFO_LOG_LEVEL);
 	logger.addAppender(_append);

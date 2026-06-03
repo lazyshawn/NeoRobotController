@@ -1,14 +1,14 @@
 
 #include <windows.h>
 #include <iostream>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 //#include <mutex>
 //#include <condition_variable>
 //#include <unordered_set>
 //#include <atomic>
 
 #include "robot_interface/CoopRobotManager.h"
-#include "robot_interface/BufferSynchronizer.h"
+//#include "robot_interface/BufferSynchronizer.h"
 
 #include "CoopRobotBase.h"
 #include "NeoRobot.h"
