@@ -31,7 +31,7 @@ int DiscreteTrajectory::pop() {
 	return 0;
 }
 
-bool DiscreteTrajectory::trajectory_loaded() {
+bool DiscreteTrajectory::empty() {
 	return trajList.empty();
 }
 SingleTrajectory DiscreteTrajectory::get_curTraj() {

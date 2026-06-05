@@ -43,12 +43,12 @@ int RobotBase::wait_auto_task_stop() {
 	//	return ret;
 	//}
 
-	if (robotStatus.lowerStatus == 0 && trajectory.trajectory_loaded() && task_assigned_completed()) {
+	if (robotStatus.lowerStatus == 0 && trajectory.empty() && task_assigned_completed()) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " wake up and task list empty.");
 	}
 	else {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " wake up, status: " <<
-			robotStatus.lowerStatus << ", " << robotStatus.upperStatus << ", " << robotStatus.lineNum);
+			robotStatus.lowerStatus << ", " << robotStatus.upperStatus << ", " << robotStatus.reachLineNum);
 	}
 
 	return ret;
@@ -61,10 +61,10 @@ int RobotBase::notify_waiting_robot() {
 	motionDone = true;
 
 	// 轨迹完成唤醒
-	if (notifyType == 0) {
+	//if (notifyType == 0) {
 		// 清空轨迹
 		trajectory.clear();
-	}
+	//}
 
 	// 唤醒线程
 	cvMotion.notify_one();

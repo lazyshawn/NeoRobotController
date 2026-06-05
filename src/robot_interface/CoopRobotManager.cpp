@@ -266,7 +266,7 @@ void RobotGroupManager::IMPL::processCommandThread() {
 		for (size_t i = 0; i < robotList.size(); ++i) {
 
 			// 指令缓存不为空
-			while (!robotList[i]->trajectory.trajectory_loaded()) {
+			while (!robotList[i]->trajectory.empty()) {
 
 				// 机器人状态警告,不清空轨迹: 处于暂停状态
 				if (robot_warning(i))
@@ -398,7 +398,7 @@ void RobotGroupManager::IMPL::processCommandThread() {
 
 				// 记录当前轨迹编号，用于轨迹完成后的触发动作
 				//curTraj.lineNum = robotList[i]->get_lineNum();
-				robotList[i]->trajHistory.push(curTraj);
+				robotList[i]->trajHistory.add_single_traj(curTraj);
 
 			}
 
@@ -407,7 +407,7 @@ void RobotGroupManager::IMPL::processCommandThread() {
 		// 所有指令下发完毕
 		bool taskFinish = true;
 		for (size_t i = 0; i < robotList.size(); ++i) {
-			if (!robotList[i]->trajectory.trajectory_loaded()) {
+			if (!robotList[i]->trajectory.empty()) {
 				taskFinish = false;
 				break;
 			}
@@ -531,7 +531,7 @@ void RobotGroupManager::IMPL::updateStatusThread() {
 			//}
 
 			// 机器人未异常，指令下发程序，轨迹未下发完成
-			if (startCmdThread && cmdThreadDone && !robotList[i]->trajectory.trajectory_loaded()) {
+			if (startCmdThread && cmdThreadDone && !robotList[i]->trajectory.empty()) {
 				if (cmdThreadWorker.joinable())
 					cmdThreadWorker.join();
 				cmdThreadWorker = std::thread(&RobotGroupManager::IMPL::processCommandThread, this);
@@ -691,7 +691,7 @@ bool RobotGroupManager::IMPL::robot_warning(int idx) {
 bool RobotGroupManager::IMPL::robot_idle(int idx) {
 
 	// 无运动，轨迹完成，无运动缓冲
-	if (statusList[idx].lowerStatus == 0 && robotList[idx]->task_assigned_completed() && robotList[idx]->trajectory.trajectory_loaded()) {
+	if (statusList[idx].lowerStatus == 0 && robotList[idx]->task_assigned_completed() && robotList[idx]->trajectory.empty()) {
 
 		if (get_bit(coopState[idx], 7) == 0) {
 			LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << idx << " task complete.");
