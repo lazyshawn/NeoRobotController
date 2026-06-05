@@ -368,17 +368,12 @@ void RobotGroupManager::IMPL::processCommandThread() {
 				robotList[i]->execute_move_action(action.before, 0);
 
 				// 下发运动指令
-				if (curTraj.isJoint()) {
-					ret = robotList[i]->execute_single_joint();
-				}
-				else if (curTraj.isCartesian()){
-					ret = robotList[i]->execute_single_cartesian();
-				}
+				ret = robotList[i]->execute_single_traj(curTraj);
 
 				// 下发异常处理
 				if (ret != 0) {
 					LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << i << " send command failed: " << ret);
-					robotList[i]->set_upperStatus(0, 0x20);
+					//robotList[i]->set_upperStatus(0, 0x20);
 					robot_group_stop(i);
 					break;
 				}
@@ -772,6 +767,38 @@ void RobotGroupManager::IMPL::robot_in_place_command(int robotIdx) {
 	// 无已下发轨迹
 	if (robotList[robotIdx]->trajHistory.empty())
 		return;
+
+	// 当前已完成轨迹编号
+	int lineNum = statusList[robotIdx].reachLineNum;
+	// 第一条历史轨迹
+	auto curTraj = robotList[robotIdx]->trajHistory.get_curTraj();
+
+	// 开始执行
+	if (lineNum == curTraj.lineNum - 1 && !get_bit(coopState[robotIdx], 5)) {
+		printf("R%d start to execute traj %d.\n", robotIdx, curTraj.lineNum);
+		// 开始执行轨迹
+		set_bit(coopState[robotIdx], 5, true);
+		// 轨迹处理，如触发同步信号等
+	}
+	else if (lineNum == curTraj.lineNum) {
+		printf("R%d complete traj %d.\n", robotIdx, curTraj.lineNum);
+		// 轨迹完成
+		set_bit(coopState[robotIdx], 5, false);
+		// 历史轨迹弹出
+		robotList[robotIdx]->trajHistory.pop();
+	}
+	// 轨迹编号异常
+	else if (lineNum > curTraj.lineNum) {
+		while (lineNum > curTraj.lineNum) {
+			if (robotList[robotIdx]->trajHistory.empty())
+				break;
+
+			// 历史轨迹弹出
+			robotList[robotIdx]->trajHistory.pop();
+			curTraj = robotList[robotIdx]->trajHistory.get_curTraj();
+			// 异常轨迹处理
+		}
+	}
 
 }
 

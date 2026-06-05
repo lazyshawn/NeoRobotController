@@ -27,6 +27,9 @@ int DiscreteTrajectory::push_trajectory(const DiscreteTrajectory& trajectory) {
 }
 
 int DiscreteTrajectory::pop() {
+	if (trajList.empty())
+		return 1;
+	preTraj = trajList.front();
 	trajList.pop_front();
 	return 0;
 }
@@ -41,4 +44,4 @@ SingleTrajectory DiscreteTrajectory::get_preTraj() {
 	return preTraj;
 }
 
-}
+} // namespace FSAIRobotInterface

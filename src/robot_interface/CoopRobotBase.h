@@ -183,8 +183,12 @@ private:
 	// 轨迹下发后处理
 	virtual int process_after_send_traj();
 
-	virtual int execute_single_joint() = 0;
-	virtual int execute_single_cartesian() = 0;
+	/**
+	* @brief  执行指令缓冲中的第一条运动指令
+	* @param    outTraj   下发后的轨迹信息，主要是更新行号
+	* @return   下发状态: 0 - 正常返回, other - 控制卡接口的异常码
+	*/
+	virtual int execute_single_traj(SingleTrajectory& outTraj) = 0;
 
 	//! 剩余缓冲检测
 	virtual int remain_buffer_free() = 0;

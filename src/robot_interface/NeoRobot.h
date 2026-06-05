@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <atomic>
-
 #include "CoopRobotBase.h"
 
 namespace FSAIRobotInterface {
@@ -26,8 +24,7 @@ public:
 	//! 轨迹下发后处理
 	int process_after_send_traj() override;
 
-	int execute_single_joint() override;
-	int execute_single_cartesian() override;
+	int execute_single_traj(SingleTrajectory& outTraj) override;
 
 	//! 剩余缓冲检测
 	int remain_buffer_free() override;

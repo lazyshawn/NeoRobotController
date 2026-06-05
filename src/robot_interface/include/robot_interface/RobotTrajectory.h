@@ -128,11 +128,10 @@ struct RobotStatus {
 
 
 class SHARE_API_ SingleTrajectory : public SegmentBase {
-	//! 内部轨迹编号，用于确定轨迹下发顺序的编号
-	int trajId;
-	//! 外部设定的轨迹编号，供外部查询使用
-	int aliasId;
 public:
+	//! 轨迹行号，用于确定轨迹下发顺序的编号
+	int lineNum = -1;
+
 	bool isJoint();
 	bool isCartesian();
 };
