@@ -861,6 +861,7 @@ int InterpBuffer::cartesian_move() {
 	}
 	else {
 		// 前平滑段结束后，补偿贝塞尔弧长累积误差，保证切换到直线段时位置连续
+		// 但是这里计算的距离与规划时计算的距离不完全一致，若要保证终点完全一致最好重新规划
 		if (curBuf->interpInfo.partId == 1 && curBuf->procInfo.preSmooth > 0) {
 			double realDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, preBuf->procInfo.doneU, curBuf->interpInfo.curU, 1000);
 			double error = curBuf->interpInfo.curMoveS - realDist;
