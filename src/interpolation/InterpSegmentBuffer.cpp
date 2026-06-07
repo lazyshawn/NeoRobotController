@@ -860,20 +860,15 @@ int InterpBuffer::cartesian_move() {
 		}
 	}
 	else {
-		// 前平滑段结束后，基于实际走的S和曲线计算的S偏差重新计算 `前平滑段长度`，这样切换到直线段时速度计算才准确
+		// 前平滑段结束后，补偿贝塞尔弧长累积误差，保证切换到直线段时位置连续
+		// 但是这里计算的距离与规划时计算的距离不完全一致，若要保证终点完全一致最好重新规划
 		if (curBuf->interpInfo.partId == 1 && curBuf->procInfo.preSmooth > 0) {
-			// 实际直线计算是从距离大于curMoveS开始的，计算的曲线距离(realDist) -> 实际规划距离(interpInfo.curMoveS)
 			double realDist = bezier_dist(5, curBuf->procInfo.preCtrlPnt, preBuf->procInfo.doneU, curBuf->interpInfo.curU, 1000);
-			// 避免直线段计算的距离为负数
-			double maxError = moveS - curBuf->procInfo.segmBegDist;
-
-			// 切换到直线段速度不突变: 规划比实际多走的距离，计算直线时起点往后偏移即可补偿回来，但是实际终点位置会超出给定终点位置
 			double error = curBuf->interpInfo.curMoveS - realDist;
-			// 保证moveS走完后正好停在结束点: moveS = (preS - pre.doneS) + pre.remainS + preBlendDist + mainDist
-			//error = preBuf->procInfo.remainS + (preS - preBuf->procInfo.doneS) + curBuf->procInfo.preBlendDist - curBuf->procInfo.segmBegDist;
 
+			// 仅修正直线段入口，让直线段的 lambda 插值自然吸收误差
+			// 直线段终点固定为 endPos，segmEndDist 不变则后平滑入口不受影响
 			curBuf->procInfo.segmBegDist += error;
-			curBuf->procInfo.segmEndDist += error;
 		}
 
 		// 后平滑段

@@ -3,7 +3,6 @@
 #include <deque>
 
 #include "common/TrajectorySegment.h"
-#include "common/ExportSharedAPI.h"
 
 
 namespace FSAIRobotInterface {
@@ -11,6 +10,11 @@ namespace FSAIRobotInterface {
 * 机器人配置参数
 */
 struct RobotConfig {
+	// --- 内部管理参数
+	// 机器人类型: 0-真实机器人，1-仿真机器人
+	int isSimRobot = 0;
+	
+	// --- 外部配置参数
 	// 机器人配置参数
 	// 连杆参数: LargeZ,L1,L2,L3,L4,D5,DiffY
 	std::vector<float> linkLength = {};
@@ -80,24 +84,25 @@ struct RobotConfig {
 * 当前所有参数都在该类中，后续实时参数将移动到 `RobotRTStatus` 类中
 */
 struct RobotStatus {
+	// --- 内部管理状态
+	//! 指令行号: 下发的运动个数
+	int sendLineNum = 0;
+	//! 唤醒类型
+	int notifyType;
+	
+	// --- 外部读取状态
 	// 实时刷新
 	int lowerStatus;                      // 下位机状态(Bit)：(0)
 	int upperStatus = 0;                  // 上位机状态: 指令下发异常，手动/自动模式不匹配
 
 	int autoMode;                         // 自动模式：  -1-手动模式，1-自动模式
 	int fkMode;                           // 正逆解模式: 0-未建立，1-正解, -1-逆解
-	int lineNum = 0;                      // 当前运动行号
-	int cmdNum = 0;                       // 当前轨迹的下发编号
+	int reachLineNum = 0;                 // 当前到达的轨迹行号，内部用于确定轨迹顺序的编号
+	int reachLineId = 0;                  // 当前到达的轨迹编号，外部设定的轨迹ID
 	double masterAxisDist;                // 主轴运动距离
 	int remainBuffer;					  // 剩余缓冲数
+	long slaveTime;                       // 下位机时间戳，仿真器为当前插补时间
 
-	double current;                        // 实时电流
-	double voltage;                        // 实时电压
-
-	long slaveTime;                       // 下位机时间戳
-	long weldTime;                        // 焊接时间
-	long weldBegTime;                     // 上次起弧时间戳
-	long weldEndTime;                     // 上次息弧时间戳
 
 	std::vector<double> jPos = {};         // 关节位置
 	std::vector<double> cPos = {};         // 上位机的笛卡尔空间位置
@@ -108,11 +113,13 @@ struct RobotStatus {
 	//int taskType;                         // 当前任务类型：空移，拍照，横焊，立焊，平焊
 
 	// 按需刷新 (非实时)
-	double curInterpTime = 0.0;           // 当前插补时间(目前仅仿真器使用)
+	long weldTime;                        // 焊接时间
+	long weldBegTime;                     // 上次起弧时间戳
+	long weldEndTime;                     // 上次息弧时间戳
 	std::vector<int> axisStatus = {};     // 轴状态
 	std::vector<int> encoder = {};        // 编码器值
-	std::vector<double> posOffset = {};    // 随动偏移
-	std::vector<double> cPosR = {};        // 机器人坐标系位置
+	std::vector<double> posOffset = {};   // 随动偏移
+	std::vector<double> cPosR = {};       // 机器人坐标系位置
 	std::vector<int> subErrorCode = {};   // 异常码辅码
 
 	RobotStatus() {};
@@ -122,6 +129,9 @@ struct RobotStatus {
 
 class SHARE_API_ SingleTrajectory : public SegmentBase {
 public:
+	//! 轨迹行号，用于确定轨迹下发顺序的编号
+	int lineNum = -1;
+
 	bool isJoint();
 	bool isCartesian();
 };
@@ -140,7 +150,7 @@ public:
 	//! 弹出轨迹
 	int pop();
 
-	bool trajectory_loaded();
+	bool empty();
 	SingleTrajectory get_curTraj();
 	SingleTrajectory get_preTraj();
 };

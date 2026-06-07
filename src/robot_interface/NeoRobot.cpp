@@ -56,9 +56,9 @@ void NeoRobot::interp_thread() {
 		auto now = std::chrono::steady_clock::now();
 		auto tmpEnd = std::chrono::steady_clock::now();
 
-		// 加锁并执行插补任务
+		// 加锁并执行插补任务，防止调度器状态读写时的资源竞争
 		{
-			std::lock_guard<std::mutex> lock(mtxMotion);
+			std::lock_guard<std::mutex> lock(mtxInnerBuffer);
 			dispatcher.run_cycle_task(signalOut, dispatcherState);
 		}
 
@@ -83,26 +83,21 @@ int NeoRobot::process_after_send_traj() {
 	return 0;
 }
 
-int NeoRobot::execute_single_joint() {
+int NeoRobot::execute_single_traj(SingleTrajectory& outTraj) {
 	auto curTraj = trajectory.get_curTraj();
 	auto preTraj = trajectory.get_preTraj();
 
-	dispatcher.add_move_point(curTraj.pointInfo, curTraj.motionCfg, curTraj.moveCmd);
+	int ret = dispatcher.add_move_point(curTraj.pointInfo, curTraj.motionCfg, curTraj.moveCmd);
+
+	// 下发异常，不弹出轨迹，等待处理
+	if (ret != 0)
+		return ret;
 
 	// 弹出轨迹
 	trajectory.pop();
-
-	return 0;
-
-}
-int NeoRobot::execute_single_cartesian() {
-	auto curTraj = trajectory.get_curTraj();
-	auto preTraj = trajectory.get_preTraj();
-
-	dispatcher.add_move_point(curTraj.pointInfo, curTraj.motionCfg, curTraj.moveCmd);
-
-	// 弹出轨迹
-	trajectory.pop();
+	// 已下发轨迹计数加一
+	robotStatus.sendLineNum++;
+	outTraj.lineNum = robotStatus.sendLineNum;
 
 	return 0;
 }
@@ -134,11 +129,12 @@ int NeoRobot::separate_trajectory() {
 
 int NeoRobot::update_rt_robot_status() {
 	// 该线程与仿真线程分别读写状态，会有冲突，需要加锁保护
-	std::lock_guard<std::mutex> lock(mtxMotion);
+	std::lock_guard<std::mutex> lock(mtxInnerBuffer);
 
 	robotStatus.lowerStatus = 0;
 	robotStatus.jPos = dispatcherState.dpos.all_to_vector();
 	robotStatus.autoMode = dispatcherState.autoMode;
+	robotStatus.reachLineNum = dispatcherState.cmdNum;
 
 	return 0;
 }
@@ -194,6 +190,8 @@ int NeoRobot::task_resume() {
 }
 //! 任务清空
 int NeoRobot::task_clear() {
+	// 清空行号
+	robotStatus.sendLineNum = 0;
 	return 0;
 }
 //! 急停

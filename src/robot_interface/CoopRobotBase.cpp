@@ -43,12 +43,12 @@ int RobotBase::wait_auto_task_stop() {
 	//	return ret;
 	//}
 
-	if (robotStatus.lowerStatus == 0 && trajectory.trajectory_loaded() && task_assigned_completed()) {
+	if (robotStatus.lowerStatus == 0 && trajectory.empty() && task_assigned_completed()) {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " wake up and task list empty.");
 	}
 	else {
 		LOG4CPLUS_INFO(RobotLog::getLogger(), "R" << aliasId << " wake up, status: " <<
-			robotStatus.lowerStatus << ", " << robotStatus.upperStatus << ", " << robotStatus.lineNum);
+			robotStatus.lowerStatus << ", " << robotStatus.upperStatus << ", " << robotStatus.reachLineNum);
 	}
 
 	return ret;
@@ -61,10 +61,10 @@ int RobotBase::notify_waiting_robot() {
 	motionDone = true;
 
 	// 轨迹完成唤醒
-	if (notifyType == 0) {
+	//if (notifyType == 0) {
 		// 清空轨迹
 		trajectory.clear();
-	}
+	//}
 
 	// 唤醒线程
 	cvMotion.notify_one();
@@ -79,20 +79,17 @@ int RobotBase::task_assigned_completed() {
 
 int RobotBase::get_rt_robot_status(RobotStatus& status) {
 
-	{
-		// 加锁
-		std::lock_guard<std::mutex> lock(mtxMotion);
+	// 获取所有状态资源快照，依次请求内部资源锁和外部资源锁
+	std::scoped_lock lock(mtxInnerBuffer, mtxOuterBuffer);
 
-		status = robotStatus;
-	}
-
+	status = robotStatus;
 
 	return 0;
 }
 
 int RobotBase::set_upperStatus(int idx, int code) {
 	// 加锁
-	std::lock_guard<std::mutex> lock(mtxMotion);
+	std::lock_guard<std::mutex> lock(mtxInnerBuffer);
 
 	robotStatus.upperStatus |= code;
 
@@ -104,7 +101,7 @@ int RobotBase::reset_upperStatus(int idx) {
 	// 上位机状态位全部复位
 	if (idx < 0) {
 		{
-			std::lock_guard<std::mutex> lock(mtxMotion);
+			std::lock_guard<std::mutex> lock(mtxInnerBuffer);
 			robotStatus.upperStatus = 0;
 		}
 
