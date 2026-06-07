@@ -648,10 +648,8 @@ double DoubleSCurve::get_remain_time(double dt) {
 
 double DoubleSCurve::get_max_speed(double ds) {
 
-	// 速度冗余，防止计算误差导致规划时最大速度超出限制
-	double margin = 1e-9;
 	double Tjk, Tacc;
-	// 加速到最大速度过程中达到最大加速度
+	// 加速到最大速度时未达到最大加速度 (3.19)
 	if ((m_vmax - m_v0)*m_jmax < m_amax*m_amax) {
 		Tjk = std::sqrt(std::fabs(m_vmax - m_v0) / m_jmax);
 		Tacc = 2 * Tjk;
@@ -660,44 +658,44 @@ double DoubleSCurve::get_max_speed(double ds) {
 		Tjk = m_amax / m_jmax;
 		Tacc = Tjk + (m_vmax - m_v0) / m_amax;
 	}
-	// 加速到最大速度需要的临界距离
-	double dsCmax = Tacc * (m_v0 + m_vmax) / 2;
 
-	double ans = 0.0;
-	// 1. 加速距离内能达到最大速度
-	if (ds > dsCmax) {
-		ans = m_vmax;
+	// 1. 加速距离内能达到最大速度 (vlim = vmax)
+	if (ds > Tacc * (m_v0 + m_vmax) / 2) {
+		return m_vmax;
 	}
-	// 2. 距离不够加速到最大速度
+
+	// 2. 加速距离内不能达到最大速度 (vlim < vmax)，根据是否达到最大加速度区分加速阶段的段数
+	double sol[3] = { 0.0 };
+	int solNum = 3;
+	// 两段加速刚好达到最大加速度: Tj = a/J; ds = (v0+v1)*Tj = (2*v0*J + a*a)*a/(J*J)
+	if (ds > (2 * m_v0 * m_jmax + m_amax * m_amax) * m_amax / (m_jmax * m_jmax)) {
+		// 2.1. 需要三段加速到达目标距离 (alim = amax)(3-27): ds = Ta*(v0+v1)/2; v1-v0 = a*(Ta-Tj)
+		Tjk = m_amax / m_jmax;
+		double coeff[3] = { 0 };
+		coeff[0] = m_amax * m_amax / m_jmax * m_v0 - 2 * m_amax * ds - m_v0 * m_v0;
+		coeff[1] = m_amax * m_amax / m_jmax;
+		coeff[2] = 1;
+		solve_quadratic_equation(coeff, sol);
+	}
 	else {
-		// 无法达到最大速度时，加速到目标距离的临界情况：两段加速刚好达到最大加速度
-		double dsC2 = (2 * m_v0*m_jmax + m_amax * m_amax) * m_amax / (m_jmax*m_jmax);
-		double sol[3] = { 0.0 };
-		int solNum = 3;
+		// 2.2. 两段加速到达目标距离 (alim < amax)
+		double coeff[4] = { -m_v0 * m_v0 * m_v0 - ds * ds * m_jmax, -m_v0 * m_v0, m_v0, 1.0 };
+		solNum = 2;
+		solve_cubic_equation(coeff, sol);
+	}
 
-		// 2.1. 需要三段加速到达目标距离
-		if (ds > dsC2) {
-			Tjk = m_amax / m_jmax;
-			double coeff[3] = { Tjk / 2 * m_v0 - m_v0 * m_v0 / (2 * m_amax), Tjk / 2, 1 / (2 * m_amax) };
-			solve_quadratic_equation(coeff, sol);
-		}
-		// 2.2. 两段加速到达目标距离
-		else {
-			double coeff[4] = { -m_v0 * m_v0 * m_v0 - ds * ds * m_jmax, -m_v0 * m_v0, m_v0, 1.0 };
-			solNum = 2;
-			solve_cubic_equation(coeff, sol);
-		}
-
-		// 最小正解
-		for (int i = 0; i < solNum; ++i) {
-			if (sol[i] > 0) {
-				ans = sol[i];
-				break;
-			}
+	// 最小正解
+	double ans = 0.0;
+	for (int i = 0; i < solNum; ++i) {
+		if (sol[i] > 0) {
+			ans = sol[i];
+			break;
 		}
 	}
 
-	return ans - margin;
+	// 速度冗余，防止计算误差导致规划时最大速度超出限制
+	double margin = 1e-9;
+	return (ans < margin) ? 0 : ans - margin;
 }
 
 double DoubleSCurve::calc_time_PiTPe(double ds) {

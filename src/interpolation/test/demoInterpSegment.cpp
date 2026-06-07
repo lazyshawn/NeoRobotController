@@ -101,7 +101,7 @@ int push_trajectory() {
 	motionCfg.smooth = 40;
 
 	SwingConfig swingCfg;
-	swingCfg.enable = 1;
+	swingCfg.enable = 0;
 	swingCfg.freq = 1.0;
 	swingCfg.leftWidth = swingCfg.rightWidth = 0.5;
 	motionCfg.swingParam = swingCfg;
@@ -113,7 +113,7 @@ int push_trajectory() {
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[0] += 10;
 	pointInfo.endPos.extPos[0] += 100;
-	motionCfg.speed = 2;
+	motionCfg.speed = 20;
 	dispatcher.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	while (!dispatcher.buffer_ready()) {
@@ -144,10 +144,11 @@ int push_trajectory() {
 	pointInfo.begPos = pointInfo.endPos;
 	pointInfo.endPos.rbtPos[1] -= 10;
 	pointInfo.endPos.extPos[0] += 100;
-	motionCfg.speed = 2;
+	motionCfg.speed = 20;
 	dispatcher.add_move_point(pointInfo, motionCfg, moveCmd);
 
 	// 开始信号使能
+	dispatcher.switch_auto(true);
 	dispatcher.interp_enable(true);
 
 	return 0;
