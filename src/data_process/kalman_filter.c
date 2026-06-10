@@ -1,6 +1,7 @@
 ﻿#include "data_process/kalman_filter.h"
 
 #include "AuxMatrix.h"
+#include "AuxRotRep.h"
 
 
 typedef struct KalmanFilter {
@@ -29,6 +30,7 @@ typedef struct KalmanFilter {
 // 使用静态变量存储矩阵，避免频繁分配和释放内存，注意**不是**线程安全的设计
 static MatrixXd Rk, Qk, Fk, Bk, Pk, Kk, Hk, Xk, Zk;
 static KalmanFilter gs_filter;
+static MatrixXd mGs, Rc;
 
 int kalman_filter_init(int numState, int numObs, int numIn,
 	const double* covQ, const double* covR,
@@ -128,6 +130,67 @@ int kalman_filter_process(double* input, double* output) {
 	matrix_delete(KXk);
 	matrix_delete(KHk);
 	matrix_delete(Ident);
+
+	return 0;
+}
+
+// 力传感器标定
+int force_sensor_calibration(double* input, double* output) {
+	return 0;
+}
+
+// 力传感器负载辨识
+int force_sensor_identification(double* input, double* output) {
+	return 0;
+}
+
+// 力传感器初始化
+int force_sensor_init(const double* rs, const double* gs, 
+	const double* covQ, const double* covR, const double* Pk0, const double* x0)
+{
+	// 负载参数初始化
+	matrix_attach(&mGs, 3, 1, gs);
+	matrix_attach(&Rc, 3, 1, rs);
+
+	// 滤波器初始化
+	kalman_filter_init(6, 6, 1, covQ, covR, Pk0, x0);
+
+	return 0;
+}
+
+// 力传感器补偿
+int force_sensor_compensation(const double euler[3], const double input[6], double output[6]) {
+	// 计算传感器姿态矩阵
+	double Rot[9];
+	Euler2Rot(euler, Rot);
+	MatrixXd R;
+	matrix_attach(&R, 3, 3, Rot);
+	MatrixXd* RT = matrix_new_copy(&R);
+	matrix_transpose(RT);
+
+	// 传感器测量值分解为力和力矩两部分
+	MatrixXd Fssr, Tssr;
+	matrix_attach(&Fssr, 3, 1, input);
+	matrix_attach(&Tssr, 3, 1, &input[3]);
+
+	// 重力补偿
+	MatrixXd *Fobs = matrix_new_copy(&mGs);
+	MatrixXd* Tobs = matrix_new_copy(&mGs);
+	matrix_multiply(RT, &mGs, Fobs);
+	matrix_outer_product(&Rc, Fobs, Tobs);
+
+	matrix_plus(1.0, &Fssr, -1.0, Fobs, Fobs);
+	matrix_plus(1.0, &Tssr, -1.0, Tobs, Tobs);
+
+	// 卡尔曼滤波
+	double obs[6] = { 0.0 };
+	matrix_to_array(Fobs, obs, 3);
+	matrix_to_array(Tobs, &obs[3], 3);
+	kalman_filter_process(obs, output);
+
+	matrix_delete(RT);
+	matrix_delete(Fobs);
+	matrix_delete(Tobs);
 
 	return 0;
 }

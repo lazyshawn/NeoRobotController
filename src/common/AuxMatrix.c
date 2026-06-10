@@ -576,9 +576,14 @@ int matrix_outer_product(const MatrixXd *matA, const MatrixXd *matB, MatrixXd *a
 	if (matA->cols - matB->cols != 0 || matA->rows - matB->rows != 0)
 		return 2;
 
-	ans->data[0] = matA->data[1] * matB->data[2] - matA->data[2] * matB->data[1];
-	ans->data[1] = -(matA->data[0] * matB->data[2] - matA->data[2] * matB->data[0]);
-	ans->data[2] = matA->data[0] * matB->data[1] - matA->data[1] * matB->data[0];
+	// 使用临时内存，允许输入输出矩阵为同一个对象
+	double tmp[3] = { 0.0 };
+	tmp[0] = matA->data[1] * matB->data[2] - matA->data[2] * matB->data[1];
+	tmp[1] = -(matA->data[0] * matB->data[2] - matA->data[2] * matB->data[0]);
+	tmp[2] = matA->data[0] * matB->data[1] - matA->data[1] * matB->data[0];
+	for (int i = 0; i < 3; ++i) {
+		ans->data[i] = tmp[i];
+	}
 
 	return 0;
 }

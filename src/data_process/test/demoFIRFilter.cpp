@@ -115,18 +115,29 @@ int test_input_shaping() {
 
 
 int test_kalman_filter() {
+	double input[6] = { 1.0 };
+	double output[6] = { 0.0 };
+
 	double covQ[6] = { 0.01, 0.01, 0.01, 0.01, 0.01, 0.01 };
 	double covR[6] = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
 	double Pk0[6] = { 1, 1, 1, 1, 1, 1 };
 	double x0[6] = { 0, 0, 0, 0, 0, 0 };
-	kalman_filter_init(6,6,1, covQ, covR, Pk0, x0);
 
-	double input[6] = { 1.0 };
-	double output[6] = { 0.0 };
+	//kalman_filter_init(6,6,1, covQ, covR, Pk0, x0);
+	//for (int i = 0; i < 100; ++i) {
+	//	kalman_filter_process(input, output);
+	//	input[0] += 0.01;
+	//	std::cout << "Step " << i << ": " << input[0] << " -> " << output[0] << std::endl;
+	//}
 
+	double rs[3] = { 0.0, 0.0, 10.0 };
+	double mgs[3] = { 0.0, 0.0, -9.81 * 10 };
+	double euler[3] = { 10.0 * M_PI / 180, 20.0 * M_PI / 180, 30.0 * M_PI / 180 };
+	force_sensor_init(rs,mgs, covQ, covR, Pk0, x0);
 	for (int i = 0; i < 100; ++i) {
-		kalman_filter_process(input, output);
+		force_sensor_compensation(euler, input, output);
 		input[0] += 0.01;
+		euler[0] += 0.001;
 		std::cout << "Step " << i << ": " << input[0] << " -> " << output[0] << std::endl;
 	}
 
