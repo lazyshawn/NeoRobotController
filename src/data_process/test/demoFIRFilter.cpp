@@ -1,6 +1,7 @@
 ﻿
 #include "data_process/arc_tracker.h"
 #include "data_process/input_shaping.h"
+#include "data_process/kalman_filter.h"
 
 #include <algorithm>
 #include <iostream>
@@ -11,10 +12,13 @@
 int test_filter();
 // 输入整形测试
 int test_input_shaping();
+// 卡尔曼滤波测试
+int test_kalman_filter();
 
 int main() {
 	//test_filter();
-	test_input_shaping();
+	//test_input_shaping();
+	test_kalman_filter();
 	return 0;
 }
 
@@ -104,6 +108,26 @@ int test_input_shaping() {
 		// 保存结果
 		std::cout << i << ", " << Jin[0] << ": " << Jout[0] << std::endl;
 		out << Jin[0] << ", " << Jout[0] << std::endl;
+	}
+
+	return 0;
+}
+
+
+int test_kalman_filter() {
+	double covQ[6] = { 0.01, 0.01, 0.01, 0.01, 0.01, 0.01 };
+	double covR[6] = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
+	double Pk0[6] = { 1, 1, 1, 1, 1, 1 };
+	double x0[6] = { 0, 0, 0, 0, 0, 0 };
+	kalman_filter_init(6,6,1, covQ, covR, Pk0, x0);
+
+	double input[6] = { 1.0 };
+	double output[6] = { 0.0 };
+
+	for (int i = 0; i < 100; ++i) {
+		kalman_filter_process(input, output);
+		input[0] += 0.01;
+		std::cout << "Step " << i << ": " << input[0] << " -> " << output[0] << std::endl;
 	}
 
 	return 0;

@@ -258,6 +258,19 @@ int matrix_copy_array(MatrixXd *mat, const double *val, int num) {
 	return 0;
 }
 
+int matrix_attach(MatrixXd* mat, int rows, int cols, const double* val) {
+	mat->rows = rows;
+	mat->cols = cols;
+	mat->data = val;
+	return 0;
+}
+
+int matrix_detach(MatrixXd* mat) {
+	mat->rows = mat->cols = 0;
+	mat->data = NULL;
+	return 0;
+}
+
 // 矩阵析构
 void matrix_delete(MatrixXd * q) {
 	free(q->data);

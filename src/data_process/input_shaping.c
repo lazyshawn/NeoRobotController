@@ -2,6 +2,7 @@
 #include "data_process/input_shaping.h"
 
 #include "data_process/fir_filter.h"
+#include "AuxMatrix.h"
 
 #define COEFF_LEN 2048
 // 滤波器系数
