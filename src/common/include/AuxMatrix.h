@@ -52,6 +52,16 @@ extern "C" {
 	SHARE_API_ MatrixXd *matrix_from_array(int rows, int cols, const double *val, int num);
 	SHARE_API_ int matrix_copy_array(MatrixXd *mat, const double *val, int num);
 
+	/**
+	* @brief  使用现有数组初始化矩阵，矩阵数据指针直接指向输入数组，不进行复制，不负责管理内存
+	* @param  mat     矩阵指针，不要求初始化
+	* @param  rows    矩阵行数
+	* @param  cols    矩阵列数
+	* @param  val     初始化数组
+	*/
+	SHARE_API_ int matrix_attach(MatrixXd* mat, int rows, int cols, const double* val);
+	SHARE_API_ int matrix_detach(MatrixXd* mat);
+
 	// 矩阵析构
 	SHARE_API_ void matrix_delete(MatrixXd * q);
 
