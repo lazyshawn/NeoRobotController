@@ -840,7 +840,29 @@ double bezier_dist(int m, const double ctr[][3], double a, double b, int n) {
 
 // 贝塞尔曲线插补
 double bezier_interp(int m, const double ctr[][3], double curU, double detS, int num) {
-	// 二分法
+	// --- 1. 四阶龙格库塔: y(s) = u(s), 求u(s+ds)
+	double deriv[3] = { 0.0 };
+	double predU = curU;
+	// 起点斜率
+	double k1 = 1.0 / bezier_derivatives(m, ctr, curU, deriv);
+
+	// 中间点斜率，使用u估计值处的导数近似半步处的导数
+	predU = curU + k1 * detS / 2;
+	double k2 = 1.0 / bezier_derivatives(m, ctr, predU, deriv);
+
+	// 修正的中间点斜率
+	predU = curU + k2 * detS / 2;
+	double k3 = 1.0 / bezier_derivatives(m, ctr, predU, deriv);
+
+	// 终点斜率
+	predU = curU + k3 * detS;
+	double k4 = 1.0 / bezier_derivatives(m, ctr, predU, deriv);
+
+	// 终点函数值
+	double nextU = curU + detS / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
+	return nextU;
+
+	// --- 2. 二分法
 	double beg = curU, end = 1.0;
 	int maxIteNum = 20;
 
