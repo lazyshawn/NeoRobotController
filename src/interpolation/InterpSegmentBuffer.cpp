@@ -1079,6 +1079,7 @@ int InterpBuffer::jog_move(int idx) {
 	int state = 0;
 	// 细化插补，减少突变，按500us插补，按实际周期输出
 	int num = cycleTime / 5e-4;
+	num = 1;
 	for (int i = 0; i < num; ++i) {
 		state = curve[idx].online_interp(cycleTime / num);
 	}
@@ -1092,6 +1093,19 @@ int InterpBuffer::get_online_interp_result(int idx, double ans[4]) {
 }
 
 double InterpBuffer::plan_decccel_online_interp(int idx) {
-	double Tdi[3];
-	return curve[idx].plan_decccel_online_interp(Tdi);
+	// 获取当前状态
+	double xt[4] = { 0.0 };
+	int onlineState = curve[idx].get_cur_state(xt);
+
+	double endmove = xt[0];
+	if (std::abs(onlineState) == 1) {
+		double Tdi[3];
+		endmove = curve[idx].plan_decccel_online_interp(Tdi);
+	}
+	// 减速阶段，返回终点值
+	else if (std::abs(onlineState) == 2) {
+		endmove = curve[idx].get_q1();
+	}
+
+	return endmove;
 }

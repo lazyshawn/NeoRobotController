@@ -40,13 +40,18 @@ class DoubleSCurve {
 
 	// --- 在线插补参数
 	//! 在线插补状态: +/- 运动方向，1 - 加速/匀速阶段, 2 - 减速阶段
-	int m_onlineState;
+	int m_onlineState, m_onlineStateSignal;
 	long m_decCnt = 0;
 	//! 当前插补结果 [xt, vt, at, jt]
 	double m_xt[4];
+	//! 减速规划状态
+	double m_a0, m_Tj2a, m_Tj2b;
 
 	// 计算实际运动参数限制值，每次规划完后更新
 	int calc_plan_param();
+
+	// 点动状态切换
+	int switch_online_state();
 
 public:
 	DoubleSCurve();
@@ -86,6 +91,7 @@ public:
 	double get_Td();
 	double get_Tv();
 	double get_vp();
+	double get_q1();
 	/**
 	* @brief  计算曲线
 	*
