@@ -10,6 +10,40 @@
 
 对外接口只有调度器和不带处理信息的指令队列。
 
+```mermaid
+classDiagram
+    direction LR
+
+    class DoubleSCurve {
+        -q0, q1, v0, v1, sign
+        -vmax, amax, jmax
+        -scale, offset, reserve
+        -FSLimit, RSLimit
+        -cb_endmove_check
+
+        -Tj1, Tj2, Ta, Tv, Td, T
+        -vlim, alima, alimd
+        -s1, s2, s3, s4, s5, s6
+
+        -xt[4]
+        -bool interpDone
+        -state, signal
+
+        +plan_jog()
+        +plan_p2p()
+        +plan_timed()
+        +plan_stop()
+        +plan_settle()
+        
+        +calc_deccel_endmove()
+        +calc_pos()
+        +calc_residual_dist()
+        +calc_residual_time()
+        +calc_max_speed()
+        +calc_time_PiTPe()
+    }
+```
+
 ### 插补流程
 整个插补流程分为三层：用户输入层、调度层、插补层。用户层将运动指令预处理后存入缓冲队列；调度层管理插补状态；插补层执行插补计算并输出离散点。
 

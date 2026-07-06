@@ -135,5 +135,5 @@ public:
 	// 执行点动
 	int jog_move(int idx, int dir);
 	// 寸动
-	//int step_feed(int idx, double dist);
+	//int step_move(int idx, double dist);
 };

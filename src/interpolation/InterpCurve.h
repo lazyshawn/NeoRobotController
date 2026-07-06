@@ -7,12 +7,16 @@
 * ************************************************************* */
 
 #include <cmath>
+#include <functional>
+//#include "common/ExportSharedAPI.h"
 
 //双S曲线插补, 七段规划
 class DoubleSCurve {
 	//! 运动学约束
 	double m_vmax = 2, m_amax = 5, m_jmax = 5;
 	double m_vmin, m_amin, m_jmin;
+	//! 正负限位
+	double m_FSLimit = 2.0, m_RSLimit = -2.0;
 
 	//! 曲线方向
 	int m_sign = 1;
@@ -23,18 +27,17 @@ class DoubleSCurve {
 
 	//! 始末点状态
 	double m_q0, m_q1, m_v0, m_v1;
-	//! 不同阶段的时间
-	double m_Tj1, m_Tj2, m_Ta, m_Tv, m_Td, m_T = 0;
+
+	//! 回调函数，终点有效性检测，输入终点位置
+	std::function<int(double)> cb_endmove_check;
 
 	// - 其他常用规划参数
-	//! 轨迹段最大速度、加速度
-	double m_alima, m_alimd, m_vlim;
 	// 不同阶段的位移
 	double m_s1, m_s2, m_s3, m_s4, m_s5, m_s6;
 
 	// - 保持规划插补参数
-	//! 完成标识符，上次计算点位到达终点
-	bool m_doneFlag;
+	//! 插补状态码：0 - 使能，1 - Stop，2 - Settle，3 - 完成，4 - 加速，5 - 匀速，6 - 减速
+	int m_stateCode = 0;
 	//! 规划速度，后续移除，存入m_xt中
 	double m_vp = 0.0;
 
@@ -45,16 +48,49 @@ class DoubleSCurve {
 	//! 当前插补结果 [xt, vt, at, jt]
 	double m_xt[4];
 	//! 减速规划状态
-	double m_a0, m_Tj2a, m_Tj2b;
+	double m_Tj2a, m_Tj2b;
 
 	// 计算实际运动参数限制值，每次规划完后更新
 	int calc_plan_param();
 
 	// 点动状态切换
 	int switch_online_state();
+	/**
+	* @brief  按当前状态进行最快停止规划
+	*/
+	int plan_stop();
+	/**
+	* @brief  按当前状态规划到加速度降为0
+	*/
+	int plan_settle();
+
+	int set_accel_phase(bool set);
+	int set_const_phase(bool set);
+	int set_decel_phase(bool set);
+	int set_settle_phase(bool set);
+	int set_stop_phase(bool set);
+	int set_done(bool set);
 
 public:
+	//! 不同阶段的时间
+	double m_Tj1, m_Tj2, m_Ta, m_Tv, m_Td, m_T = 0;
+	//! 轨迹段最大速度、加速度
+	double m_alima, m_alimd, m_vlim;
+	//! 插补结束后保持终点位置
+	bool keepStillAtEnd = true;
+
 	DoubleSCurve();
+
+	bool is_accel_phase();
+	bool is_const_phase();
+	bool is_decel_phase();
+	bool is_settle_phase();
+	bool is_stop_phase();
+	bool is_done();
+
+
+	int set_cb_endmove_check(const std::function<int(double)>& cb);
+	int plan_jog();
 
 	void clear();
 	/**
@@ -73,17 +109,18 @@ public:
 	*    - 0  正常返回
 	*    - 1  规划超速
 	*
-	* 计算各阶段的时间
+	* 计算各阶段的时间，前提条件：
+	* 1. 首末点加速度 a0 = a1 = 0
 	*/
-	int plan();
+	int plan_ptp();
 	/**
 	* @brief  通过设定各个阶段的时间进行规划
 	*
 	* 前提条件：
-	* 1. 首末点速度为 0，v0 = v1 = 0
-	* 2. vmax, amax 均能达到，设定值无效
+	* 1. 首末点速度为 v0 = v1 = 0
+	* 2. vmax, amax 需要计算得到，设定值无法保证
 	*/
-	int plan_by_duration(double Tall, double Tacc, double Tjerk);
+	int plan_timed(double Tall, double Tacc, double Tjerk);
 
 	// 获取最大规划时间
 	double get_duration();
@@ -98,27 +135,21 @@ public:
 	* 计算给定时间下的曲线位置
 	*/
 	double get_pos(double t);
-	bool done();
 	double get_offset() const;
 	double get_scale() const;
 
 	int get_onlineState();
 	int set_onlineState(int state);
-	/**
-	* @brief  在线插补
-	* @param  phase    插补阶段: 0 - 加速，1 - 减速
-	*/
-	int online_interp(double dt);
 	// 获取当前插补状态
 	int get_cur_state(double state[4]);
-	// 规划在线插补减速阶段: 计算各个减速阶段的时间，返回终点位置
-	double plan_decccel_online_interp(double Tdi[3]);
+	// 计算减速阶段时间，返回终点位置
+	double calc_deccel_duration(double Tdi[3]);
 	// 使用减速规划参数
 	int apply_deccel_plan(double Tdi[3]);
 
 	/**
 	* @brief  曲线缩放与偏移
-	* @param  dt  时间偏移，正值曲线左移，负值曲线右移
+	* @param  dt  时间偏移，负值曲线左移，正值曲线右移
 	* @param  k   曲线缩放，起点位置不变
 	*
 	* tn = k*t + dt，先缩放再偏移
