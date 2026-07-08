@@ -487,7 +487,7 @@ int InterpBuffer::joint_plane() {
 		for (int i = 0; i < 9; ++i) {
 			curvePre[i] = curve[i];
 			// 上一段未插补的部分移动到时间起点，保留缩放
-			curvePre[i].displacement(-(preBuf->procInfo.curTime - cycleTime), curve[i].get_scale());
+			curvePre[i].set_displacement(-(preBuf->procInfo.curTime - cycleTime), curve[i].get_scale());
 			curve[i].clear();
 		}
 	}
@@ -507,7 +507,7 @@ int InterpBuffer::joint_plane() {
 	// 当前段规划同步
 	if (curDuration > dim_EPS) {
 		for (int i = 0; i < 9; ++i) {
-			curve[i].displacement(0, curDuration / curve[i].get_duration());
+			curve[i].set_displacement(0, curDuration / curve[i].get_duration());
 		}
 	}
 
@@ -717,8 +717,8 @@ int InterpBuffer::cartesian_plan() {
 	curve[0].plan_ptp();
 
 	// 计算整数倍插补周期后的剩余距离
-	curBuf->procInfo.remainS = curve[0].get_remain_dist(cycleTime);
-	curBuf->procInfo.remainT = curve[0].get_remain_time(cycleTime);
+	curBuf->procInfo.remainS = curve[0].calc_residual_dist(cycleTime);
+	curBuf->procInfo.remainT = curve[0].calc_residual_time(cycleTime);
 
 	// 当前段规划时间
 	curBuf->procInfo.maxTime = curve[0].get_duration();
@@ -733,13 +733,13 @@ int InterpBuffer::cartesian_plan() {
 		int shiftNum = ((curvePre[0].get_duration() + curvePre[0].get_offset()) - (preBuf->procInfo.curTime - cycleTime)) / cycleTime;
 		double shiftTime = shiftNum * cycleTime;
 		// 右移整数个周期
-		curve[0].displacement(shiftTime, 1);
+		curve[0].set_displacement(shiftTime, 1);
 
 		// 前一条轨迹规划曲线左移: 前平滑大于零开始(curve.offset) -> 后平滑从零开始(curTime)
-		curvePre[0].displacement(-(preBuf->procInfo.curTime - cycleTime) + curvePre[0].get_offset(), 1);
+		curvePre[0].set_displacement(-(preBuf->procInfo.curTime - cycleTime) + curvePre[0].get_offset(), 1);
 
 		// 前一条轨迹附加轴规划左移
-		curvePre[6].displacement(-(preBuf->procInfo.curTime - cycleTime), 1);
+		curvePre[6].set_displacement(-(preBuf->procInfo.curTime - cycleTime), 1);
 	}
 	else {
 		// 主运动状态初始化
@@ -1039,7 +1039,7 @@ double InterpBuffer::cartesian_look_ahead() {
 		// 最大提速速度
 		curve.set_constraint(tmpBuf->motionCfg.speed, 10, 10 * 10);
 		curve.set_condition(0, dist, vsForward, 0);
-		double maxSpeed = curve.get_max_speed(dist);
+		double maxSpeed = curve.calc_accel_limit_speed(dist);
 
 		// 前瞻约束速度
 		vlim[i] = std::min(maxSpeed, tmpBuf->procInfo.constrainedVel);
@@ -1055,7 +1055,7 @@ double InterpBuffer::cartesian_look_ahead() {
 		// 最大提速速度
 		curve.set_constraint(tmpBuf->motionCfg.speed, 10, 10 * 10);
 		curve.set_condition(0, dist, vsForward, 0);
-		double maxSpeed = curve.get_max_speed(dist);
+		double maxSpeed = curve.calc_accel_limit_speed(dist);
 
 		// 回溯约束速度
 		vlim[i] = std::min(maxSpeed, vlim[i]);
@@ -1080,7 +1080,7 @@ int InterpBuffer::jog_move(int idx, long cnt, double dt) {
 	int replaned = curve[idx].plan_jog();
 	if (replaned) {
 		// 规划完可能自带偏移，此处要叠加
-		curve[idx].displacement(curve[idx].get_offset() +  dt * (cnt - 1), 1.0);
+		curve[idx].set_displacement(curve[idx].get_offset() +  dt * (cnt - 1), 1.0);
 	}
 	// 点动插补
 	curve[idx].get_pos(dt * cnt);
@@ -1102,8 +1102,8 @@ double InterpBuffer::plan_decccel_online_interp(int idx) {
 
 	double endmove = xt[0];
 	if (std::abs(onlineState) == 1) {
-		double Tdi[3];
-		endmove = curve[idx].calc_deccel_duration(Tdi);
+		double Tdi[4];
+		endmove = curve[idx].calc_deccel_phase(Tdi);
 	}
 	// 减速阶段，返回终点值
 	else if (std::abs(onlineState) == 2) {

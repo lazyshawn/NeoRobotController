@@ -38,8 +38,6 @@ class DoubleSCurve {
 	// - 保持规划插补参数
 	//! 插补状态码：0 - 使能，1 - Stop，2 - Settle，3 - 完成，4 - 加速，5 - 匀速，6 - 减速
 	int m_stateCode = 0;
-	//! 规划速度，后续移除，存入m_xt中
-	double m_vp = 0.0;
 
 	// --- 在线插补参数
 	//! 在线插补状态: +/- 运动方向，1 - 加速/匀速阶段, 2 - 减速阶段
@@ -64,12 +62,15 @@ class DoubleSCurve {
 	*/
 	int plan_settle();
 
+	// 设置插补状态
 	int set_accel_phase(bool set);
 	int set_const_phase(bool set);
 	int set_decel_phase(bool set);
 	int set_settle_phase(bool set);
 	int set_stop_phase(bool set);
 	int set_done(bool set);
+	int set_forward_locked(bool set);
+	int set_reverse_locked(bool set);
 
 public:
 	//! 不同阶段的时间
@@ -81,18 +82,21 @@ public:
 
 	DoubleSCurve();
 
+	void clear();
+
+	// 查询插补状态
 	bool is_accel_phase();
 	bool is_const_phase();
 	bool is_decel_phase();
 	bool is_settle_phase();
 	bool is_stop_phase();
 	bool is_done();
-
+	bool is_forward_locked();
+	bool is_reverse_locked();
 
 	int set_cb_endmove_check(const std::function<int(double)>& cb);
 	int plan_jog();
 
-	void clear();
 	/**
 	* @brief  设置曲线参数
 	*/
@@ -127,7 +131,6 @@ public:
 	double get_Ta();
 	double get_Td();
 	double get_Tv();
-	double get_vp();
 	double get_q1();
 	/**
 	* @brief  计算曲线
@@ -142,10 +145,16 @@ public:
 	int set_onlineState(int state);
 	// 获取当前插补状态
 	int get_cur_state(double state[4]);
-	// 计算减速阶段时间，返回终点位置
-	double calc_deccel_duration(double Tdi[3]);
+	/**
+	* @brief  计算减速阶段时间
+	* @param  Tdi  [out] 减速段时长
+	* @return 终点位置
+	*
+	* 保证终点位置 v=0, a=0
+	*/
+	double calc_deccel_phase(double Tdi[4]);
 	// 使用减速规划参数
-	int apply_deccel_plan(double Tdi[3]);
+	int apply_deccel_plan(double Tdi[4]);
 
 	/**
 	* @brief  曲线缩放与偏移
@@ -154,21 +163,21 @@ public:
 	*
 	* tn = k*t + dt，先缩放再偏移
 	*/
-	int displacement(double dt, double k);
+	int set_displacement(double dt, double k);
 	/**
 	* @brief  计算整数插补周期后的剩余距离
 	* @param  dt  单个插补周期的时间
 	*/
-	double get_remain_dist(double dt);
-	double get_remain_time(double dt);
+	double calc_residual_dist(double dt);
+	double calc_residual_time(double dt);
 
 	/**
-	* @brief  提速最大速度值
+	* @brief  给定距离下保持提速能达到的极限速度值
 	* @param  ds  提速位移
 	* 
 	* 不考虑减速阶段，按 vmax, amax, jmax 约束，计算在给定距离 ds 和初始速度 v0 时可以达到的最终速度 vlim
 	*/
-	double get_max_speed(double ds);
+	double calc_accel_limit_speed(double ds);
 	/**
 	* @brief  计算给定距离到运动结束需要的时间
 	* @param  ds  剩余位移
