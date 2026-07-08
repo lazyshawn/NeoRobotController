@@ -4,9 +4,9 @@
 #include "InterpSegmentBuffer.h"
 
 #include <iostream>
-//#include <fstream>
-//static std::ofstream jntPosOutFile("jnt_pos.txt");
-//static std::ofstream jntVelOutFile("jnt_vel.txt");
+#include <fstream>
+static std::ofstream jntPosOutFile("jnt_pos.txt");
+static std::ofstream jntVelOutFile("jnt_vel.txt");
 
 // 将前向声明 IMPL 定义为 InterpBuffer 的别名
 struct InterpDispatcher::IMPL : public InterpBuffer {};
@@ -40,11 +40,13 @@ int InterpDispatcher::interp_enable(bool enable) {
 int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState& state) {
 	// - 前处理
 	// 第一次调用时初始化
+	static PosData prePos;
 	if (dispatcherStatus.CycleNum < 1) {
 		// 接收初始关节角
 		dispatcherStatus.dpos = state.dpos;
 		// 默认进入关节模式
 		switch_to_mode(0);
+		prePos = state.dpos;
 	}
 
 	// 调用计数更新
@@ -65,14 +67,26 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 		interp_manual_task();
 	}
 
-	//for (int i = 0; i < 5; ++i) {
-	//	jntPosOutFile << dispatcherStatus.dpos.rbtPos[i] << ", ";
-	//}
-	//jntPosOutFile << dispatcherStatus.dpos.rbtPos[5] << ", ";
-	//for (int i = 0; i < 2; ++i) {
-	//	jntPosOutFile << dispatcherStatus.dpos.extPos[i] << ", ";
-	//}
-	//jntPosOutFile << dispatcherStatus.dpos.extPos[2] << std::endl;
+	static double preVel0 = 0.0;
+	for (int i = 0; i < 5; ++i) {
+		jntPosOutFile << dispatcherStatus.dpos.rbtPos[i] << ", ";
+		double curVel = (dispatcherStatus.dpos.rbtPos[i] - prePos.rbtPos[i]) / get_cycleTime();
+		if (i == 0) {
+			if (std::fabs(curVel - preVel0) > 0.1) {
+				double tmp = 0.0;
+			}
+			preVel0 = curVel;
+		}
+		jntVelOutFile << (dispatcherStatus.dpos.rbtPos[i] - prePos.rbtPos[i]) / get_cycleTime() << ", ";
+	}
+	jntPosOutFile << dispatcherStatus.dpos.rbtPos[5] << ", ";
+	jntVelOutFile << (dispatcherStatus.dpos.rbtPos[5] - prePos.rbtPos[5]) / get_cycleTime();
+	for (int i = 0; i < 2; ++i) {
+		jntPosOutFile << dispatcherStatus.dpos.extPos[i] << ", ";
+	}
+	jntPosOutFile << dispatcherStatus.dpos.extPos[2] << std::endl;
+	jntVelOutFile << std::endl;
+	prePos = dispatcherStatus.dpos;
 
 	// 输出插补状态
 	state = dispatcherStatus;
@@ -154,7 +168,7 @@ int InterpDispatcher::interp_auto_task() {
 int InterpDispatcher::interp_manual_task() {
 	// 遍历轴点动使能信号
 	int cmd = signalIn.switchState;
-	for (int i = 0; i < 9; ++i) {
+	for (int i = 0; i < 1; ++i) {
 		// 修改点动状态
 		int dir = cmd & 3;
 
@@ -177,23 +191,9 @@ int InterpDispatcher::interp_manual_task() {
 			pimpl->switch_jog_state(i, 0);
 		}
 
-		// 检测限位: 超限后允许反向点动
-		double endmove = pimpl->plan_decccel_online_interp(i);
-		// 限位检测安全余量
-		constexpr double limitSafeMargin = 0.01;
-		double upperLimit = i < 6 ? kineCfg.jntUpperLimit[i] : kineCfg.extUpperLimit[i - 6];
-		double lowerLimit = i < 6 ? kineCfg.jntLowerLimit[i] : kineCfg.extLowerLimit[i - 6];
-		if ((dir == 1 && endmove + limitSafeMargin > upperLimit) || (dir == 2 && endmove - limitSafeMargin < lowerLimit)
-			&& signalIn.switchState) 
-		{
-			pimpl->switch_jog_state(i, 0);
-			signalIn.switchState &= ~(1 << (i * 2));
-			signalIn.switchState &= ~(1 << (i * 2 + 1));
-		}
-
 		// 执行点动插补
 		double xt[4];
-		int jogState = pimpl->jog_move(i);
+		int jogState = pimpl->jog_move(i, dispatcherStatus.CycleNum, get_cycleTime());
 		pimpl->get_online_interp_result(i, xt);
 		if (i < 6) {
 			dispatcherStatus.dpos.rbtPos[i] = xt[0];
@@ -284,7 +284,7 @@ int InterpDispatcher::switch_to_mode(int type) {
 		// 更新各轴插补曲线的起点位置、速度、加速度等
 		for (int i = 0; i < 9; ++i) {
 			double q0 = i < 6 ? dispatcherStatus.dpos.rbtPos[i] : dispatcherStatus.dpos.extPos[i - 6];
-			pimpl->set_jog_constraint(i, q0, 10, 100, 800);
+			pimpl->set_jog_constraint(i, q0, 2, 5, 5);
 		}
 	}
 
