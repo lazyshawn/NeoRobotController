@@ -6,14 +6,12 @@
 * 1. 提供不同类型的基础插补曲线，如双S, 梯形, 多项式等	        *
 * ************************************************************* */
 
-#include <cmath>
 #include <functional>
-//#include "common/ExportSharedAPI.h"
 
 //双S曲线插补, 七段规划
 class DoubleSCurve {
 	//! 运动学约束
-	double m_vmax = 2, m_amax = 5, m_jmax = 5;
+	double m_vmax = 2, m_amax = 5, m_jmax_bk = 5, m_jmax;
 	double m_vmin, m_amin, m_jmin;
 	//! 正负限位
 	double m_FSLimit = 2.0, m_RSLimit = -2.0;
@@ -152,9 +150,9 @@ public:
 	*
 	* 保证终点位置 v=0, a=0
 	*/
-	double calc_deccel_phase(double Tdi[4]);
+	double calc_deccel_phase(double Tdi[5]);
 	// 使用减速规划参数
-	int apply_deccel_plan(double Tdi[4]);
+	int apply_deccel_plan(double Tdi[5]);
 
 	/**
 	* @brief  曲线缩放与偏移

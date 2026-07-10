@@ -152,6 +152,7 @@ static int get_bit(int value, int idx) {
  ***********************************************************************/
 DoubleSCurve::DoubleSCurve() {
 	this->clear();
+	m_jmax = m_jmax_bk;
 	// 默认状态
 	m_stateCode = 14;
 	// 设置默认回调
@@ -181,7 +182,7 @@ int DoubleSCurve::plan_jog() {
 
 	// --- 2. 通过回调检测减速终点处的有效性
 	// 计算终点位置
-	double Tdi[4], endmove = calc_deccel_phase(Tdi);
+	double Tdi[5], endmove = calc_deccel_phase(Tdi);
 	// 终点位置异常
 	int failInfo = cb_endmove_check(endmove);
 	if (failInfo < 0) {
@@ -200,10 +201,10 @@ int DoubleSCurve::plan_jog() {
 		if (isStopPlan) {
 			apply_deccel_plan(Tdi);
 			replaned = 1;
-			printf("!!!! *** Emergency stop. *** !!!!\n");
+			printf("!!!! *** Emergency stop: endmove at %f *** !!!!\n", Tdi[3]);
 		}
 	}
-	else if (failInfo == 0) {
+	else if (failInfo == 0 && cb_endmove_check(m_xt[0]) == 0) {
 		set_forward_locked(false);
 		set_reverse_locked(false);
 	}
@@ -212,8 +213,10 @@ int DoubleSCurve::plan_jog() {
 }
 
 int DoubleSCurve::plan_stop() {
-	double Tdi[4], endmove = calc_deccel_phase(Tdi);
+	double Tdi[5], endmove = calc_deccel_phase(Tdi);
 	apply_deccel_plan(Tdi);
+	printf("plan stop state: %f, %f, %f, %f. stop param: %f, %f, %f, %f, %f\n", 
+		m_xt[0], m_xt[1], m_xt[2], m_xt[3], Tdi[0], Tdi[1], Tdi[2], Tdi[3], Tdi[4]);
 	return 0;
 }
 
@@ -413,7 +416,7 @@ int DoubleSCurve::set_condition(double begPos, double endPos, double begVel, dou
 int DoubleSCurve::set_constraint(double maxVel, double maxAcc, double maxJerk) {
 	m_vmax = fabs(maxVel);
 	m_amax = fabs(maxAcc);
-	m_jmax = maxJerk > 0 ? fabs(maxJerk) : 10 * m_amax;
+	m_jmax = m_jmax_bk = maxJerk > 0 ? fabs(maxJerk) : 10 * m_amax;
 
 	m_vmin = -m_vmax;
 	m_amin = -m_amax;
@@ -609,8 +612,13 @@ double DoubleSCurve::get_pos(double t) {
 		if (keepStillAtEnd)
 			t = m_T - m_reserveTime;
 		set_done(true);
-		set_stop_phase(std::fabs(m_v1) < stopVel);
-		set_settle_phase(true);
+		if (std::fabs(m_v1) < stopVel) {
+			set_stop_phase(true);
+			set_settle_phase(true);
+		}
+		else {
+			set_stop_phase(false);
+		}
 	}
 	else {
 		set_done(false);
@@ -723,10 +731,10 @@ int DoubleSCurve::switch_online_state() {
 	/*        ┌                ┐
 	*            状态切换逻辑图 
 	*         └                ┘
-	*     (Stop)            (Settle, a=0)
-	*      静止 ---> ±加速 <--- 稳定 
-	*        ↑        ↓        ↑ 
-	*        └----- ±减速 -----┘ 
+	*   (Stop) -------------> (Settle, a=0)
+	*    静止  <-------------  稳定
+	*     ↑                    ↓
+	*     └-----------------  运动 (Move)
 	* 
 	* --- 1. 状态说明
 	* 1. 正向和负向切换时，需要经过静止或a=0状态，如：
@@ -762,16 +770,20 @@ int DoubleSCurve::switch_online_state() {
 		if (m_onlineStateSignal > 0 && !is_forward_locked()) {
 			set_condition(m_sign * m_xt[0], m_FSLimit, m_sign * m_xt[1], 0);
 			plan_ptp();
+			set_stop_phase(false);
 			replaned = true;
 		}
 		else if (m_onlineStateSignal < 0 && !is_reverse_locked()) {
 			set_condition(m_sign * m_xt[0], m_RSLimit, m_sign * m_xt[1], 0);
 			plan_ptp();
+			set_stop_phase(false);
 			replaned = true;
 		}
 	}
 	// 减速状态，若减速完成会切换到 Settle 状态并执行上一个分支
-	else if (is_stop_phase()) {
+	else if (is_stop_phase() && !is_forward_locked() && !is_reverse_locked()) {
+		// 防止使用减速规划时的临时捷度
+		m_jmax = m_jmax_bk;
 		plan_settle();
 		replaned = true;
 	}
@@ -786,23 +798,24 @@ int DoubleSCurve::get_cur_state(double state[4]) {
 	return m_onlineState;
 }
 
-double DoubleSCurve::calc_deccel_phase(double Tdi[4]) {
+double DoubleSCurve::calc_deccel_phase(double Tdi[5]) {
 	// 获取实际减速方向，调整后速度方向为正
 	int dir = (m_sign * m_xt[1] < 0) ? -1 : 1;
 	double xt[4];
 	for (int i = 0; i < 4; ++i)
 		xt[i] = dir * m_sign * m_xt[i];
+	double jmax = m_jmax;
 
 	// 能达到匀减速度阶段 (3.36)
 	double Tj2a = (m_amin - xt[2]) / m_jmin;
-	double Tj2b = (0 - m_amin) / m_jmax;
+	double Tj2b = (0 - m_amin) / jmax;
 	double Td = -xt[1] / m_amin + Tj2a * (m_amin - xt[2]) / (2 * m_amin) + Tj2b * m_amin / (2 * m_amin);
 
 	// 不能达到匀加速度阶段 (3.37)
-	double det = (m_jmax - m_jmin) * (xt[2] * xt[2] * m_jmax - m_jmin * 2 * m_jmax * xt[1]);
+	double det = (jmax - m_jmin) * (xt[2] * xt[2] * jmax - m_jmin * 2 * jmax * xt[1]);
 	if (Td < Tj2a + Tj2b) {
-		Tj2a = -xt[2] / m_jmin + sqrt((m_jmax - m_jmin) * (xt[2] * xt[2] * m_jmax - m_jmin * 2 * m_jmax * xt[1])) / (m_jmin * (m_jmin - m_jmax));
-		Tj2b = sqrt((m_jmax - m_jmin) * (xt[2] * xt[2] * m_jmax - m_jmin * 2 * m_jmax * xt[1])) / (m_jmax * (m_jmax - m_jmin));
+		Tj2a = -xt[2] / m_jmin + sqrt((jmax - m_jmin) * (xt[2] * xt[2] * jmax - m_jmin * 2 * jmax * xt[1])) / (m_jmin * (m_jmin - jmax));
+		Tj2b = sqrt((jmax - m_jmin) * (xt[2] * xt[2] * jmax - m_jmin * 2 * jmax * xt[1])) / (jmax * (jmax - m_jmin));
 		Td = Tj2a + Tj2b;
 	}
 	// 计算终点位置
@@ -813,21 +826,20 @@ double DoubleSCurve::calc_deccel_phase(double Tdi[4]) {
 		Tj2a = 0.0;
 		Tj2b = 2 * std::fabs(xt[1] / xt[2]);
 		Td = Tj2a + Tj2b;
-		if (std::fabs(std::abs(xt[2]) / Td - m_jmax) > 1e-3) {
-			m_jmax = std::abs(xt[2]) / Td;
-		}
-		hk = m_jmax * Td * Td * Td / 6;
+		jmax = std::abs(xt[2]) / Td;
+		hk = jmax * Td * Td * Td / 6;
 	}
 
 	Tdi[0] = Tj2a;
 	Tdi[1] = Tj2b;
 	Tdi[2] = Td;
 	Tdi[3] = dir * (xt[0] + hk);
+	Tdi[4] = jmax;
 
 	return dir * (xt[0] + hk);
 }
 
-int DoubleSCurve::apply_deccel_plan(double Tdi[4]) {
+int DoubleSCurve::apply_deccel_plan(double Tdi[5]) {
 	// 按当前实际速度方向规划减速
 	int dir = (m_sign * m_xt[1] < 0) ? -1 : 1;
 	for (int i = 0; i < 4; ++i)
@@ -837,9 +849,11 @@ int DoubleSCurve::apply_deccel_plan(double Tdi[4]) {
 	// 将当前状态保存为减速规划的起点状态
 	m_q0 = m_xt[0];
 	m_v0 = m_xt[1];
+	m_jmax = Tdi[4];
 	m_offset = 0;
 	m_scale = 1;
 	set_stop_phase(true);
+	set_settle_phase(false);
 
 	m_q1 = Tdi[3] * dir;
 	m_v1 = 0;
