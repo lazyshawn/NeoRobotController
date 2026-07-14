@@ -6,14 +6,12 @@
 * 1. 提供不同类型的基础插补曲线，如双S, 梯形, 多项式等	        *
 * ************************************************************* */
 
-#include <cmath>
 #include <functional>
-//#include "common/ExportSharedAPI.h"
 
 //双S曲线插补, 七段规划
 class DoubleSCurve {
 	//! 运动学约束
-	double m_vmax = 2, m_amax = 5, m_jmax = 5;
+	double m_vmax = 2, m_amax = 5, m_jmax_bk = 5, m_jmax;
 	double m_vmin, m_amin, m_jmin;
 	//! 正负限位
 	double m_FSLimit = 2.0, m_RSLimit = -2.0;
@@ -50,6 +48,9 @@ class DoubleSCurve {
 
 	// 计算实际运动参数限制值，每次规划完后更新
 	int calc_plan_param();
+
+	// 按规划方向切换当前状态xt
+	int reverse_plan_direction(int dir);
 
 	// 点动状态切换
 	int switch_online_state();
@@ -152,9 +153,9 @@ public:
 	*
 	* 保证终点位置 v=0, a=0
 	*/
-	double calc_deccel_phase(double Tdi[4]);
+	double calc_decel_phase(double Tdi[5]);
 	// 使用减速规划参数
-	int apply_deccel_plan(double Tdi[4]);
+	int apply_deccel_plan(double Tdi[5]);
 
 	/**
 	* @brief  曲线缩放与偏移
@@ -199,7 +200,7 @@ public:
 @param  u      待获取点位的参数值
 @param  ans    [out] 目标点位
 ******************************************/
-int bezier_positioin(int m, const double ctr[][3], double u, double ans[3]);
+int bezier_position(int m, const double ctr[][3], double u, double ans[3]);
 
 /******************************************
 @brief  贝塞尔曲线导数

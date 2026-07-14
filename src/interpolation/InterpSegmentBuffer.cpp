@@ -854,7 +854,7 @@ int InterpBuffer::cartesian_move() {
 		}
 		double curPos[3];
 		curU = bezier_interp(5, curBuf->procInfo.preCtrlPnt, curBuf->interpInfo.curU, detS, 2);
-		bezier_positioin(5, curBuf->procInfo.preCtrlPnt, curU, curPos);
+		bezier_position(5, curBuf->procInfo.preCtrlPnt, curU, curPos);
 
 		for (int i = 0; i < 3; ++i) {
 			pos.rbtPos[i] = curPos[i];
@@ -887,7 +887,7 @@ int InterpBuffer::cartesian_move() {
 
 			double curPos[3];
 			curU = bezier_interp(5, curBuf->procInfo.postCtrlPnt, curBuf->interpInfo.curU, dis, 2);
-			bezier_positioin(5, curBuf->procInfo.postCtrlPnt, curU, curPos);
+			bezier_position(5, curBuf->procInfo.postCtrlPnt, curU, curPos);
 
 			for (int i = 0; i < 3; ++i) {
 				pos.rbtPos[i] = curPos[i];
@@ -1103,7 +1103,7 @@ double InterpBuffer::plan_decccel_online_interp(int idx) {
 	double endmove = xt[0];
 	if (std::abs(onlineState) == 1) {
 		double Tdi[4];
-		endmove = curve[idx].calc_deccel_phase(Tdi);
+		endmove = curve[idx].calc_decel_phase(Tdi);
 	}
 	// 减速阶段，返回终点值
 	else if (std::abs(onlineState) == 2) {

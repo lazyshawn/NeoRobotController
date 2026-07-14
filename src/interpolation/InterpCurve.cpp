@@ -70,14 +70,14 @@ static double solve_cubic_equation(double *k, double *ans) {
 
 	// 总判别式
 	double Det = B * B - 4 * A*C;
-	double epsillon = 1e-6;
+	double epsilon = 1e-6;
 
 	// 公式1: 三重实根
-	if (fabs(A) < epsillon && fabs(B) < epsillon) {
+	if (fabs(A) < epsilon && fabs(B) < epsilon) {
 		ans[0] = ans[1] = ans[2] = (-b - c - 3 * d) / (3 * a + b + c);
 	}
 	// 公式3: 三个实根，其中一个两重实根
-	else if (fabs(Det) < epsillon) {
+	else if (fabs(Det) < epsilon) {
 		double K = B / A;
 		double sol = -b / a + K;
 		ans[0] = sol;
@@ -152,6 +152,7 @@ static int get_bit(int value, int idx) {
  ***********************************************************************/
 DoubleSCurve::DoubleSCurve() {
 	this->clear();
+	m_jmax = m_jmax_bk;
 	// 默认状态
 	m_stateCode = 14;
 	// 设置默认回调
@@ -173,15 +174,16 @@ int DoubleSCurve::set_cb_endmove_check(const std::function<int(double)>& cb) {
 	return 0;
 }
 
+// s
 int DoubleSCurve::plan_jog() {
-	int replaned = 0;
+	int replanned = 0;
 
 	// --- 1. 检测状态切换
-	replaned = switch_online_state();
+	replanned = switch_online_state();
 
 	// --- 2. 通过回调检测减速终点处的有效性
 	// 计算终点位置
-	double Tdi[4], endmove = calc_deccel_phase(Tdi);
+	double Tdi[5], endmove = calc_decel_phase(Tdi);
 	// 终点位置异常
 	int failInfo = cb_endmove_check(endmove);
 	if (failInfo < 0) {
@@ -199,21 +201,23 @@ int DoubleSCurve::plan_jog() {
 
 		if (isStopPlan) {
 			apply_deccel_plan(Tdi);
-			replaned = 1;
-			printf("!!!! *** Emergency stop. *** !!!!\n");
+			replanned = 1;
+			printf("!!!! *** Emergency stop: endmove at %f *** !!!!\n", Tdi[3]);
 		}
 	}
-	else if (failInfo == 0) {
+	else if (failInfo == 0 && cb_endmove_check(m_xt[0]) == 0) {
 		set_forward_locked(false);
 		set_reverse_locked(false);
 	}
 
-	return replaned;
+	return replanned;
 }
 
 int DoubleSCurve::plan_stop() {
-	double Tdi[4], endmove = calc_deccel_phase(Tdi);
+	double Tdi[5], endmove = calc_decel_phase(Tdi);
 	apply_deccel_plan(Tdi);
+	printf("plan stop state: %f, %f, %f, %f. stop param: %f, %f, %f, %f, %f\n", 
+		m_xt[0], m_xt[1], m_xt[2], m_xt[3], Tdi[0], Tdi[1], Tdi[2], Tdi[3], Tdi[4]);
 	return 0;
 }
 
@@ -386,6 +390,20 @@ int DoubleSCurve::calc_plan_param() {
 	return 0;
 }
 
+int DoubleSCurve::reverse_plan_direction(int dir) {
+	if (dir * m_sign < 0) {
+		for (int i=0; i<4; ++i) {
+			m_xt[i] *= -1;
+		}
+		m_q0 *= -1;
+		m_q1 *= -1;
+		m_v0 *= -1;
+		m_v1 *= -1;
+		m_sign *= -1;
+	}
+	return 0;
+}
+
 int DoubleSCurve::set_condition(double begPos, double endPos, double begVel, double endVel) {
 	m_q0 = begPos;
 	m_q1 = endPos;
@@ -413,7 +431,7 @@ int DoubleSCurve::set_condition(double begPos, double endPos, double begVel, dou
 int DoubleSCurve::set_constraint(double maxVel, double maxAcc, double maxJerk) {
 	m_vmax = fabs(maxVel);
 	m_amax = fabs(maxAcc);
-	m_jmax = maxJerk > 0 ? fabs(maxJerk) : 10 * m_amax;
+	m_jmax = m_jmax_bk = maxJerk > 0 ? fabs(maxJerk) : 10 * m_amax;
 
 	m_vmin = -m_vmax;
 	m_amin = -m_amax;
@@ -609,8 +627,13 @@ double DoubleSCurve::get_pos(double t) {
 		if (keepStillAtEnd)
 			t = m_T - m_reserveTime;
 		set_done(true);
-		set_stop_phase(std::fabs(m_v1) < stopVel);
-		set_settle_phase(true);
+		if (std::fabs(m_v1) < stopVel) {
+			set_stop_phase(true);
+			set_settle_phase(true);
+		}
+		else {
+			set_stop_phase(false);
+		}
 	}
 	else {
 		set_done(false);
@@ -720,63 +743,47 @@ int DoubleSCurve::set_onlineState(int state) {
 }
 
 int DoubleSCurve::switch_online_state() {
-	/*        ┌                ┐
-	*            状态切换逻辑图 
-	*         └                ┘
-	*     (Stop)            (Settle, a=0)
-	*      静止 ---> ±加速 <--- 稳定 
-	*        ↑        ↓        ↑ 
-	*        └----- ±减速 -----┘ 
-	* 
-	* --- 1. 状态说明
-	* 1. 正向和负向切换时，需要经过静止或a=0状态，如：
-	*    +加速 --> +减速 --> Settle --> -加速
-	* 2. Stop 状态可以通过插补完成到达，或减速规划到达
-	* 3. Settle 状态下，速度 v 不一定为 0，此时根据信号切换到加速或减速状态
-	* 
-	* --- 2. 切换逻辑
-	* 1.  停止信号 + 非 Stop 状态
-	* 1.1 从加速/减速状态切换到 Stop 状态，规划减速曲线
-	* 2.  运动信号 + Settle 状态 + 插补完成状态
-	* 2.1 规划当前位置到限位位置的 PTP 曲线
-	* 3.  运动信号 + 信号与状态反向 + 非 Settle 状态
-	*/
+	/* 状态切换逻辑:
+	 *   Stop ---(sgn!=0, 未锁)---> Settle ---(sgn!=0, 未锁)---> Move (PTP)
+	 *    |                          |                            |
+	 *    +<---(sgn=0 or locked) <---+----------------------------+
+	 */
+	int replanned = 0;
 
-	// 重新进行了规划
-	int replaned = 0;
-
-	if (is_stop_phase() && is_done()) {
-		keepStillAtEnd = m_onlineStateSignal == 0 ? true : false;
-	}
-
-	// 停止信号 || 信号方向被限制
+	// 停止信号 || 信号方向被限制，保持停止模式
 	if (m_onlineStateSignal == 0 || (m_onlineStateSignal > 0 && is_forward_locked()) || (m_onlineStateSignal < 0 && is_reverse_locked())) {
-		// 非停止状态
 		if (!is_stop_phase()) {
+			keepStillAtEnd = (m_onlineStateSignal == 0);
 			plan_stop();
-			replaned = true;
+			replanned = true;
 		}
 	}
-	// Settle 状态插补完成
+	// Settle + Done ---> 新一轮 PTP
 	else if (is_settle_phase() && is_done()) {
 		if (m_onlineStateSignal > 0 && !is_forward_locked()) {
 			set_condition(m_sign * m_xt[0], m_FSLimit, m_sign * m_xt[1], 0);
-			plan_ptp();
-			replaned = true;
+			replanned = true;
 		}
 		else if (m_onlineStateSignal < 0 && !is_reverse_locked()) {
 			set_condition(m_sign * m_xt[0], m_RSLimit, m_sign * m_xt[1], 0);
+			replanned = true;
+		}
+		if (replanned) {
 			plan_ptp();
-			replaned = true;
+			set_stop_phase(false);
+			printf("plan ptp. a = %f, %f. Ta: %f, %f. Tv: %f, Td: %f, %f, %f.\n",m_alima, m_alimd, m_Tj1, m_Ta, m_Tv, m_Tj2a, m_Tj2b, m_Td);
 		}
 	}
-	// 减速状态，若减速完成会切换到 Settle 状态并执行上一个分支
-	else if (is_stop_phase()) {
+	// Stop ---> 过渡到 Settle
+	else if (is_stop_phase() && !is_forward_locked() && !is_reverse_locked()) {
+		// 恢复默认捷度
+		m_jmax = m_jmax_bk;
+		keepStillAtEnd = false;
 		plan_settle();
-		replaned = true;
+		replanned = true;
 	}
 
-	return replaned;
+	return replanned;
 }
 
 int DoubleSCurve::get_cur_state(double state[4]) {
@@ -786,23 +793,24 @@ int DoubleSCurve::get_cur_state(double state[4]) {
 	return m_onlineState;
 }
 
-double DoubleSCurve::calc_deccel_phase(double Tdi[4]) {
+double DoubleSCurve::calc_decel_phase(double Tdi[5]) {
 	// 获取实际减速方向，调整后速度方向为正
 	int dir = (m_sign * m_xt[1] < 0) ? -1 : 1;
 	double xt[4];
 	for (int i = 0; i < 4; ++i)
 		xt[i] = dir * m_sign * m_xt[i];
+	double jmax = m_jmax;
 
 	// 能达到匀减速度阶段 (3.36)
 	double Tj2a = (m_amin - xt[2]) / m_jmin;
-	double Tj2b = (0 - m_amin) / m_jmax;
+	double Tj2b = (0 - m_amin) / jmax;
 	double Td = -xt[1] / m_amin + Tj2a * (m_amin - xt[2]) / (2 * m_amin) + Tj2b * m_amin / (2 * m_amin);
 
 	// 不能达到匀加速度阶段 (3.37)
-	double det = (m_jmax - m_jmin) * (xt[2] * xt[2] * m_jmax - m_jmin * 2 * m_jmax * xt[1]);
+	double det = (jmax - m_jmin) * (xt[2] * xt[2] * jmax - m_jmin * 2 * jmax * xt[1]);
 	if (Td < Tj2a + Tj2b) {
-		Tj2a = -xt[2] / m_jmin + sqrt((m_jmax - m_jmin) * (xt[2] * xt[2] * m_jmax - m_jmin * 2 * m_jmax * xt[1])) / (m_jmin * (m_jmin - m_jmax));
-		Tj2b = sqrt((m_jmax - m_jmin) * (xt[2] * xt[2] * m_jmax - m_jmin * 2 * m_jmax * xt[1])) / (m_jmax * (m_jmax - m_jmin));
+		Tj2a = -xt[2] / m_jmin + sqrt(det) / (m_jmin * (m_jmin - jmax));
+		Tj2b = sqrt(det) / (jmax * (jmax - m_jmin));
 		Td = Tj2a + Tj2b;
 	}
 	// 计算终点位置
@@ -813,21 +821,20 @@ double DoubleSCurve::calc_deccel_phase(double Tdi[4]) {
 		Tj2a = 0.0;
 		Tj2b = 2 * std::fabs(xt[1] / xt[2]);
 		Td = Tj2a + Tj2b;
-		if (std::fabs(std::abs(xt[2]) / Td - m_jmax) > 1e-3) {
-			m_jmax = std::abs(xt[2]) / Td;
-		}
-		hk = m_jmax * Td * Td * Td / 6;
+		jmax = std::abs(xt[2]) / Td;
+		hk = jmax * Td * Td * Td / 6;
 	}
 
 	Tdi[0] = Tj2a;
 	Tdi[1] = Tj2b;
 	Tdi[2] = Td;
 	Tdi[3] = dir * (xt[0] + hk);
+	Tdi[4] = jmax;
 
 	return dir * (xt[0] + hk);
 }
 
-int DoubleSCurve::apply_deccel_plan(double Tdi[4]) {
+int DoubleSCurve::apply_deccel_plan(double Tdi[5]) {
 	// 按当前实际速度方向规划减速
 	int dir = (m_sign * m_xt[1] < 0) ? -1 : 1;
 	for (int i = 0; i < 4; ++i)
@@ -837,9 +844,11 @@ int DoubleSCurve::apply_deccel_plan(double Tdi[4]) {
 	// 将当前状态保存为减速规划的起点状态
 	m_q0 = m_xt[0];
 	m_v0 = m_xt[1];
+	m_jmax = Tdi[4];
 	m_offset = 0;
 	m_scale = 1;
 	set_stop_phase(true);
+	set_settle_phase(false);
 
 	m_q1 = Tdi[3] * dir;
 	m_v1 = 0;
@@ -900,12 +909,12 @@ double DoubleSCurve::calc_accel_limit_speed(double ds) {
 		coeff[0] = m_amax * m_amax / m_jmax * m_v0 - 2 * m_amax * ds - m_v0 * m_v0;
 		coeff[1] = m_amax * m_amax / m_jmax;
 		coeff[2] = 1;
+		solNum = 2;
 		solve_quadratic_equation(coeff, sol);
 	}
 	else {
 		// 2.2. 两段加速到达目标距离 (alim < amax)
 		double coeff[4] = { -m_v0 * m_v0 * m_v0 - ds * ds * m_jmax, -m_v0 * m_v0, m_v0, 1.0 };
-		solNum = 2;
 		solve_cubic_equation(coeff, sol);
 	}
 
@@ -992,7 +1001,7 @@ double DoubleSCurve::calc_time_PiTPe(double ds) {
  *                        B E Z I E R                                  *
  ***********************************************************************/
  // 贝塞尔曲线位置
-int bezier_positioin(int m, const double ctr[][3], double u, double ans[3]) {
+int bezier_position(int m, const double ctr[][3], double u, double ans[3]) {
 	double *Q = (double *)malloc(sizeof(double) * (m + 1));
 
 	// 第J维度
@@ -1029,7 +1038,7 @@ double bezier_derivatives(int m, const double ctr[][3], double u, double ans[3])
 	}
 
 	// b'(m, u) = m * b(m-1, u)
-	bezier_positioin(m - 1, pnt, u, ans);
+	bezier_position(m - 1, pnt, u, ans);
 	for (int i = 0; i < 3; ++i) {
 		ans[i] *= m;
 	}
@@ -1086,26 +1095,5 @@ double bezier_interp(int m, const double ctr[][3], double curU, double detS, int
 	// 终点函数值
 	double nextU = curU + detS / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
 	return nextU;
-
-	// --- 2. 二分法
-	double beg = curU, end = 1.0;
-	int maxIteNum = 20;
-
-	// 最大迭代次数
-	double lastU = 1.0;
-	for (int i = 0; i < maxIteNum; ++i) {
-		// 中点参数
-		double U = (beg + end) / 2;
-
-		double dis = bezier_dist(m, ctr, curU, U, num);
-
-		// 更新区间端点
-		if (dis > detS)
-			end = U;
-		else
-			beg = U;
-	}
-
-	return (beg + end) / 2;
 }
 

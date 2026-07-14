@@ -168,7 +168,7 @@ int InterpDispatcher::interp_auto_task() {
 int InterpDispatcher::interp_manual_task() {
 	// 遍历轴点动使能信号
 	int cmd = signalIn.switchState;
-	for (int i = 0; i < 1; ++i) {
+	for (int i = 0; i < 9; ++i) {
 		// 修改点动状态
 		int dir = cmd & 3;
 
