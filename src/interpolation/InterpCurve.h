@@ -49,6 +49,9 @@ class DoubleSCurve {
 	// 计算实际运动参数限制值，每次规划完后更新
 	int calc_plan_param();
 
+	// 按规划方向切换当前状态xt
+	int reverse_plan_direction(int dir);
+
 	// 点动状态切换
 	int switch_online_state();
 	/**
@@ -150,7 +153,7 @@ public:
 	*
 	* 保证终点位置 v=0, a=0
 	*/
-	double calc_deccel_phase(double Tdi[5]);
+	double calc_decel_phase(double Tdi[5]);
 	// 使用减速规划参数
 	int apply_deccel_plan(double Tdi[5]);
 
@@ -197,7 +200,7 @@ public:
 @param  u      待获取点位的参数值
 @param  ans    [out] 目标点位
 ******************************************/
-int bezier_positioin(int m, const double ctr[][3], double u, double ans[3]);
+int bezier_position(int m, const double ctr[][3], double u, double ans[3]);
 
 /******************************************
 @brief  贝塞尔曲线导数
