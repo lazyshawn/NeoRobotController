@@ -6,6 +6,7 @@
 1. 下发流程无阻塞，指令就绪立即下发，执行过程中也可以同时下发新任务。
 1. 特殊轨迹处理，按需修改与原始指令运动不同的轨迹，如刮擦起弧、弧坑回填等。
 
+该模块中的几个核心类如下之间的关系如下图所示：
 ``` mermaid
 classDiagram
     direction LR
@@ -13,22 +14,65 @@ classDiagram
     %%note "line1line2"
 
     class RobotGroupManager {
-        +flush() void
+        -pimpl
+        +new_robot()
+        +find_robot()
+        +start_thread()
+        +stop_thread()
     }
 
     class RobotBase {
-        +DiscreteTrajectory
+        +robotId
+        +aliasId
+        +trajBuffer
+        +trajHistory
+        -notify_waiting_robot()
+        +wait_auto_task_stop()
+        +get_rt_robot_status()
+        +get_register_config()
+        +read_register_config()
+        +write_register_config()
+        +jog_moving()
+        +push_new_trajectory()
     }
 
     class RobotStatus {
+        +lowerStatus
+        +upperStatus
     }
 
     class RobotConfig {
     }
 
+    class DiscreteTrajectory {
+        -trajList
+        -preTraj
+        +get_curTraj()
+        +get_preTraj()
+        +pop()
+        +push_trajectory()
+        +trajectory_loaded()
+    }
+
+    class SingleTrajectory {
+        -trajId
+        -aliasId
+        +isJoint()
+        +isCartesian()
+    }
+
+    class SegmentBase {
+        +pointInfo
+        +motionCfg
+        +moveCmd
+    }
+
     RobotBase <--o RobotGroupManager: 代理
-    RobotStatus <--* RobotBase
-    RobotConfig <--* RobotBase
+    RobotStatus <--o RobotBase
+    RobotConfig <--o RobotBase
+    DiscreteTrajectory <--o RobotBase
+    SingleTrajectory <--o DiscreteTrajectory
+    SegmentBase <|-- SingleTrajectory
 ```
 
 ### 系统状态管理

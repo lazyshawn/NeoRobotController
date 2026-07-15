@@ -4,14 +4,24 @@
 #include "InterpSegmentBuffer.h"
 
 #include <iostream>
-//#include <fstream>
-//static std::ofstream jntPosOutFile("jnt_pos.txt");
-//static std::ofstream jntVelOutFile("jnt_vel.txt");
+#include <fstream>
+static std::ofstream jntPosOutFile("jnt_pos.txt");
+static std::ofstream jntVelOutFile("jnt_vel.txt");
 
 // 将前向声明 IMPL 定义为 InterpBuffer 的别名
 struct InterpDispatcher::IMPL : public InterpBuffer {};
 
-InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {}
+InterpDispatcher::InterpDispatcher() : pimpl (std::make_unique<IMPL>()) {
+	// --- 默认机器人配置参数
+	for (int i = 0; i < 6; ++i) {
+		kineCfg.jntLowerLimit[i] = -5 - i;
+		kineCfg.jntUpperLimit[i] = 5 + i;
+	}
+	for (int i = 0; i < 3; ++i) {
+		kineCfg.extLowerLimit[i] = -8 - i;
+		kineCfg.extUpperLimit[i] = 8 + i;
+	}
+}
 
 // 析构函数: 编译器必须析构的代码位置看到 IMPL 的完整定义
 InterpDispatcher::~InterpDispatcher() = default;
@@ -29,9 +39,14 @@ int InterpDispatcher::interp_enable(bool enable) {
 
 int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState& state) {
 	// - 前处理
-	// 第一次调用时初始化，接收初始关节角
+	// 第一次调用时初始化
+	static PosData prePos;
 	if (dispatcherStatus.CycleNum < 1) {
+		// 接收初始关节角
 		dispatcherStatus.dpos = state.dpos;
+		// 默认进入关节模式
+		switch_to_mode(0);
+		prePos = state.dpos;
 	}
 
 	// 调用计数更新
@@ -52,14 +67,26 @@ int InterpDispatcher::run_cycle_task(InterpSignalOut& signalOut, DispatcherState
 		interp_manual_task();
 	}
 
-	//for (int i = 0; i < 5; ++i) {
-	//	jntPosOutFile << dispatcherStatus.dpos.rbtPos[i] << ", ";
-	//}
-	//jntPosOutFile << dispatcherStatus.dpos.rbtPos[5] << ", ";
-	//for (int i = 0; i < 2; ++i) {
-	//	jntPosOutFile << dispatcherStatus.dpos.extPos[i] << ", ";
-	//}
-	//jntPosOutFile << dispatcherStatus.dpos.extPos[2] << std::endl;
+	static double preVel0 = 0.0;
+	for (int i = 0; i < 5; ++i) {
+		jntPosOutFile << dispatcherStatus.dpos.rbtPos[i] << ", ";
+		double curVel = (dispatcherStatus.dpos.rbtPos[i] - prePos.rbtPos[i]) / get_cycleTime();
+		if (i == 0) {
+			if (std::fabs(curVel - preVel0) > 0.1) {
+				double tmp = 0.0;
+			}
+			preVel0 = curVel;
+		}
+		jntVelOutFile << (dispatcherStatus.dpos.rbtPos[i] - prePos.rbtPos[i]) / get_cycleTime() << ", ";
+	}
+	jntPosOutFile << dispatcherStatus.dpos.rbtPos[5] << ", ";
+	jntVelOutFile << (dispatcherStatus.dpos.rbtPos[5] - prePos.rbtPos[5]) / get_cycleTime();
+	for (int i = 0; i < 2; ++i) {
+		jntPosOutFile << dispatcherStatus.dpos.extPos[i] << ", ";
+	}
+	jntPosOutFile << dispatcherStatus.dpos.extPos[2] << std::endl;
+	jntVelOutFile << std::endl;
+	prePos = dispatcherStatus.dpos;
 
 	// 输出插补状态
 	state = dispatcherStatus;
@@ -94,6 +121,12 @@ int InterpDispatcher::interp_auto_task() {
 		if (dispatcherStatus.interpState == 0 && pimpl->get_buffer_size() > 0) {
 			// 运动前缓冲指令切换 <等待> 状态
 			// 轨迹起点设为当前关节位置, 因为缓冲动作可能会运动导致当前点与指令起点不一致
+			// 设置各轴插补曲线的起点位置、速度、加速度等
+			for (int i = 0; i < 3; ++i) {
+				pimpl->set_jog_constraint(i, 0, 20, 50, 500);
+				pimpl->set_jog_constraint(i + 3, 0, 10, 50, 500);
+				pimpl->set_jog_constraint(i + 6, 0, 100, 1000, 5000);
+			}
 			// 缓冲指令完成，切换 <插补> 状态
 			dispatcherStatus.interpState |= 1;
 		}
@@ -160,7 +193,7 @@ int InterpDispatcher::interp_manual_task() {
 
 		// 执行点动插补
 		double xt[4];
-		int jogState = pimpl->jog_move(i);
+		int jogState = pimpl->jog_move(i, dispatcherStatus.CycleNum, get_cycleTime());
 		pimpl->get_online_interp_result(i, xt);
 		if (i < 6) {
 			dispatcherStatus.dpos.rbtPos[i] = xt[0];
@@ -251,7 +284,7 @@ int InterpDispatcher::switch_to_mode(int type) {
 		// 更新各轴插补曲线的起点位置、速度、加速度等
 		for (int i = 0; i < 9; ++i) {
 			double q0 = i < 6 ? dispatcherStatus.dpos.rbtPos[i] : dispatcherStatus.dpos.extPos[i - 6];
-			pimpl->set_jog_constraint(i, q0, 10, 10, 100);
+			pimpl->set_jog_constraint(i, q0, 2, 5, 5);
 		}
 	}
 

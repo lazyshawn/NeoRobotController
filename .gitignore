@@ -1,6 +1,8 @@
 .vs
 .vscode
 .cache
+.stfolder
+.stignore
 build*/
 out
 CMakeSettings.json

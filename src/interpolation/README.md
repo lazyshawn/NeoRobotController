@@ -10,6 +10,40 @@
 
 对外接口只有调度器和不带处理信息的指令队列。
 
+```mermaid
+classDiagram
+    direction LR
+
+    class DoubleSCurve {
+        -q0, q1, v0, v1, sign
+        -vmax, amax, jmax
+        -scale, offset, reserve
+        -FSLimit, RSLimit
+        -cb_endmove_check
+
+        -Tj1, Tj2, Ta, Tv, Td, T
+        -vlim, alima, alimd
+        -s1, s2, s3, s4, s5, s6
+
+        -xt[4]
+        -bool interpDone
+        -state, signal
+
+        +plan_jog()
+        +plan_p2p()
+        +plan_timed()
+        +plan_stop()
+        +plan_settle()
+        
+        +calc_deccel_endmove()
+        +calc_pos()
+        +calc_residual_dist()
+        +calc_residual_time()
+        +calc_max_speed()
+        +calc_time_PiTPe()
+    }
+```
+
 ### 插补流程
 整个插补流程分为三层：用户输入层、调度层、插补层。用户层将运动指令预处理后存入缓冲队列；调度层管理插补状态；插补层执行插补计算并输出离散点。
 
@@ -67,7 +101,7 @@ sequenceDiagram
 #### 关节运动
 关节运动插补流程如下图所示。
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Stage1 [预处理]
         A1[点位格式转换] --> B1[平滑设置]
     end
@@ -81,9 +115,6 @@ flowchart LR
     subgraph Stage3 [插补]
         A3[当前段插补] --> B3[叠加前段未完成插补]
     end
-
-    B1 --> A2
-    D2 --> A3
 ```
 预处理阶段主要处理点位格式转换，将起点终点点位转换为关节角，然后将当前段后平滑置零，再根据前段轨迹平滑指令同步修改前段后平滑和当前段前平滑。
 规划阶段作用在第一次插补前，负责将前一段轨迹的速度曲线保存，并将未插补完成的部分平移到时间起点；规划并同步当前段所有轴的插补曲线；计算去除后平滑的实际插补时长`Tk`，并将插补计时器清零。
@@ -94,7 +125,6 @@ flowchart LR
 ```mermaid
 flowchart TD
     subgraph Stage1 [预处理]
-        direction LR
         A1[点位格式转换] --> B1[原始轨迹长度]
         B1 --> C1[平滑与控制点]
         C1 --> D1[前段曲线平滑设置]
@@ -113,4 +143,18 @@ flowchart TD
         B3 --> C3[姿态与附加轴插补]
         C3 --> D3[摆焊叠加]
     end
+```
+
+相邻两段笛卡尔曲线规划和插补时序如下图所示，仅展示前后平滑均存在的情况，`moveS`为合并插补距离。
+1. 预处理阶段需要计算过渡段的控制点位置。`end/u=0`为上一段轨迹后平滑起点；`beg/u=1`为当前段轨迹前平滑终点。`u=0.5`为过渡段的中点，将过渡段长度分到两段轨迹；`mainD`为轨迹中不包含过渡曲线的主位移起点。
+1. 规划阶段考虑前段规划中不足一个周期的部分，即`done`到`u=0.5`，以保证相邻规划的速度连续。实际规划从`done`开始，到后平滑曲线`u=0.5`结束。
+1. 插补阶段第一次插补超过后`end`时，保存当前轨迹插补到的过渡段位置`doneU`，下一段轨迹开始规划，将当前时间设为`t=0`。插补到`done`位置后，前一段轨迹真正结束，不再输出插补距离增量到`moveS`。
+```C++
+   u=0  t=0            u=0.5     moveS     u=1
+    |    |   pre.plan ->|         |         |    |-> cur.mainD
+    |    |              |         V         |    |
+----|----|---------|----|--------------|----|----|------------>
+    |    |         |    |              |    |
+   end   |       done                  |   beg
+     pre.doneU     |-> cur.plan   cur.curMoveS
 ```

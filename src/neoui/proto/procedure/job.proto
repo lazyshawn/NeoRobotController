@@ -1,0 +1,9 @@
+// job.proto
+syntax = "proto3";
+package procedure;
+import "procedure/weld.proto";
+
+message JobParam {
+  int32 id = 1;
+  repeated WeldParam weld = 2;
+}

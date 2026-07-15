@@ -139,6 +139,7 @@ public:
 	// --- 点动处理
 	int set_jog_constraint(int idx, double q0, double vmax, double amax, double jmax);
 	int switch_jog_state(int idx, int state);
-	int jog_move(int idx);
+	int jog_move(int idx, long cnt, double dt);
 	int get_online_interp_result(int idx, double ans[4]);
+	double plan_decccel_online_interp(int idx);
 };

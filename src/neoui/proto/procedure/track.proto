@@ -1,0 +1,12 @@
+// track.proto
+syntax = "proto3";
+package procedure;
+
+message TrackParam {
+  int32 id = 1;
+  int32 enable = 2;
+  int32 gain_lr = 3;
+  int32 offset_lr = 4;
+  int32 gain_ud = 5;
+  int32 offset_ud = 6;
+}

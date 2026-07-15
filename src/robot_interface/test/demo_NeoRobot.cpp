@@ -3,7 +3,6 @@
 #include<iostream>
 
 #include "robot_interface/CoopRobotManager.h"
-#include "RobotLogger.h"
 
 #include <Windows.h>
 #include <DbgHelp.h>
@@ -58,11 +57,9 @@ LONG WINAPI CrashHandler(EXCEPTION_POINTERS* pException) {
 
 // 控制卡
 //std::shared_ptr<FSAIRobotInterface::Controller> ZController(new FSAIRobotInterface::Controller);
-// 机器人
-std::shared_ptr<FSAIRobotInterface::RobotBase> robot(new FSAIRobotInterface::NeoRobot);
 FSAIRobotInterface::RobotGroupManager group;
 // 轨迹
-DiscreteTrajectory trajList, trajList2;
+FSAIRobotInterface::DiscreteTrajectory trajList, trajList2;
 //TrajectoryConfig trajCfg, trajCfg2;
 std::vector<int> finish;
 
@@ -74,14 +71,14 @@ int main() {
 	//ZController->lazy_connect();
 	//robot->set_ZController(ZController);
 
-	robot->switch_auto(true);
-	group.new_robot(robot);
+	group.new_robot(FSAIRobotInterface::RobotGroupManager::NEOROBOT);
+	group.switch_auto(0, true);
 
 	group.start_thread();
 
 	// 轨迹
-	DiscreteTrajectory trajList;
-	SingleTrajectory curTraj;
+	FSAIRobotInterface::DiscreteTrajectory trajList;
+	FSAIRobotInterface::SingleTrajectory curTraj;
 
 	PosData dpos;
 	dpos.pointType = 0;
@@ -123,7 +120,7 @@ int main() {
 	curTraj.set_data(pointInfo, motionCfg, moveCmd);
 	trajList.add_single_traj(curTraj);
 
-	robot->push_new_trajectory(trajList);
+	group.push_new_trajectory(0, trajList);
 
 	printf("Press <Enter> to exit.\n");
 	getchar();

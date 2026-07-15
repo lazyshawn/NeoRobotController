@@ -7,10 +7,14 @@ add_library(data_process
   track_utility.c
 
   input_shaping.c
+  kalman_filter.c
 )
 target_include_directories(data_process PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+target_link_libraries(data_process PUBLIC
+  common
 )
 
 add_subdirectory(test)

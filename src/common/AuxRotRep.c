@@ -11,14 +11,15 @@ int Euler2Rot(const double euler[3], double R[9]) {
     double sa = sin(a), sb = sin(b), sc = sin(c);
     double ca = cos(a), cb = cos(b), cc = cos(c);
     
+    // 第一行
     R[0] = ca*cb;
     R[1] = ca*sb*sc - sa*cc;
     R[2] = ca*sb*cc + sa*sc;
-
+    // 第二行
     R[3] = sa*cb;
     R[4] = sa*sb*sc + ca*cc;
     R[5] = sa*sb*cc - ca*sc;
-
+    // 第三行
     R[6] = -sb;
     R[7] = cb*sc;
     R[8] = cb*cc;

@@ -40,6 +40,12 @@ typedef struct {
 	int tcpId;
 	//! TCP 记录值，最多记录 10 组
 	double tcp[10][6];
+	//! 地轨方向
+	double extDir[3];
+	//! 地轨正限位
+	double extUpperLimit[3];
+	//! 地轨负限位
+	double extLowerLimit[3];
 
 	// --- 推导参数
 	//! 空间坐标系的关节旋量: 通过关节类型、关节方向、关节轴线上任意一点计算得到
