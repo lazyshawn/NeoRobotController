@@ -1,5 +1,6 @@
 ﻿
 #include "InterpCurve.h"
+#include <cmath>
 #include <iostream>
 
 // --- 辅助函数

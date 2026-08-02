@@ -5,7 +5,7 @@ add_library(common
   AuxRotRep.c
   AuxTransformation.c
   GeoKinematics.c
-  GeoFk.c
+  GeoFK.c
   GeoIK.c
   GeoIK_subproblem.c
 

@@ -1,5 +1,7 @@
 ﻿
-#ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER)
+#include "data_process/control_algo.h"
+#elif defined(__linux__) && defined(__GNUC__)
 #include "data_process/control_algo.h"
 #else
 #include "control_algo.h"

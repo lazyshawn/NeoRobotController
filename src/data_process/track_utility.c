@@ -1,5 +1,7 @@
 ﻿
-#ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER)
+#include "data_process/track_utility.h"
+#elif defined(__linux__) && defined(__GNUC__)
 #include "data_process/track_utility.h"
 #else
 #include "track_utility.h"
@@ -9,7 +11,7 @@
 /***********************************************************************
  *                        Z M O T I O N                                *
  ***********************************************************************/
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__linux__)
  // 获取轴脉冲值
 int32 get_axis_pulse(int mode, uint32 iaxis) {
 	if (mode == 1) {

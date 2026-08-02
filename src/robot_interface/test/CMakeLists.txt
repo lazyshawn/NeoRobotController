@@ -4,5 +4,8 @@ add_executable(demo_NeoRobot
 )
 target_link_libraries(demo_NeoRobot PUBLIC
   FSAIRobotInterface
-  DbgHelp
 )
+# DbgHelp 仅 Windows 存在
+if(WIN32)
+  target_link_libraries(demo_NeoRobot PUBLIC DbgHelp)
+endif()
