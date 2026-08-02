@@ -2,6 +2,7 @@
 #include "interpolation/InterpDispatch.h"
 
 #include "NeoRobot.h"
+#include <iostream>
 
 namespace FSAIRobotInterface {
 

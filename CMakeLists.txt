@@ -42,10 +42,12 @@ if(BUILD_TESTING)
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
+    set_target_properties(GTest::gtest PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+    set_target_properties(GTest::gtest_main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+  else()
+    find_package(GTest REQUIRED)
   endif()
 
-  set_target_properties(gtest PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
-  set_target_properties(gtest_main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
   # 启用测试，这是 CTest 所必需的
   enable_testing()

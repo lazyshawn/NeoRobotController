@@ -1,13 +1,13 @@
-
+#ifdef __WIN32
+#include <iostream>
 #include <windows.h>
-#include<iostream>
 
 #include "robot_interface/CoopRobotManager.h"
 
-#include <Windows.h>
 #include <DbgHelp.h>
-#include <time.h>
+#include <Windows.h>
 #include <stdio.h>
+#include <time.h>
 
 void InvalidParameterHandler(const wchar_t* expression, const wchar_t* function,
 	const wchar_t* file, unsigned int line, uintptr_t pReserved) {
@@ -127,4 +127,9 @@ int main() {
 
 	return 0;
 
+#else
+int main() {
+  int x = 0;
+  return 0;
 }
+#endif

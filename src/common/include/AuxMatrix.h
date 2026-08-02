@@ -14,7 +14,10 @@
 
 #include "common/ExportSharedAPI.h"
 
-#ifdef _MSC_VER
+// #ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER)
+#include <math.h>
+#elif defined(__linux__) && defined(__GNUC__)
 #include <math.h>
 #else
 // #include "zmcbuildin.h"

@@ -1,8 +1,8 @@
 ﻿
 add_subdirectory(common)
 add_subdirectory(robot_interface)
-add_subdirectory(robot_webservice)
-add_subdirectory(task_plan)
+#add_subdirectory(robot_webservice)
+#add_subdirectory(task_plan)
 
 add_subdirectory(interpolation)
 add_subdirectory(data_process)

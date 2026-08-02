@@ -5,6 +5,8 @@ add_library(interpolation_obj OBJECT
   InterpSegmentBuffer.cpp
   InterpDispatch.cpp
 )
+# OBJECT 库用于共享库时必须开启 PIC
+set_target_properties(interpolation_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(interpolation_obj PUBLIC
   common
 )
