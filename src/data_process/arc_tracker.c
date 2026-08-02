@@ -1,5 +1,7 @@
 ﻿
-#ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER)
+#include "data_process/arc_tracker.h"
+#elif defined(__linux__) && defined(__GNUC__)
 #include "data_process/arc_tracker.h"
 #else
 #include "arc_tracker.h"

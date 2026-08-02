@@ -3,6 +3,8 @@
 
 // 矩阵计算辅助库
 #include "AuxMatrix.h"
+#include <string.h>
+#include<iostream>
 
 
 /***********************************************************************

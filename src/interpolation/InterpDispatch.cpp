@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cmath>
 static std::ofstream jntPosOutFile("jnt_pos.txt");
 static std::ofstream jntVelOutFile("jnt_vel.txt");
 

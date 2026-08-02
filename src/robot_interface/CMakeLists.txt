@@ -29,9 +29,9 @@ target_link_directories(FSAIRobotInterface PUBLIC
 
 # Then, link libraries
 target_link_libraries(FSAIRobotInterface PUBLIC
-  zauxdll
-  zmotion
-  log4cplus$<$<CONFIG:Debug>:D>
+  #zauxdll
+  #zmotion
+  log4cplus$<$<AND:$<CONFIG:Debug>,$<PLATFORM_ID:Windows>>:D>
   Eigen3::Eigen
 
   #common

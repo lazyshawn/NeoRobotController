@@ -1,9 +1,13 @@
 
 #include "AuxMatrix.h"
 
-#ifdef _MSC_VER
-#include <stdlib.h>
+#if defined(_WIN32) && defined(_MSC_VER)
 #include <stdio.h>
+#include <stdlib.h>
+#elif defined(__linux__) && defined(__GNUC__)
+#include <stdio.h>
+#include <stdlib.h>
+#else
 #endif
 
 static const double dim_EPS = 1e-6;
