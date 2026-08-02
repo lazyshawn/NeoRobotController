@@ -3,6 +3,7 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
+#include <cmath>
 
 #include "interpolation/InterpDispatch.h"
 #include "InterpCurve.h"

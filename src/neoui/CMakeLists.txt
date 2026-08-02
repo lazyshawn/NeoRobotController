@@ -34,7 +34,7 @@ add_executable(demo_mvvm
   # viewmodels
   MainViewModel.cpp
   # views
-  mainView.cpp
+  MainView.cpp
 
   forms/logo.rc
 )
